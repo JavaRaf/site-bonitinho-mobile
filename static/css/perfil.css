@@ -1,0 +1,152 @@
+.perfil-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  background: #fafafa;
+  padding: 1rem;
+}
+
+.perfil-card {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.perfil-back {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.perfil-back:hover {
+  opacity: 0.8;
+}
+
+.perfil-card h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.5rem 0 1rem;
+  color: #111827;
+}
+
+.perfil-avatar-section {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.perfil-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 0.5rem;
+}
+
+.perfil-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perfil-label {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.perfil-avatar-list {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.perfil-avatar-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.perfil-avatar-option:hover,
+.perfil-avatar-option.selected {
+  border-color: #111827;
+}
+
+.perfil-avatar-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perfil-field {
+  margin-bottom: 1rem;
+}
+
+.perfil-field label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.perfil-field input {
+  width: 100%;
+  height: 40px;
+  padding: 0 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.perfil-field input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+}
+
+.perfil-btn {
+  width: 100%;
+  height: 40px;
+  border: none;
+  border-radius: 6px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.perfil-btn:hover {
+  background: #1f2937;
+}
+
+.perfil-error {
+  font-size: 0.8125rem;
+  color: #ef4444;
+  text-align: center;
+  margin-top: 0.5rem;
+  min-height: 1.2em;
+}
+
+.perfil-ok {
+  font-size: 0.8125rem;
+  color: #10b981;
+  text-align: center;
+  margin-top: 0.25rem;
+  min-height: 1.2em;
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar — ArteBonitinha</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/auth.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">
+        <img src="/static/img/logo.png" alt="logo">
+      </div>
+      <h1>ArteBonitinha</h1>
+      <p>Entre para curtir e comentar</p>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <div class="field">
+        <label for="username">Usuário</label>
+        <input type="text" id="username" name="username" placeholder="seu usuário" autocomplete="username" required minlength="3">
+      </div>
+
+      <div class="field">
+        <label for="password">Senha</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required minlength="4">
+      </div>
+
+      <button type="submit" class="auth-btn">Entrar</button>
+
+      <p class="auth-error" id="authError"></p>
+    </form>
+
+    <p class="auth-switch">
+      Não tem conta? <a href="/register">Criar conta</a>
+    </p>
+  </div>
+
+  <script src="/static/js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Perfil — ArteBonitinha</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/perfil.css">
+</head>
+<body class="perfil-page">
+
+  <div class="perfil-card">
+    <a href="/" class="perfil-back"><img src="/static/img/back.svg" alt="voltar" class="back-icon"></a>
+
+    <h2>Meu Perfil</h2>
+
+    <div class="perfil-avatar-section">
+      <div class="perfil-avatar" id="perfilAvatar">
+        <img src="/avatars/red.svg" alt="avatar" id="perfilAvatarImg">
+      </div>
+      <p class="perfil-label">Escolha um avatar</p>
+      <div class="perfil-avatar-list" id="perfilAvatarList"></div>
+    </div>
+
+    <div class="perfil-field">
+      <label for="perfilUsername">Nome de usuário</label>
+      <input type="text" id="perfilUsername" minlength="3" autocomplete="off">
+    </div>
+
+    <button id="perfilSave" class="perfil-btn">Salvar alterações</button>
+    <p class="perfil-error" id="perfilError"></p>
+    <p class="perfil-ok" id="perfilOk"></p>
+  </div>
+
+  <script src="/static/js/perfil.js"></script>
+</body>
+</html>

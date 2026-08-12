@@ -1,0 +1,398 @@
+/* === Reset & Base === */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #111827;
+  background: #fafafa;
+  min-height: 100dvh;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* === Header === */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  height: 50px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#logo-img {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#logo-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: -0.2px;
+}
+
+.user {
+  flex-shrink: 0;
+  position: relative;
+}
+
+#user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+#user-avatar:hover {
+  opacity: 0.8;
+}
+
+#user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-menu {
+  display: none;
+  position: absolute;
+  top: 38px;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  overflow: hidden;
+  z-index: 200;
+  min-width: 148px;
+}
+
+.user-menu.open {
+  display: block;
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  text-align: left;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.menu-item:hover {
+  background: #f3f4f6;
+}
+
+/* === Carrossel === */
+.carrossel {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem 0.75rem;
+}
+
+.img-model {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+#img-view {
+  width: 100%;
+  min-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background: #fafafa;
+}
+
+.img-owner {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 0.5rem;
+  z-index: 10;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.carousel-track {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  transition: transform 0.3s cubic-bezier(0.2,0,0.2,1);
+}
+
+.carousel-slide {
+  min-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.carousel-slide img {
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: contain;
+  background: #f3f4f6;
+}
+
+.carousel-dots {
+  display: flex;
+  gap: 6px;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.carousel-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 3px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.carousel-dot.active {
+  width: 14px;
+  background: #374151;
+}
+
+.img-placeholder {
+  width: 48px;
+  height: 48px;
+  color: #d1d5db;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* === Action Buttons === */
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 0.5rem 1.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btn-group {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.likes-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  min-width: 1.2em;
+  text-align: center;
+}
+
+#likes-btn,
+#comment-btn,
+#download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+#likes-btn:hover,
+#comment-btn:hover,
+#download-btn:hover {
+  background: #f3f4f6;
+}
+
+#likes-btn:active,
+#comment-btn:active,
+#download-btn:active {
+  background: #e5e7eb;
+}
+
+#likes-btn img,
+#comment-btn img,
+#download-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+#likes-btn { color: #ef4444; }
+#comment-btn { color: #4f46e5; }
+#download-btn { color: #374151; }
+
+/* === Comments === */
+.comments-section {
+  border-top: 1px solid #f3f4f6;
+  padding: 0.75rem 1rem;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0;
+  min-height: 32px;
+  line-height: 1.4;
+}
+
+.comment-user {
+  font-weight: 600;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.comment-text {
+  color: #4b5563;
+  word-break: break-word;
+  flex: 1;
+}
+
+.comment-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comment-form input {
+  flex: 1;
+  height: 34px;
+  padding: 0 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.comment-form input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+}
+
+.comment-form button {
+  height: 34px;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.comment-form button:hover {
+  background: #1f2937;
+}
+
+.comment-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 4px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+
+.comment-delete:hover {
+  opacity: 0.8;
+}
+
+.comment-delete img {
+  width: 14px;
+  height: 14px;
+}
+
+.back-icon {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  opacity: 0.6;
+}

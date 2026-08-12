@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — ArteBonitinha</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="admin-page">
+
+  <div class="admin-header">
+    <a href="/" class="admin-back"><img src="/static/img/back.svg" alt="voltar" class="back-icon"></a>
+    <h2>Admin</h2>
+  </div>
+
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="images">Imagens</button>
+    <button class="admin-tab" data-tab="users">Usuários</button>
+  </div>
+
+  <div id="tabImages">
+    <div class="admin-grid" id="adminGrid"></div>
+  </div>
+
+  <div id="tabUsers" style="display:none">
+    <table class="users-table" id="usersTable"></table>
+  </div>
+
+  <div class="admin-actions" id="actionsImages">
+    <button class="admin-btn outline" id="adminSelectAll">Selecionar todas</button>
+    <button class="admin-btn danger" id="adminDeleteSelected">Excluir</button>
+    <button class="admin-btn outline" id="adminRemoveLikes">Remover likes</button>
+    <span id="adminStatus"></span>
+  </div>
+
+  <div class="admin-actions" id="actionsUsers" style="display:none"></div>
+
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-card">
+      <p id="confirmMsg"></p>
+      <div class="confirm-actions">
+        <button id="confirmNo" class="admin-btn">Não</button>
+        <button id="confirmYes" class="admin-btn danger">Sim</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>
