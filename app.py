@@ -2,7 +2,9 @@ from pathlib import Path
 import sqlite3
 import uuid
 from datetime import timedelta
-from flask import Flask, jsonify, render_template, send_from_directory, session, request
+from io import BytesIO
+from flask import Flask, jsonify, render_template, send_from_directory, send_file, session, request
+from PIL import Image, ImageOps
 
 from db.schema import init_db, get_db
 from routes.auth import auth_bp
@@ -18,6 +20,23 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=20)
 
 init_db()
 app.register_blueprint(auth_bp)
+
+
+def get_setting(key, default=None):
+    db = get_db()
+    row = db.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    db.close()
+    return row["value"] if row else default
+
+
+def set_setting(key, value):
+    db = get_db()
+    db.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, value)
+    )
+    db.commit()
+    db.close()
 
 
 @app.route("/health", methods=["GET"])
@@ -58,8 +77,14 @@ def perfil_page():
 
 @app.route("/admin", methods=["GET"])
 def admin_page():
-    if not session.get("is_admin"):
+    if "user_id" not in session:
         return render_template("login.html")
+    if not session.get("is_admin"):
+        return (
+            "<h2>Você não é admin</h2>"
+            "<p>Redirecionando para a tela inicial...</p>"
+            '<script>setTimeout(() => location.href = "/", 2000);</script>'
+        )
     return render_template("admin.html")
 
 
@@ -72,6 +97,7 @@ def list_images():
         """SELECT u.image_name, us.username,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
+           WHERE u.active = 1
            ORDER BY likes DESC, u.created_at DESC"""
     ).fetchall()
     db.close()
@@ -234,6 +260,153 @@ def admin_promote_user(user_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/collage", methods=["POST"])
+def admin_export_collage():
+    if not session.get("is_admin"):
+        return jsonify({"error": "admin only"}), 403
+
+    data = request.get_json(silent=True) or {}
+    names = data.get("images", [])
+    img_dir = BASE_DIR / "images"
+
+    if not names:
+        allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+        names = sorted(
+            f.name for f in img_dir.iterdir() if f.suffix.lower() in allowed
+        )
+
+    paths = [img_dir / n for n in names if (img_dir / n).exists()]
+    if not paths:
+        return jsonify({"error": "no images"}), 400
+
+    SIZE = 1600
+    n = len(paths)
+    cols = int(n ** 0.5) + (1 if int(n ** 0.5) ** 2 < n else 0)
+    rows = (n + cols - 1) // cols
+
+    cell_w = SIZE // cols
+    cell_h = SIZE // rows
+
+    canvas = Image.new("RGB", (SIZE, SIZE), "white")
+
+    for i, path in enumerate(paths):
+        col = i % cols
+        row = i // cols
+        with Image.open(path) as im:
+            im = im.convert("RGBA")
+            # cover-fit the image into the cell
+            im = ImageOps.fit(im, (cell_w, cell_h), method=Image.Resampling.LANCZOS)
+            canvas.paste(im, (col * cell_w, row * cell_h), im)
+
+    buf = BytesIO()
+    canvas.save(buf, format="PNG")
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="image/png",
+        as_attachment=True,
+        download_name="collage.png"
+    )
+
+
+@app.route("/api/admin/turnos", methods=["GET"])
+def admin_turnos():
+    if not session.get("is_admin"):
+        return jsonify({"error": "admin only"}), 403
+
+    db = get_db()
+    current_round = db.execute("SELECT COALESCE(MAX(round_number), 0) FROM rounds").fetchone()[0]
+    rows = db.execute(
+        """SELECT u.image_name, us.username AS owner,
+                  (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
+           FROM uploads u LEFT JOIN users us ON u.user_id = us.id
+           WHERE u.active = 1
+           ORDER BY likes DESC, u.created_at DESC"""
+    ).fetchall()
+    history = db.execute(
+        "SELECT round_number, cutoff, finished_at FROM rounds ORDER BY round_number DESC"
+    ).fetchall()
+    db.close()
+
+    return jsonify({
+        "current_round": current_round + 1,
+        "active_count": len(rows),
+        "images": [{"name": r["image_name"], "owner": r["owner"], "likes": r["likes"]} for r in rows],
+        "history": [dict(h) for h in history]
+    })
+
+
+@app.route("/api/admin/turnos/advance", methods=["POST"])
+def admin_turnos_advance():
+    if not session.get("is_admin"):
+        return jsonify({"error": "admin only"}), 403
+
+    data = request.get_json(silent=True) or {}
+    try:
+        cutoff = int(data.get("cutoff", 3))
+    except (TypeError, ValueError):
+        return jsonify({"error": "cutoff inválido"}), 400
+    if cutoff < 1:
+        return jsonify({"error": "cutoff deve ser >= 1"}), 400
+
+    db = get_db()
+    rows = db.execute(
+        """SELECT image_name FROM uploads WHERE active = 1
+           ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.image_name = uploads.image_name) DESC,
+                    created_at DESC"""
+    ).fetchall()
+    names = [r["image_name"] for r in rows]
+
+    if len(names) <= cutoff:
+        db.close()
+        return jsonify({"error": "Nada a fazer: imagens ativas <= cutoff"}), 400
+
+    survivors = names[:cutoff]
+    eliminated = names[cutoff:]
+
+    # remove eliminated images from disk and DB
+    img_dir = BASE_DIR / "images"
+    for name in eliminated:
+        filepath = img_dir / name
+        if filepath.exists():
+            filepath.unlink()
+    db.executemany("DELETE FROM uploads WHERE image_name = ?", [(n,) for n in eliminated])
+    db.executemany("DELETE FROM comments WHERE image_name = ?", [(n,) for n in eliminated])
+    db.execute("DELETE FROM likes")
+    current_round = db.execute("SELECT COALESCE(MAX(round_number), 0) FROM rounds").fetchone()[0]
+    db.execute("INSERT INTO rounds (round_number, cutoff) VALUES (?, ?)", (current_round + 1, cutoff))
+    db.commit()
+    db.close()
+
+    return jsonify({"round": current_round + 1, "passed": survivors, "removed": eliminated})
+
+
+@app.route("/api/admin/turnos/mode", methods=["GET", "POST"])
+def admin_turnos_mode():
+    if not session.get("is_admin"):
+        return jsonify({"error": "admin only"}), 403
+
+    if request.method == "GET":
+        return jsonify({"single_vote_mode": get_setting("single_vote_mode") == "1"})
+
+    data = request.get_json(silent=True) or {}
+    enabled = bool(data.get("enabled"))
+    set_setting("single_vote_mode", "1" if enabled else "0")
+    return jsonify({"single_vote_mode": enabled})
+
+
+@app.route("/api/admin/turnos/reset", methods=["POST"])
+def admin_turnos_reset():
+    if not session.get("is_admin"):
+        return jsonify({"error": "admin only"}), 403
+
+    db = get_db()
+    db.execute("DELETE FROM rounds")
+    db.commit()
+    db.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/votos", methods=["GET"])
 def votos_page():
     return render_template("votos.html")
@@ -246,6 +419,7 @@ def ranking_api():
         """SELECT u.image_name, us.username AS owner,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
+           WHERE u.active = 1
            ORDER BY likes DESC, u.created_at DESC"""
     ).fetchall()
 
@@ -278,6 +452,11 @@ def serve_avatar(filename):
     return send_from_directory(BASE_DIR / "avatars", filename)
 
 
+@app.route("/api/singlevote", methods=["GET"])
+def single_vote_status():
+    return jsonify({"enabled": get_setting("single_vote_mode") == "1"})
+
+
 @app.route("/api/likes", methods=["GET"])
 def get_likes():
     if "user_id" not in session:
@@ -307,6 +486,13 @@ def toggle_like(image_name):
         db.close()
         return jsonify({"liked": False})
     else:
+        if get_setting("single_vote_mode") == "1":
+            other = db.execute(
+                "SELECT id FROM likes WHERE user_id = ? AND image_name != ?",
+                (session["user_id"], image_name)
+            ).fetchone()
+            if other:
+                db.execute("DELETE FROM likes WHERE id = ?", (other["id"],))
         db.execute(
             "INSERT INTO likes (user_id, image_name) VALUES (?, ?)",
             (session["user_id"], image_name)

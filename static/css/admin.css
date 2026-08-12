@@ -77,7 +77,6 @@
 }
 
 .admin-card img {
-  width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   display: block;
@@ -97,17 +96,11 @@
   right: 0.3rem;
   width: 20px;
   height: 20px;
-  border: 1px solid #111827;
-  border-radius: 50%;
-  background: transparent;
   cursor: pointer;
   z-index: 2;
   padding: 0;
-  transition: all 0.15s;
-}
-
-.admin-card.selected .admin-select {
-  background: #fff;
+  margin: 0;
+  accent-color: #111827;
 }
 
 .admin-likers {
@@ -122,6 +115,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
+  max-width: 100%;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   background: #f3f4f6;
@@ -129,6 +123,13 @@
   color: #374151;
   cursor: pointer;
   transition: background 0.1s;
+}
+
+.admin-liker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-liker-tag:hover {
@@ -139,6 +140,7 @@
 .admin-liker-icon {
   width: 10px;
   height: 10px;
+  flex: none;
   opacity: 0.5;
 }
 
@@ -192,7 +194,7 @@
 /* Actions bar */
 .admin-actions {
   position: fixed;
-  bottom: 1rem;
+  bottom: 4rem;
   left: 50%;
   transform: translateX(-50%);
   background: #fff;
@@ -202,7 +204,7 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: inherit;
   gap: 0.4rem;
   z-index: 50;
 }
@@ -289,4 +291,91 @@
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+
+/* Turnos panel */
+.turnos-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+  color: #374151;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.turnos-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.turnos-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.turnos-stat-label {
+  font-size: 0.6875rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.turnos-stat strong {
+  font-size: 1.125rem;
+  color: #111827;
+}
+
+.turnos-stat input[type="number"] {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.turnos-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+}
+
+.turnos-stats .admin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.turnos-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.6875rem;
+  color: #6b7280;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.turnos-history p {
+  width: 100%;
+  font-weight: 500;
+  color: #374151;
+}
+
+.turnos-history-item {
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: #f3f4f6;
 }

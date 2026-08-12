@@ -31,8 +31,9 @@
     <div class="carrossel">
       <div class="img-model">
 
+        <div class="img-owner" id="imgOwner"><span class="img-owner-label">Enviado por:</span> <span id="imgOwnerName"></span><span class="img-owner-singlevote" id="imgOwnerSingleVote" style="display:none">Voto único</span></div>
+
         <div id="img-view">
-          <div class="img-owner" id="imgOwner"></div>
           <div class="carousel-track" id="carouselTrack">
             <svg class="img-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2"/>
@@ -48,7 +49,10 @@
             <div id="likes-btn"><img src="/static/img/heart.svg" alt="like"></div>
             <span class="likes-count" id="likes-count"></span>
           </div>
-          <div id="comment-btn"><img src="/static/img/comments.svg" alt="comment"></div>
+          <div class="btn-group">
+            <div id="comment-btn"><img src="/static/img/comments.svg" alt="comment"></div>
+            <span class="likes-count" id="comment-count"></span>
+          </div>
           <div id="download-btn"><img src="/static/img/download.svg" alt="download"></div>
         </div>
 

@@ -1,6 +1,15 @@
 let currentUserId = null;
 let isAdmin = false;
+let currentAvatar = "";
 const commentsCache = new Map();
+
+const avatarColors = {
+    "red.svg": "#f43f5e",
+    "indigo.svg": "#6366f1",
+    "green.svg": "#10b981",
+    "amber.svg": "#f59e0b",
+    "purple.svg": "#8b5cf6"
+};
 
 async function fetchCurrentUser() {
     try {
@@ -9,6 +18,7 @@ async function fetchCurrentUser() {
         if (data.user) {
             currentUserId = data.user.id;
             isAdmin = data.user.is_admin || false;
+            currentAvatar = data.user.avatar || "";
         }
     } catch { /* ignore */ }
 }
@@ -43,12 +53,16 @@ async function loadComments(forceRefresh = false) {
 
 function renderComments(comments) {
     const list = document.getElementById("commentsList");
+    const countEl = document.getElementById("comment-count");
+    if (countEl) countEl.textContent = comments.length > 0 ? comments.length : "";
     list.innerHTML = comments.length
         ? comments.map(c => {
             const canDelete = isAdmin || currentUserId === c.user_id;
+            const isSelf = currentUserId === c.user_id;
+            const selfColor = avatarColors[currentAvatar] || "#4f46e5";
             return `
                 <div class="comment" data-id="${c.id}">
-                    <span class="comment-user">${escapeHtml(c.username)}</span>
+                    <span class="comment-user${isSelf ? " is-self" : ""}"${isSelf ? ` style="color:${selfColor}"` : ""}>${escapeHtml(c.username)}</span>
                     <span class="comment-text">${escapeHtml(c.text)}</span>
                     ${canDelete ? `<button class="comment-delete" data-id="${c.id}"><img src="/static/img/trash.svg" alt="del"></button>` : ""}
                 </div>`;

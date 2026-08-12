@@ -47,6 +47,18 @@ def init_db():
             original_name TEXT  NOT NULL,
             created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS rounds (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_number INTEGER NOT NULL,
+            cutoff       INTEGER NOT NULL,
+            finished_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
     """)
     # migration: add is_admin if missing
     try:
@@ -56,6 +68,11 @@ def init_db():
     # migration: add avatar if missing
     try:
         conn.execute("ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT 'default-avatar.svg'")
+    except sqlite3.OperationalError:
+        pass
+    # migration: add active flag on uploads
+    try:
+        conn.execute("ALTER TABLE uploads ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
     except sqlite3.OperationalError:
         pass
     conn.commit()

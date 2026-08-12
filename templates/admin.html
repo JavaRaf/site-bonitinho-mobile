@@ -17,6 +17,7 @@
   <div class="admin-tabs">
     <button class="admin-tab active" data-tab="images">Imagens</button>
     <button class="admin-tab" data-tab="users">Usuários</button>
+    <button class="admin-tab" data-tab="turnos">Turnos</button>
   </div>
 
   <div id="tabImages">
@@ -27,14 +28,48 @@
     <table class="users-table" id="usersTable"></table>
   </div>
 
+  <div id="tabTurnos" style="display:none">
+    <div class="turnos-panel">
+      <div class="turnos-stats">
+        <div class="turnos-stat">
+          <span class="turnos-stat-label">Turno atual</span>
+          <strong id="turnoNumber"></strong>
+        </div>
+        <div class="turnos-stat">
+          <span class="turnos-stat-label">Imagens na disputa</span>
+          <strong id="turnoActiveCount"></strong>
+        </div>
+      </div>
+      <div class="turnos-stats">
+        <label class="turnos-stat">
+          <span class="turnos-stat-label">Passam para a próxima fase</span>
+          <input type="number" id="turnoCutoff" value="3" min="1">
+        </label>
+        <label class="turnos-stat">
+          <span class="turnos-stat-label">Modo voto único</span>
+          <span class="turnos-check"><input type="checkbox" id="turnoSingleVote">Ativar</span>
+        </label>
+      </div>
+      <div class="turnos-stats">
+        <button class="admin-btn danger" id="turnoAdvance">Avançar turno</button>
+        <button class="admin-btn outline" id="turnoReset">Resetar turnos</button>
+      </div>
+      <div class="turnos-history" id="turnosHistory"></div>
+    </div>
+    <div class="admin-grid" id="turnoGrid"></div>
+  </div>
+
   <div class="admin-actions" id="actionsImages">
     <button class="admin-btn outline" id="adminSelectAll">Selecionar todas</button>
     <button class="admin-btn danger" id="adminDeleteSelected">Excluir</button>
     <button class="admin-btn outline" id="adminRemoveLikes">Remover likes</button>
+    <button class="admin-btn outline" id="adminExportCollage">Exportar collage</button>
     <span id="adminStatus"></span>
   </div>
 
   <div class="admin-actions" id="actionsUsers" style="display:none"></div>
+
+  <div class="admin-actions" id="actionsTurnos" style="display:none"></div>
 
   <div class="confirm-overlay" id="confirmModal">
     <div class="confirm-card">

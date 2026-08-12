@@ -10,6 +10,15 @@ async function loadLikes() {
     updateLikeIcon();
 }
 
+async function loadSingleVoteFlag() {
+    try {
+        const res = await fetch("/api/singlevote");
+        const data = await res.json();
+        const el = document.getElementById("imgOwnerSingleVote");
+        if (el) el.style.display = data.enabled ? "" : "none";
+    } catch { /* ignore */ }
+}
+
 async function loadCarousel() {
     const res = await fetch("/api/images");
     const images = await res.json();
@@ -41,6 +50,7 @@ async function loadCarousel() {
     updateOwnerOverlay();
     updateLikeCount();
     await loadLikes();
+    loadSingleVoteFlag();
 }
 
 function updateLikeCount() {
@@ -67,8 +77,8 @@ function lazyLoadAround(index) {
 function updateOwnerOverlay() {
     const slides = document.querySelectorAll(".carousel-slide");
     const owner = slides[current]?.dataset.owner;
-    const el = document.getElementById("imgOwner");
-    if (el) el.textContent = owner ? "@" + owner : "";
+    const el = document.getElementById("imgOwnerName");
+    if (el) el.textContent = owner ? owner : "";
 }
 
 function goTo(index) {
@@ -126,6 +136,17 @@ track.addEventListener("touchend", e => {
     }
 });
 
+/* === Keyboard navigation (A/D, arrows) === */
+document.addEventListener("keydown", e => {
+    const tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+    if (["a", "arrowleft", "w"].includes(e.key.toLowerCase())) {
+        goTo(current - 1);
+    } else if (["d", "arrowright", "s"].includes(e.key.toLowerCase())) {
+        goTo(current + 1);
+    }
+});
+
 /* === Double-tap → toggle like (per-image, via API) === */
 track.addEventListener("click", e => {
     const img = e.target.closest(".carousel-slide img");
@@ -139,32 +160,31 @@ track.addEventListener("click", e => {
     }
 });
 
+async function refreshLikeCounts() {
+    try {
+        const res = await fetch("/api/images");
+        const images = await res.json();
+        const map = {};
+        images.forEach(img => { map[img.name] = img.likes || 0; });
+        document.querySelectorAll(".carousel-slide").forEach(slide => {
+            if (map[slide.dataset.image] !== undefined) {
+                slide.dataset.likes = map[slide.dataset.image];
+            }
+        });
+    } catch { /* ignore */ }
+}
+
 async function toggleLike() {
     const imgName = currentImageName();
     if (!imgName) return;
 
-    const wasLiked = likedImages.has(imgName);
-    const slides = document.querySelectorAll(".carousel-slide");
+    const res = await fetch(`/api/likes/${imgName}`, { method: "POST" });
+    if (!res.ok) return;
 
-    // optimistic update
-    if (wasLiked) {
-        likedImages.delete(imgName);
-        if (slides[current]) {
-            let n = parseInt(slides[current].dataset.likes) || 0;
-            slides[current].dataset.likes = Math.max(0, n - 1);
-        }
-    } else {
-        likedImages.add(imgName);
-        if (slides[current]) {
-            let n = parseInt(slides[current].dataset.likes) || 0;
-            slides[current].dataset.likes = n + 1;
-        }
-    }
+    await loadLikes();
+    await refreshLikeCounts();
     updateLikeIcon();
     updateLikeCount();
-
-    // sync with backend (fire-and-forget)
-    fetch(`/api/likes/${imgName}`, { method: "POST" }).catch(() => {});
 }
 
 /* === Prevent text selection on double-tap === */

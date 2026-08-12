@@ -31,14 +31,14 @@ async function loadImages() {
     grid.innerHTML = images.map(img => `
         <div class="admin-card" data-name="${esc(img.name)}">
             <img src="/images/${img.name}" alt="${img.name}" loading="lazy">
-            <button class="admin-select"></button>
+            <input type="checkbox" class="admin-select">
             <div class="admin-card-info">
                 <span>${esc(img.owner || "—")}</span>
                 <span>❤ ${img.likes || 0}</span>
             </div>
             <div class="admin-likers" style="display:none">
                 ${img.likers && img.likers.length
-                    ? img.likers.map(u => `<span class="admin-liker-tag" data-user-id="${u.id}" data-image="${esc(img.name)}">@${esc(u.username)} <img src="/static/img/trash.svg" alt="del" class="admin-liker-icon"></span>`).join("")
+                    ? img.likers.map(u => `<span class="admin-liker-tag" data-user-id="${u.id}" data-image="${esc(img.name)}"><span class="admin-liker-name">@${esc(u.username)}</span><img src="/static/img/trash.svg" alt="del" class="admin-liker-icon"></span>`).join("")
                     : `<span style="font-size:0.6875rem;color:#9ca3af">Nenhum like</span>`}
             </div>
         </div>
@@ -53,15 +53,15 @@ async function loadImages() {
 
         const selectBtn = card.querySelector(".admin-select");
         if (selectBtn) {
-            selectBtn.addEventListener("click", e => {
+            selectBtn.addEventListener("change", e => {
                 e.stopPropagation();
                 const name = card.dataset.name;
-                if (selected.has(name)) {
-                    selected.delete(name);
-                    card.classList.remove("selected");
-                } else {
+                if (e.target.checked) {
                     selected.add(name);
                     card.classList.add("selected");
+                } else {
+                    selected.delete(name);
+                    card.classList.remove("selected");
                 }
             });
         }
@@ -82,12 +82,15 @@ document.getElementById("adminSelectAll").addEventListener("click", () => {
     const cards = document.querySelectorAll(".admin-card");
     const allSelected = selected.size === cards.length;
     cards.forEach(c => {
+        const cb = c.querySelector(".admin-select");
         if (allSelected) {
             selected.delete(c.dataset.name);
             c.classList.remove("selected");
+            if (cb) cb.checked = false;
         } else {
             selected.add(c.dataset.name);
             c.classList.add("selected");
+            if (cb) cb.checked = true;
         }
     });
     document.getElementById("adminSelectAll").textContent = allSelected ? "Selecionar todas" : "Limpar seleção";
@@ -112,6 +115,23 @@ document.getElementById("adminRemoveLikes").addEventListener("click", async () =
     loadImages();
 });
 
+document.getElementById("adminExportCollage").addEventListener("click", async () => {
+    const res = await api("POST", "/api/admin/collage", { images: [...selected] });
+    if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        showStatus(data?.error || "Erro ao exportar");
+        return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "collage.png";
+    a.click();
+    URL.revokeObjectURL(url);
+    showStatus("Collage exportada");
+});
+
 /* === Users tab === */
 async function loadUsers() {
     const res = await fetch("/api/admin/users");
@@ -119,13 +139,15 @@ async function loadUsers() {
     const table = document.getElementById("usersTable");
 
     table.innerHTML = `
-        <tr><th>Usuário</th><th>Tipo</th><th>Ações</th></tr>
+        <tr><th>Usuário</th><th>Tipo</th><th>Tornar admin</th><th>Excluir</th></tr>
         ${users.map(u => `
             <tr>
                 <td>${esc(u.username)}</td>
                 <td><span class="user-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span></td>
                 <td>
                     ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Tornar admin</button>` : ""}
+                </td>
+                <td>
                     <button class="admin-btn danger small" data-delete="${u.id}">Excluir</button>
                 </td>
             </tr>
@@ -150,17 +172,81 @@ async function loadUsers() {
     });
 }
 
+/* === Turnos tab === */
+async function loadTurnos() {
+    const res = await fetch("/api/admin/turnos");
+    const data = await res.json();
+    const grid = document.getElementById("turnoGrid");
+
+    document.getElementById("turnoNumber").textContent = data.current_round;
+    document.getElementById("turnoActiveCount").textContent = data.active_count;
+
+    const modeRes = await fetch("/api/admin/turnos/mode");
+    const mode = await modeRes.json();
+    document.getElementById("turnoSingleVote").checked = mode.single_vote_mode;
+
+    grid.innerHTML = data.images.map(img => `
+        <div class="admin-card">
+            <img src="/images/${img.name}" alt="${img.name}" loading="lazy">
+            <div class="admin-card-info">
+                <span>${esc(img.owner || "—")}</span>
+                <span>❤ ${img.likes || 0}</span>
+            </div>
+        </div>
+    `).join("");
+
+    const history = document.getElementById("turnosHistory");
+    history.innerHTML = data.history.length
+        ? `<p>Histórico:</p>` + data.history.map(h =>
+            `<span class="turnos-history-item">Turno ${h.round_number}: top ${h.cutoff}</span>`
+          ).join("")
+        : "";
+}
+
+document.getElementById("turnoAdvance").addEventListener("click", async () => {
+    const cutoff = parseInt(document.getElementById("turnoCutoff").value, 10);
+    if (!cutoff || cutoff < 1) {
+        showStatus("Informe um número válido");
+        return;
+    }
+    if (!await askConfirm(`Avançar turno mantendo as ${cutoff} mais curtidas?`)) return;
+    const res = await api("POST", "/api/admin/turnos/advance", { cutoff });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+        showStatus(data?.error || "Erro ao avançar turno");
+        return;
+    }
+    showStatus(`Turno ${data.round} avançado: ${data.passed.length} passaram, ${data.removed.length} removidas`);
+    loadTurnos();
+});
+
+document.getElementById("turnoSingleVote").addEventListener("change", async e => {
+    const res = await api("POST", "/api/admin/turnos/mode", { enabled: e.target.checked });
+    const data = await res.json().catch(() => null);
+    showStatus(data?.single_vote_mode ? "Modo voto único ativado" : "Modo voto único desativado");
+});
+
+document.getElementById("turnoReset").addEventListener("click", async () => {
+    if (!await askConfirm("Resetar turnos? Limpa apenas o histórico.")) return;
+    await api("POST", "/api/admin/turnos/reset");
+    showStatus("Turnos resetados");
+    loadTurnos();
+});
+
 /* === Tab switching === */
 document.querySelectorAll(".admin-tab").forEach(tab => {
     tab.addEventListener("click", () => {
         document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
-        const isImages = tab.dataset.tab === "images";
-        document.getElementById("tabImages").style.display = isImages ? "" : "none";
-        document.getElementById("tabUsers").style.display = isImages ? "none" : "";
-        document.getElementById("actionsImages").style.display = isImages ? "" : "none";
-        document.getElementById("actionsUsers").style.display = isImages ? "none" : "";
-        if (!isImages) loadUsers();
+        const tabName = tab.dataset.tab;
+        document.getElementById("tabImages").style.display = tabName === "images" ? "" : "none";
+        document.getElementById("tabUsers").style.display = tabName === "users" ? "" : "none";
+        document.getElementById("tabTurnos").style.display = tabName === "turnos" ? "" : "none";
+        document.getElementById("actionsImages").style.display = tabName === "images" ? "" : "none";
+        document.getElementById("actionsUsers").style.display = tabName === "users" ? "" : "none";
+        document.getElementById("actionsTurnos").style.display = tabName === "turnos" ? "" : "none";
+        if (tabName === "users") loadUsers();
+        if (tabName === "turnos") loadTurnos();
     });
 });
 

@@ -154,17 +154,33 @@ header {
 }
 
 .img-owner {
-  position: absolute;
-  bottom: 2.5rem;
-  left: 0.5rem;
-  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.img-owner-label {
+  color: rgba(0, 0, 0, 0.64);
+
+}
+
+#imgOwnerName {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   background: rgba(0,0,0,0.5);
   color: #fff;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  pointer-events: none;
+}
+
+.img-owner-singlevote {
+  margin-left: auto;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: #7f7f7f;
+  color: #fff;
+  font-size: 0.625rem;
 }
 
 .carousel-track {
@@ -311,9 +327,13 @@ header {
 }
 
 .comment-user {
-  font-weight: 600;
+  font-weight: 700;
   color: #374151;
   flex-shrink: 0;
+}
+
+.comment-user.is-self {
+  color: #4f46e5;
 }
 
 .comment-text {
