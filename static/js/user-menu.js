@@ -14,6 +14,7 @@ async function loadProfile() {
                 avatarImg.src = `/avatars/${avatar}`;
                 avatarImg.onerror = () => { avatarImg.src = "/static/svg/default-avatar.svg"; };
             }
+            document.getElementById("menuAdmin").style.display = data.user.is_admin ? "" : "none";
         } else {
             window.location.href = "/login";
         }
