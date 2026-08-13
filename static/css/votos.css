@@ -5,13 +5,17 @@
 }
 
 .votos-header {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .votos-back {
+  position: absolute;
+  left: 0;
   display: inline-flex;
   align-items: center;
   opacity: 0.5;

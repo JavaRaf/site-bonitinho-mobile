@@ -226,8 +226,16 @@
   z-index: 50;
 }
 
+/* Images actions bar: in normal flow, above the images grid */
+#actionsImages {
+  position: static;
+  transform: none;
+  margin-bottom: 0.75rem;
+  width: max-content;
+}
+
 .admin-btn {
-  padding: 0.4rem 0.75rem;
+  padding: 0.4rem 0.35rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 0.75rem;
