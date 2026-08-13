@@ -2,3 +2,4 @@
 images/
 db/app.db
 */__pycache__
+.env
