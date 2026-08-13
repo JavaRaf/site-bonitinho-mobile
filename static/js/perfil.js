@@ -1,4 +1,6 @@
 const AVATAR_DEFAULT = "/static/svg/default-avatar.svg";
+const COLOR_OPTIONS = ["#f43f5e", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
+let selectedColor = "";
 
 async function loadProfile() {
     try {
@@ -7,6 +9,8 @@ async function loadProfile() {
         if (!data.user) { window.location.href = "/login"; return; }
         document.getElementById("perfilUsername").value = data.user.username;
         setAvatarSrc(data.user.avatar);
+        selectedColor = data.user.color || "";
+        buildColorPicker();
     } catch { /* ignore */ }
 }
 
@@ -59,6 +63,21 @@ document.getElementById("perfilAvatarRemove").addEventListener("click", async ()
     }
 });
 
+function buildColorPicker() {
+    const container = document.getElementById("perfilColorList");
+    if (!container) return;
+    container.innerHTML = COLOR_OPTIONS.map(c =>
+        `<div class="perfil-color-option${c === selectedColor ? " selected" : ""}" data-color="${c}" style="background:${c}"></div>`
+    ).join("");
+    container.querySelectorAll(".perfil-color-option").forEach(opt => {
+        opt.addEventListener("click", () => {
+            selectedColor = opt.dataset.color;
+            container.querySelectorAll(".perfil-color-option").forEach(o => o.classList.remove("selected"));
+            opt.classList.add("selected");
+        });
+    });
+}
+
 document.getElementById("perfilSave").addEventListener("click", async () => {
     const username = document.getElementById("perfilUsername").value.trim();
     const errEl = document.getElementById("perfilError");
@@ -74,7 +93,7 @@ document.getElementById("perfilSave").addEventListener("click", async () => {
     const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username })
+        body: JSON.stringify({ username, color: selectedColor })
     });
     const data = await res.json();
 

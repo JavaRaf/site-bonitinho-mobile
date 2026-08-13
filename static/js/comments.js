@@ -61,7 +61,7 @@ function renderComments(comments) {
             const isSelf = currentUserId === c.user_id;
             return `
                 <div class="comment" data-id="${c.id}">
-                    <span class="comment-user${isSelf ? " is-self" : ""}" style="color:${userColor(c.username)}">${escapeHtml(c.username)}</span>
+                    <span class="comment-user${isSelf ? " is-self" : ""}" style="color:${c.color || userColor(c.username)}">${escapeHtml(c.username)}</span>
                     <span class="comment-text">${escapeHtml(c.text)}</span>
                     ${canDelete ? `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>` : ""}
                 </div>`;

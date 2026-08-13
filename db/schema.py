@@ -70,6 +70,11 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT 'default-avatar.svg'")
     except sqlite3.OperationalError:
         pass
+    # migration: add color if missing
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN color TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
     # migration: add active flag on uploads
     try:
         conn.execute("ALTER TABLE uploads ADD COLUMN active INTEGER NOT NULL DEFAULT 1")

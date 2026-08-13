@@ -627,7 +627,7 @@ def handle_comments(image_name):
 
     if request.method == "GET":
         rows = db.execute(
-            """SELECT c.id, c.text, c.created_at, u.username, c.user_id
+            """SELECT c.id, c.text, c.created_at, u.username, u.color, c.user_id
                FROM comments c JOIN users u ON c.user_id = u.id
                WHERE c.image_name = ?
                ORDER BY c.created_at ASC""",

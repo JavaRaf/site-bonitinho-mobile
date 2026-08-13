@@ -82,6 +82,27 @@
   background: #f9fafb;
 }
 
+.perfil-color-list {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.perfil-color-option {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.perfil-color-option.selected {
+  border-color: #111827;
+}
+
 .perfil-field {
   margin-bottom: 1rem;
 }

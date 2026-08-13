@@ -44,7 +44,7 @@ def register():
         (username, hash_password(password), is_admin)
     )
     db.commit()
-    user = db.execute("SELECT id, username, is_admin, avatar FROM users WHERE username = ?", (username,)).fetchone()
+    user = db.execute("SELECT id, username, is_admin, avatar, color FROM users WHERE username = ?", (username,)).fetchone()
     db.close()
 
     session.clear()
@@ -52,9 +52,10 @@ def register():
     session["username"] = user["username"]
     session["is_admin"] = bool(user["is_admin"])
     session["avatar"] = user["avatar"]
+    session["color"] = user["color"] or ""
     session.permanent = True
 
-    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"]}), 201
+    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"], "color": user["color"] or ""}), 201
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
@@ -64,7 +65,7 @@ def login():
     password = (data.get("password") or "").strip()
 
     db = get_db()
-    user = db.execute("SELECT id, username, password, is_admin, avatar FROM users WHERE username = ?", (username,)).fetchone()
+    user = db.execute("SELECT id, username, password, is_admin, avatar, color FROM users WHERE username = ?", (username,)).fetchone()
     db.close()
 
     if not user or not verify_password(password, user["password"]):
@@ -75,9 +76,10 @@ def login():
     session["username"] = user["username"]
     session["is_admin"] = bool(user["is_admin"])
     session["avatar"] = user["avatar"]
+    session["color"] = user["color"] or ""
     session.permanent = True
 
-    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"]})
+    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"], "color": user["color"] or ""})
 
 
 @auth_bp.route("/api/auth/logout", methods=["POST"])
@@ -94,7 +96,8 @@ def me():
         "id": session["user_id"],
         "username": session["username"],
         "is_admin": session.get("is_admin", False),
-        "avatar": session.get("avatar", "default-avatar.svg")
+        "avatar": session.get("avatar", "default-avatar.svg"),
+        "color": session.get("color", "")
     }})
 
 
@@ -125,6 +128,11 @@ def update_profile():
         db.execute("UPDATE users SET avatar = ? WHERE id = ?", (data["avatar"], session["user_id"]))
         session["avatar"] = data["avatar"]
 
+    if "color" in data:
+        color = (data["color"] or "").strip()
+        db.execute("UPDATE users SET color = ? WHERE id = ?", (color, session["user_id"]))
+        session["color"] = color
+
     db.commit()
     db.close()
-    return jsonify({"username": session["username"], "avatar": session.get("avatar", "default-avatar.svg")})
+    return jsonify({"username": session["username"], "avatar": session.get("avatar", "default-avatar.svg"), "color": session.get("color", "")})
