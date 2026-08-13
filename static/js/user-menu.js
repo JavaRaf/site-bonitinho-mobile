@@ -45,26 +45,10 @@ document.getElementById("menuVotos").addEventListener("click", () => {
     window.location.href = "/votos";
 });
 
-// Upload
-document.getElementById("menuUpload").addEventListener("click", () => {
+// Criar post
+ document.getElementById("menuUpload").addEventListener("click", () => {
     menu.classList.remove("open");
-    document.getElementById("uploadInput").click();
-});
-
-document.getElementById("uploadInput").addEventListener("change", async () => {
-    const files = document.getElementById("uploadInput").files;
-    if (!files.length) return;
-    const form = new FormData();
-    for (const f of files) form.append("images", f);
-    try {
-        const res = await fetch("/api/upload", { method: "POST", body: form });
-        if (res.ok) {
-            document.getElementById("uploadInput").value = "";
-            location.reload();
-        } else if (res.status === 401) {
-            window.location.href = "/login";
-        }
-    } catch { /* ignore */ }
+    document.getElementById("composerModal").classList.add("open");
 });
 
 // Logout

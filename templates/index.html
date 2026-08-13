@@ -21,21 +21,41 @@
       <div class="user-menu" id="userMenu">
         <button class="menu-item" id="menuPerfil">Perfil</button>
         <button class="menu-item" id="menuVotos">Votos</button>
-        <button class="menu-item" id="menuUpload">Upload</button>
+        <button class="menu-item" id="menuUpload">Criar post</button>
         <button class="menu-item" id="menuAdmin">Admin</button>
         <button class="menu-item" id="menuLogout">Sair</button>
       </div>
-      <input type="file" id="uploadInput" name="images" accept="image/*" multiple hidden>
     </div>
   </header>
 
-    <div class="carrossel">
+  <div class="composer-overlay" id="composerModal">
+    <div class="composer-card">
+      <div class="composer-header">
+        <h2>Criar post</h2>
+        <button class="composer-close" id="composerClose" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="composer-preview" id="composerPreview" hidden>
+        <img id="composerPreviewImg" alt="">
+        <button class="composer-remove" id="composerRemove" type="button" aria-label="Remover imagem">&times;</button>
+      </div>
+      <textarea class="composer-text" id="composerText" placeholder="No que você está pensando?" rows="3" maxlength="250"></textarea>
+      <div class="composer-actions">
+        <input type="file" id="composerImageInput" accept="image/*" hidden>
+        <button class="composer-add" id="composerAddImage" type="button">Adicionar imagem</button>
+        <button class="composer-post" id="composerPost" type="button" disabled>Publicar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="carrossel">
       <button class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="Anterior">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div class="img-model">
 
         <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar" src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span><span class="img-owner-singlevote" id="imgOwnerSingleVote" style="display:none">Voto único</span></div>
+
+        <div class="img-caption" id="imgCaption"></div>
 
         <div id="img-view">
           <div class="carousel-track" id="carouselTrack">
@@ -77,5 +97,6 @@
 <script src="/static/js/download.js"></script>
 <script src="/static/js/comments.js"></script>
 <script src="/static/js/user-menu.js"></script>
+<script src="/static/js/composer.js"></script>
 
 </html>

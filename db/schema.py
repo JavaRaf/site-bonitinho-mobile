@@ -80,5 +80,10 @@ def init_db():
         conn.execute("ALTER TABLE uploads ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
     except sqlite3.OperationalError:
         pass
+    # migration: add caption on uploads
+    try:
+        conn.execute("ALTER TABLE uploads ADD COLUMN caption TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     conn.close()

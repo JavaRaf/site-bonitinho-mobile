@@ -38,6 +38,7 @@ async function loadCarousel() {
         div.dataset.owner = img.owner || "";
         div.dataset.avatar = img.owner_avatar || "";
         div.dataset.likes = img.likes || 0;
+        div.dataset.caption = img.caption || "";
         const loadNow = i <= 1;
         div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false">`;
         track.appendChild(div);
@@ -79,9 +80,12 @@ function updateOwnerOverlay() {
     const slides = document.querySelectorAll(".carousel-slide");
     const owner = slides[current]?.dataset.owner;
     const avatar = slides[current]?.dataset.avatar;
+    const caption = slides[current]?.dataset.caption || "";
     const nameEl = document.getElementById("imgOwnerName");
     const avatarEl = document.getElementById("imgOwnerAvatar");
+    const captionEl = document.getElementById("imgCaption");
     if (nameEl) nameEl.textContent = owner ? owner : "";
+    if (captionEl) captionEl.textContent = caption;
     if (avatarEl) {
         if (!avatar || avatar === "default-avatar.svg") {
             avatarEl.src = "/static/svg/default-avatar.svg";

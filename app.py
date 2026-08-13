@@ -120,7 +120,7 @@ def list_images():
     img_dir = BASE_DIR / "images"
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
-    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar,
+    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
            WHERE u.active = 1
@@ -138,12 +138,13 @@ def list_images():
                     "owner": r["username"],
                     "likes": r["likes"],
                     "owner_avatar": r["owner_avatar"] or "default-avatar.svg",
+                    "caption": r["caption"] or "",
                 }
             )
             seen.add(r["image_name"])
     for fname in sorted(disk_images - seen, reverse=True):
         result.append(
-            {"name": fname, "owner": None, "likes": 0, "owner_avatar": "default-avatar.svg"}
+            {"name": fname, "owner": None, "likes": 0, "owner_avatar": "default-avatar.svg", "caption": ""}
         )
 
     return jsonify(result)
@@ -172,6 +173,8 @@ def upload_images():
         session.clear()
         return jsonify({"error": "session expired, please login again"}), 401
 
+    caption = (request.form.get("caption") or "").strip()[:250]
+
     saved = []
 
     try:
@@ -185,8 +188,8 @@ def upload_images():
             new_name = f"{salt}_{f.filename}"
             f.save(str(img_dir / new_name))
             db.execute(
-                "INSERT INTO uploads (user_id, image_name, original_name) VALUES (?, ?, ?)",
-                (session["user_id"], new_name, f.filename),
+                "INSERT INTO uploads (user_id, image_name, original_name, caption) VALUES (?, ?, ?, ?)",
+                (session["user_id"], new_name, f.filename, caption),
             )
             saved.append(new_name)
         db.commit()
