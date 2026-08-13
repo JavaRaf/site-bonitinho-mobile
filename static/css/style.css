@@ -162,9 +162,12 @@ header {
   font-weight: 500;
 }
 
-.img-owner-label {
-  color: rgba(0, 0, 0, 0.64);
-
+.img-owner-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f3f4f6;
 }
 
 #imgOwnerName {

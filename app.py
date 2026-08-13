@@ -120,7 +120,7 @@ def list_images():
     img_dir = BASE_DIR / "images"
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
-    rows = db.execute("""SELECT u.image_name, us.username,
+    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
            WHERE u.active = 1
@@ -133,11 +133,18 @@ def list_images():
     for r in rows:
         if r["image_name"] in disk_images:
             result.append(
-                {"name": r["image_name"], "owner": r["username"], "likes": r["likes"]}
+                {
+                    "name": r["image_name"],
+                    "owner": r["username"],
+                    "likes": r["likes"],
+                    "owner_avatar": r["owner_avatar"] or "default-avatar.svg",
+                }
             )
             seen.add(r["image_name"])
     for fname in sorted(disk_images - seen, reverse=True):
-        result.append({"name": fname, "owner": None, "likes": 0})
+        result.append(
+            {"name": fname, "owner": None, "likes": 0, "owner_avatar": "default-avatar.svg"}
+        )
 
     return jsonify(result)
 

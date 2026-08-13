@@ -36,6 +36,7 @@ async function loadCarousel() {
         div.className = "carousel-slide";
         div.dataset.image = img.name;
         div.dataset.owner = img.owner || "";
+        div.dataset.avatar = img.owner_avatar || "";
         div.dataset.likes = img.likes || 0;
         const loadNow = i <= 1;
         div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false">`;
@@ -77,8 +78,18 @@ function lazyLoadAround(index) {
 function updateOwnerOverlay() {
     const slides = document.querySelectorAll(".carousel-slide");
     const owner = slides[current]?.dataset.owner;
-    const el = document.getElementById("imgOwnerName");
-    if (el) el.textContent = owner ? owner : "";
+    const avatar = slides[current]?.dataset.avatar;
+    const nameEl = document.getElementById("imgOwnerName");
+    const avatarEl = document.getElementById("imgOwnerAvatar");
+    if (nameEl) nameEl.textContent = owner ? owner : "";
+    if (avatarEl) {
+        if (!avatar || avatar === "default-avatar.svg") {
+            avatarEl.src = "/static/svg/default-avatar.svg";
+        } else {
+            avatarEl.src = `/avatars/${avatar}`;
+            avatarEl.onerror = () => { avatarEl.src = "/static/svg/default-avatar.svg"; };
+        }
+    }
 }
 
 function goTo(index) {
