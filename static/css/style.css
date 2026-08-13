@@ -339,10 +339,6 @@ header {
   height: 20px;
 }
 
-#likes-btn { color: #ef4444; }
-#comment-btn { color: #4f46e5; }
-#download-btn { color: #374151; }
-
 /* === Comments === */
 .comments-section {
   border-top: 1px solid #f3f4f6;
@@ -370,12 +366,7 @@ header {
 
 .comment-user {
   font-weight: 700;
-  color: #374151;
   flex-shrink: 0;
-}
-
-.comment-user.is-self {
-  color: #4f46e5;
 }
 
 .comment-text {
