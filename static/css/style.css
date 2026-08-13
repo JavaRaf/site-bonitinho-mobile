@@ -229,15 +229,12 @@ header {
 }
 
 .img-placeholder {
-  width: 48px;
-  height: 48px;
-  color: #d1d5db;
-  animation: pulse 2s ease-in-out infinite;
+  width: 7rem;
+  opacity: 0.35;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+.carousel-track .img-placeholder {
+  margin: auto;
 }
 
 /* === Action Buttons === */

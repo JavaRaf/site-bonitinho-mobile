@@ -11,12 +11,12 @@
 <body>
   <header>
     <div class="logo">
-      <div id="logo-img"><img src="/static/img/logo.png" type="image/png"></div>
+      <div id="logo-img"><img src="/static/svg/logo.svg" type="image/png"></div>
       <div id="logo-name">ArteBonitinha</div>
     </div>
 
     <div class="user">
-      <div id="user-avatar"><img src="/static/img/default-avatar.svg" type="image/png"></div>
+      <div id="user-avatar"><img src="/static/svg/default-avatar.svg" type="image/svg"></div>
       <div class="user-menu" id="userMenu">
         <button class="menu-item" id="menuPerfil">Perfil</button>
         <button class="menu-item" id="menuVotos">Votos</button>
@@ -35,25 +35,21 @@
 
         <div id="img-view">
           <div class="carousel-track" id="carouselTrack">
-            <svg class="img-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="m21 15-5-5L5 21"/>
-            </svg>
+            <img src="/static/svg/image-placeholder.svg" alt="" class="img-placeholder">
           </div>
           <div class="carousel-dots" id="carouselDots"></div>
         </div>
 
         <div class="buttons">
           <div class="btn-group">
-            <div id="likes-btn"><img src="/static/img/heart.svg" alt="like"></div>
+            <div id="likes-btn"><img src="/static/svg/heart.svg" alt="like"></div>
             <span class="likes-count" id="likes-count"></span>
           </div>
           <div class="btn-group">
-            <div id="comment-btn"><img src="/static/img/comments.svg" alt="comment"></div>
+            <div id="comment-btn"><img src="/static/svg/comments.svg" alt="comment"></div>
             <span class="likes-count" id="comment-count"></span>
           </div>
-          <div id="download-btn"><img src="/static/img/download.svg" alt="download"></div>
+          <div id="download-btn"><img src="/static/svg/download.svg" alt="download"></div>
         </div>
 
         <div class="comments-section" id="commentsSection">

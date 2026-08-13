@@ -4,7 +4,12 @@ async function loadRanking() {
     const list = document.getElementById("votosList");
 
     if (!items.length) {
-        list.innerHTML = `<p style="text-align:center;color:#71717a;padding:3rem 1rem;">Nenhuma imagem ainda. Faça upload!</p>`;
+        list.innerHTML = `
+            <div class="votos-empty">
+                <img src="/static/svg/image-placeholder.svg" alt="" class="img-placeholder">
+                <p>Nenhuma imagem ainda. Faça upload!</p>
+            </div>
+        `;
         return;
     }
 

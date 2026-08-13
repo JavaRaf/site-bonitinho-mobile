@@ -7,7 +7,13 @@ async function loadProfile() {
         const res = await fetch("/api/auth/me");
         const data = await res.json();
         if (data.user) {
-            avatarImg.src = `/avatars/${data.user.avatar || "red.svg"}`;
+            const avatar = data.user.avatar;
+            if (!avatar || avatar === "default-avatar.svg") {
+                avatarImg.src = "/static/svg/default-avatar.svg";
+            } else {
+                avatarImg.src = `/avatars/${avatar}`;
+                avatarImg.onerror = () => { avatarImg.src = "/static/svg/default-avatar.svg"; };
+            }
         } else {
             window.location.href = "/login";
         }

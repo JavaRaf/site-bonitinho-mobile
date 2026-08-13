@@ -1,22 +1,36 @@
+import os
+
 from pathlib import Path
 import sqlite3
 import uuid
 from datetime import timedelta
 from io import BytesIO
-from flask import Flask, jsonify, render_template, send_from_directory, send_file, session, request
+from flask import (
+    Flask,
+    jsonify,
+    render_template,
+    send_from_directory,
+    send_file,
+    session,
+    request,
+)
 from PIL import Image, ImageOps
+from flask.cli import load_dotenv
 
 from db.schema import init_db, get_db
 from routes.auth import auth_bp
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "db" / "app.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
-app.secret_key = "change-this-to-a-random-secret-in-production"
+
+app.secret_key = os.getenv("SECRET_KEY")
 app.config["SESSION_PERMANENT"] = True
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=20)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
 init_db()
 app.register_blueprint(auth_bp)
@@ -33,7 +47,7 @@ def set_setting(key, value):
     db = get_db()
     db.execute(
         "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        (key, value)
+        (key, value),
     )
     db.commit()
     db.close()
@@ -43,7 +57,9 @@ def is_admin():
     if "user_id" not in session:
         return False
     db = get_db()
-    row = db.execute("SELECT is_admin FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    row = db.execute(
+        "SELECT is_admin FROM users WHERE id = ?", (session["user_id"],)
+    ).fetchone()
     db.close()
     return bool(row and row["is_admin"])
 
@@ -59,7 +75,9 @@ def main():
         return render_template("login.html")
     # verify user still exists
     db = get_db()
-    user = db.execute("SELECT id FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    user = db.execute(
+        "SELECT id FROM users WHERE id = ?", (session["user_id"],)
+    ).fetchone()
     db.close()
     if not user:
         session.clear()
@@ -102,13 +120,11 @@ def list_images():
     img_dir = BASE_DIR / "images"
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
-    rows = db.execute(
-        """SELECT u.image_name, us.username,
+    rows = db.execute("""SELECT u.image_name, us.username,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
            WHERE u.active = 1
-           ORDER BY likes DESC, u.created_at DESC"""
-    ).fetchall()
+           ORDER BY likes DESC, u.created_at DESC""").fetchall()
     db.close()
 
     disk_images = {f.name for f in img_dir.iterdir() if f.suffix.lower() in allowed}
@@ -116,7 +132,9 @@ def list_images():
     seen = set()
     for r in rows:
         if r["image_name"] in disk_images:
-            result.append({"name": r["image_name"], "owner": r["username"], "likes": r["likes"]})
+            result.append(
+                {"name": r["image_name"], "owner": r["username"], "likes": r["likes"]}
+            )
             seen.add(r["image_name"])
     for fname in sorted(disk_images - seen, reverse=True):
         result.append({"name": fname, "owner": None, "likes": 0})
@@ -139,7 +157,9 @@ def upload_images():
     db = get_db()
 
     # verify user still exists
-    user = db.execute("SELECT id FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    user = db.execute(
+        "SELECT id FROM users WHERE id = ?", (session["user_id"],)
+    ).fetchone()
     if not user:
         db.close()
         session.clear()
@@ -159,7 +179,7 @@ def upload_images():
             f.save(str(img_dir / new_name))
             db.execute(
                 "INSERT INTO uploads (user_id, image_name, original_name) VALUES (?, ?, ?)",
-                (session["user_id"], new_name, f.filename)
+                (session["user_id"], new_name, f.filename),
             )
             saved.append(new_name)
         db.commit()
@@ -216,7 +236,9 @@ def admin_remove_single_like(image_name, user_id):
     if not is_admin():
         return jsonify({"error": "admin only"}), 403
     db = get_db()
-    db.execute("DELETE FROM likes WHERE image_name = ? AND user_id = ?", (image_name, user_id))
+    db.execute(
+        "DELETE FROM likes WHERE image_name = ? AND user_id = ?", (image_name, user_id)
+    )
     db.commit()
     db.close()
     return jsonify({"ok": True})
@@ -227,7 +249,9 @@ def admin_list_users():
     if not is_admin():
         return jsonify({"error": "admin only"}), 403
     db = get_db()
-    users = db.execute("SELECT id, username, is_admin FROM users ORDER BY id").fetchall()
+    users = db.execute(
+        "SELECT id, username, is_admin FROM users ORDER BY id"
+    ).fetchall()
     db.close()
     return jsonify([dict(u) for u in users])
 
@@ -238,7 +262,9 @@ def admin_delete_user(user_id):
         return jsonify({"error": "admin only"}), 403
 
     db = get_db()
-    target = db.execute("SELECT id, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    target = db.execute(
+        "SELECT id, is_admin FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
     if not target:
         db.close()
         return jsonify({"error": "not found"}), 404
@@ -280,9 +306,7 @@ def admin_export_collage():
 
     if not names:
         allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
-        names = sorted(
-            f.name for f in img_dir.iterdir() if f.suffix.lower() in allowed
-        )
+        names = sorted(f.name for f in img_dir.iterdir() if f.suffix.lower() in allowed)
 
     paths = [img_dir / n for n in names if (img_dir / n).exists()]
     if not paths:
@@ -290,7 +314,7 @@ def admin_export_collage():
 
     SIZE = 1600
     n = len(paths)
-    cols = int(n ** 0.5) + (1 if int(n ** 0.5) ** 2 < n else 0)
+    cols = int(n**0.5) + (1 if int(n**0.5) ** 2 < n else 0)
     rows = (n + cols - 1) // cols
 
     cell_w = SIZE // cols
@@ -311,10 +335,7 @@ def admin_export_collage():
     canvas.save(buf, format="PNG")
     buf.seek(0)
     return send_file(
-        buf,
-        mimetype="image/png",
-        as_attachment=True,
-        download_name="collage.png"
+        buf, mimetype="image/png", as_attachment=True, download_name="collage.png"
     )
 
 
@@ -324,25 +345,30 @@ def admin_turnos():
         return jsonify({"error": "admin only"}), 403
 
     db = get_db()
-    current_round = db.execute("SELECT COALESCE(MAX(round_number), 0) FROM rounds").fetchone()[0]
-    rows = db.execute(
-        """SELECT u.image_name, us.username AS owner,
+    current_round = db.execute(
+        "SELECT COALESCE(MAX(round_number), 0) FROM rounds"
+    ).fetchone()[0]
+    rows = db.execute("""SELECT u.image_name, us.username AS owner,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
            WHERE u.active = 1
-           ORDER BY likes DESC, u.created_at DESC"""
-    ).fetchall()
+           ORDER BY likes DESC, u.created_at DESC""").fetchall()
     history = db.execute(
         "SELECT round_number, cutoff, finished_at FROM rounds ORDER BY round_number DESC"
     ).fetchall()
     db.close()
 
-    return jsonify({
-        "current_round": current_round + 1,
-        "active_count": len(rows),
-        "images": [{"name": r["image_name"], "owner": r["owner"], "likes": r["likes"]} for r in rows],
-        "history": [dict(h) for h in history]
-    })
+    return jsonify(
+        {
+            "current_round": current_round + 1,
+            "active_count": len(rows),
+            "images": [
+                {"name": r["image_name"], "owner": r["owner"], "likes": r["likes"]}
+                for r in rows
+            ],
+            "history": [dict(h) for h in history],
+        }
+    )
 
 
 @app.route("/api/admin/turnos/advance", methods=["POST"])
@@ -359,11 +385,9 @@ def admin_turnos_advance():
         return jsonify({"error": "cutoff deve ser >= 1"}), 400
 
     db = get_db()
-    rows = db.execute(
-        """SELECT image_name FROM uploads WHERE active = 1
+    rows = db.execute("""SELECT image_name FROM uploads WHERE active = 1
            ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.image_name = uploads.image_name) DESC,
-                    created_at DESC"""
-    ).fetchall()
+                    created_at DESC""").fetchall()
     names = [r["image_name"] for r in rows]
 
     if len(names) <= cutoff:
@@ -379,15 +403,26 @@ def admin_turnos_advance():
         filepath = img_dir / name
         if filepath.exists():
             filepath.unlink()
-    db.executemany("DELETE FROM uploads WHERE image_name = ?", [(n,) for n in eliminated])
-    db.executemany("DELETE FROM comments WHERE image_name = ?", [(n,) for n in eliminated])
+    db.executemany(
+        "DELETE FROM uploads WHERE image_name = ?", [(n,) for n in eliminated]
+    )
+    db.executemany(
+        "DELETE FROM comments WHERE image_name = ?", [(n,) for n in eliminated]
+    )
     db.execute("DELETE FROM likes")
-    current_round = db.execute("SELECT COALESCE(MAX(round_number), 0) FROM rounds").fetchone()[0]
-    db.execute("INSERT INTO rounds (round_number, cutoff) VALUES (?, ?)", (current_round + 1, cutoff))
+    current_round = db.execute(
+        "SELECT COALESCE(MAX(round_number), 0) FROM rounds"
+    ).fetchone()[0]
+    db.execute(
+        "INSERT INTO rounds (round_number, cutoff) VALUES (?, ?)",
+        (current_round + 1, cutoff),
+    )
     db.commit()
     db.close()
 
-    return jsonify({"round": current_round + 1, "passed": survivors, "removed": eliminated})
+    return jsonify(
+        {"round": current_round + 1, "passed": survivors, "removed": eliminated}
+    )
 
 
 @app.route("/api/admin/turnos/mode", methods=["GET", "POST"])
@@ -424,26 +459,28 @@ def votos_page():
 @app.route("/api/votos", methods=["GET"])
 def ranking_api():
     db = get_db()
-    rows = db.execute(
-        """SELECT u.image_name, us.username AS owner,
+    rows = db.execute("""SELECT u.image_name, us.username AS owner,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
            WHERE u.active = 1
-           ORDER BY likes DESC, u.created_at DESC"""
-    ).fetchall()
+           ORDER BY likes DESC, u.created_at DESC""").fetchall()
 
     result = []
     for r in rows:
         likers = db.execute(
             "SELECT us.username, l.user_id FROM likes l JOIN users us ON l.user_id = us.id WHERE l.image_name = ?",
-            (r["image_name"],)
+            (r["image_name"],),
         ).fetchall()
-        result.append({
-            "name": r["image_name"],
-            "owner": r["owner"],
-            "likes": r["likes"],
-            "likers": [{"username": lr["username"], "id": lr["user_id"]} for lr in likers]
-        })
+        result.append(
+            {
+                "name": r["image_name"],
+                "owner": r["owner"],
+                "likes": r["likes"],
+                "likers": [
+                    {"username": lr["username"], "id": lr["user_id"]} for lr in likers
+                ],
+            }
+        )
 
     img_dir = BASE_DIR / "images"
     result = [x for x in result if (img_dir / x["name"]).exists()]
@@ -458,7 +495,73 @@ def serve_image(filename):
 
 @app.route("/avatars/<path:filename>")
 def serve_avatar(filename):
-    return send_from_directory(BASE_DIR / "avatars", filename)
+    return send_from_directory(BASE_DIR / "static" / "avatars", filename)
+
+
+@app.route("/api/auth/avatar", methods=["POST", "DELETE"])
+def avatar_upload():
+    if "user_id" not in session:
+        return jsonify({"error": "login required"}), 401
+
+    avatar_dir = BASE_DIR / "static" / "avatars"
+    avatar_dir.mkdir(parents=True, exist_ok=True)
+    db = get_db()
+
+    if request.method == "DELETE":
+        old = db.execute(
+            "SELECT avatar FROM users WHERE id = ?", (session["user_id"],)
+        ).fetchone()
+        old_name = old["avatar"] if old else ""
+        db.execute(
+            "UPDATE users SET avatar = 'default-avatar.svg' WHERE id = ?",
+            (session["user_id"],),
+        )
+        db.commit()
+        db.close()
+        session["avatar"] = "default-avatar.svg"
+        if old_name and old_name != "default-avatar.svg":
+            old_path = avatar_dir / old_name
+            if old_path.exists():
+                old_path.unlink()
+        return jsonify({"avatar": "default-avatar.svg"})
+
+    file = request.files.get("avatar")
+    if not file or not file.filename:
+        db.close()
+        return jsonify({"error": "no file"}), 400
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp"}:
+        db.close()
+        return jsonify({"error": "invalid file type"}), 400
+
+    name = f"{session['user_id']}_{uuid.uuid4().hex[:8]}.png"
+    try:
+        with Image.open(file.stream) as im:
+            im = im.convert("RGB")
+            im = ImageOps.fit(im, (128, 128), method=Image.Resampling.LANCZOS)
+            im.save(str(avatar_dir / name), format="PNG")
+    except Exception:
+        db.close()
+        return jsonify({"error": "invalid image"}), 400
+
+    old = db.execute(
+        "SELECT avatar FROM users WHERE id = ?", (session["user_id"],)
+    ).fetchone()
+    old_name = old["avatar"] if old else ""
+    db.execute(
+        "UPDATE users SET avatar = ? WHERE id = ?", (name, session["user_id"])
+    )
+    db.commit()
+    db.close()
+    session["avatar"] = name
+
+    if old_name and old_name != "default-avatar.svg":
+        old_path = avatar_dir / old_name
+        if old_path.exists():
+            old_path.unlink()
+
+    return jsonify({"avatar": name})
 
 
 @app.route("/api/singlevote", methods=["GET"])
@@ -486,7 +589,7 @@ def toggle_like(image_name):
     db = get_db()
     existing = db.execute(
         "SELECT id FROM likes WHERE user_id = ? AND image_name = ?",
-        (session["user_id"], image_name)
+        (session["user_id"], image_name),
     ).fetchone()
 
     if existing:
@@ -498,13 +601,13 @@ def toggle_like(image_name):
         if get_setting("single_vote_mode") == "1":
             other = db.execute(
                 "SELECT id FROM likes WHERE user_id = ? AND image_name != ?",
-                (session["user_id"], image_name)
+                (session["user_id"], image_name),
             ).fetchone()
             if other:
                 db.execute("DELETE FROM likes WHERE id = ?", (other["id"],))
         db.execute(
             "INSERT INTO likes (user_id, image_name) VALUES (?, ?)",
-            (session["user_id"], image_name)
+            (session["user_id"], image_name),
         )
         db.commit()
         db.close()
@@ -521,7 +624,7 @@ def handle_comments(image_name):
                FROM comments c JOIN users u ON c.user_id = u.id
                WHERE c.image_name = ?
                ORDER BY c.created_at ASC""",
-            (image_name,)
+            (image_name,),
         ).fetchall()
         db.close()
         return jsonify([dict(r) for r in rows])
@@ -539,7 +642,7 @@ def handle_comments(image_name):
 
     db.execute(
         "INSERT INTO comments (user_id, image_name, text) VALUES (?, ?, ?)",
-        (session["user_id"], image_name, text)
+        (session["user_id"], image_name, text),
     )
     db.commit()
 
@@ -547,7 +650,7 @@ def handle_comments(image_name):
         """SELECT c.id, c.text, c.created_at, u.username
            FROM comments c JOIN users u ON c.user_id = u.id
            WHERE c.id = ?""",
-        (db.execute("SELECT last_insert_rowid()").fetchone()[0],)
+        (db.execute("SELECT last_insert_rowid()").fetchone()[0],),
     ).fetchone()
     db.close()
     return jsonify(dict(row)), 201

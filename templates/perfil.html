@@ -10,16 +10,20 @@
 <body class="perfil-page">
 
   <div class="perfil-card">
-    <a href="/" class="perfil-back"><img src="/static/img/back.svg" alt="voltar" class="back-icon"></a>
+    <a href="/" class="perfil-back"><img src="/static/svg/back.svg" alt="voltar" class="back-icon"></a>
 
     <h2>Meu Perfil</h2>
 
     <div class="perfil-avatar-section">
       <div class="perfil-avatar" id="perfilAvatar">
-        <img src="/avatars/red.svg" alt="avatar" id="perfilAvatarImg">
+        <img src="/static/svg/default-avatar.svg" alt="avatar" id="perfilAvatarImg">
       </div>
-      <p class="perfil-label">Escolha um avatar</p>
-      <div class="perfil-avatar-list" id="perfilAvatarList"></div>
+      <p class="perfil-label">Envie sua foto de perfil</p>
+      <div class="perfil-avatar-actions">
+        <button id="perfilAvatarUpload" class="perfil-btn outline">Escolher imagem</button>
+        <button id="perfilAvatarRemove" class="perfil-btn outline">Remover</button>
+      </div>
+      <input type="file" id="perfilAvatarInput" accept="image/*" hidden>
     </div>
 
     <div class="perfil-field">

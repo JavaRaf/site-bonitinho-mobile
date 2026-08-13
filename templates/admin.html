@@ -10,7 +10,7 @@
 <body class="admin-page">
 
   <div class="admin-header">
-    <a href="/" class="admin-back"><img src="/static/img/back.svg" alt="voltar" class="back-icon"></a>
+    <a href="/" class="admin-back"><img src="/static/svg/back.svg" alt="voltar" class="back-icon"></a>
     <h2>Admin</h2>
   </div>
 
@@ -51,8 +51,12 @@
         </label>
       </div>
       <div class="turnos-stats">
-        <button class="admin-btn danger" id="turnoAdvance">Avançar turno</button>
-        <button class="admin-btn outline" id="turnoReset">Resetar turnos</button>
+        <div class="turnos-stat">
+          <button class="admin-btn danger" id="turnoAdvance">Avançar turno</button>
+        </div>
+        <div class="turnos-stat">
+          <button class="admin-btn outline" id="turnoReset">Resetar turnos</button>
+        </div>
       </div>
       <div class="turnos-history" id="turnosHistory"></div>
     </div>

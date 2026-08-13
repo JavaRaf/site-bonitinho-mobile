@@ -28,6 +28,8 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: #111827;
+  flex: 1;
+  text-align: center;
 }
 
 .admin-tabs {
@@ -53,6 +55,21 @@
 .admin-tab.active {
   color: #111827;
   border-bottom-color: #111827;
+}
+
+.admin-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: #71717a;
+}
+
+.admin-empty p {
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .admin-grid {

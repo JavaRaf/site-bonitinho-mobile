@@ -104,10 +104,10 @@ function updateLikeIcon() {
     const icon = btn.querySelector("img");
     const liked = likedImages.has(currentImageName());
     if (liked) {
-        icon.src = "/static/img/heart-filled.svg";
+        icon.src = "/static/svg/heart-filled.svg";
         btn.style.color = "#f43f5e";
     } else {
-        icon.src = "/static/img/heart.svg";
+        icon.src = "/static/svg/heart.svg";
         btn.style.color = "";
     }
 }

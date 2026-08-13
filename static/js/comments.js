@@ -1,15 +1,16 @@
 let currentUserId = null;
 let isAdmin = false;
-let currentAvatar = "";
 const commentsCache = new Map();
 
-const avatarColors = {
-    "red.svg": "#f43f5e",
-    "indigo.svg": "#6366f1",
-    "green.svg": "#10b981",
-    "amber.svg": "#f59e0b",
-    "purple.svg": "#8b5cf6"
-};
+const commentColors = ["#f43f5e", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
+
+function userColor(username) {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
+    }
+    return commentColors[hash % commentColors.length];
+}
 
 async function fetchCurrentUser() {
     try {
@@ -18,7 +19,6 @@ async function fetchCurrentUser() {
         if (data.user) {
             currentUserId = data.user.id;
             isAdmin = data.user.is_admin || false;
-            currentAvatar = data.user.avatar || "";
         }
     } catch { /* ignore */ }
 }
@@ -59,12 +59,11 @@ function renderComments(comments) {
         ? comments.map(c => {
             const canDelete = isAdmin || currentUserId === c.user_id;
             const isSelf = currentUserId === c.user_id;
-            const selfColor = avatarColors[currentAvatar] || "#4f46e5";
             return `
                 <div class="comment" data-id="${c.id}">
-                    <span class="comment-user${isSelf ? " is-self" : ""}"${isSelf ? ` style="color:${selfColor}"` : ""}>${escapeHtml(c.username)}</span>
+                    <span class="comment-user${isSelf ? " is-self" : ""}" style="color:${userColor(c.username)}">${escapeHtml(c.username)}</span>
                     <span class="comment-text">${escapeHtml(c.text)}</span>
-                    ${canDelete ? `<button class="comment-delete" data-id="${c.id}"><img src="/static/img/trash.svg" alt="del"></button>` : ""}
+                    ${canDelete ? `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>` : ""}
                 </div>`;
         }).join("")
         : `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
