@@ -80,7 +80,8 @@ async function loadImages() {
 
 document.getElementById("adminSelectAll").addEventListener("click", () => {
     const cards = document.querySelectorAll(".admin-card");
-    const allSelected = selected.size === cards.length;
+    const names = [...cards].map(c => c.dataset.name);
+    const allSelected = names.length > 0 && names.every(n => selected.has(n));
     cards.forEach(c => {
         const cb = c.querySelector(".admin-select");
         if (allSelected) {

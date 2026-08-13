@@ -39,6 +39,15 @@ def set_setting(key, value):
     db.close()
 
 
+def is_admin():
+    if "user_id" not in session:
+        return False
+    db = get_db()
+    row = db.execute("SELECT is_admin FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    db.close()
+    return bool(row and row["is_admin"])
+
+
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok"}), 200
@@ -79,7 +88,7 @@ def perfil_page():
 def admin_page():
     if "user_id" not in session:
         return render_template("login.html")
-    if not session.get("is_admin"):
+    if not is_admin():
         return (
             "<h2>Você não é admin</h2>"
             "<p>Redirecionando para a tela inicial...</p>"
@@ -162,7 +171,7 @@ def upload_images():
 
 @app.route("/api/admin/images", methods=["DELETE"])
 def admin_delete_images():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     data = request.get_json()
@@ -186,7 +195,7 @@ def admin_delete_images():
 
 @app.route("/api/admin/likes", methods=["DELETE"])
 def admin_remove_likes():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     data = request.get_json()
@@ -204,7 +213,7 @@ def admin_remove_likes():
 
 @app.route("/api/admin/likes/<path:image_name>/<int:user_id>", methods=["DELETE"])
 def admin_remove_single_like(image_name, user_id):
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
     db = get_db()
     db.execute("DELETE FROM likes WHERE image_name = ? AND user_id = ?", (image_name, user_id))
@@ -215,7 +224,7 @@ def admin_remove_single_like(image_name, user_id):
 
 @app.route("/api/admin/users", methods=["GET"])
 def admin_list_users():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
     db = get_db()
     users = db.execute("SELECT id, username, is_admin FROM users ORDER BY id").fetchall()
@@ -225,7 +234,7 @@ def admin_list_users():
 
 @app.route("/api/admin/users/<int:user_id>", methods=["DELETE"])
 def admin_delete_user(user_id):
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     db = get_db()
@@ -251,7 +260,7 @@ def admin_delete_user(user_id):
 
 @app.route("/api/admin/users/<int:user_id>/promote", methods=["PUT"])
 def admin_promote_user(user_id):
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
     db = get_db()
     db.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user_id,))
@@ -262,7 +271,7 @@ def admin_promote_user(user_id):
 
 @app.route("/api/admin/collage", methods=["POST"])
 def admin_export_collage():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     data = request.get_json(silent=True) or {}
@@ -311,7 +320,7 @@ def admin_export_collage():
 
 @app.route("/api/admin/turnos", methods=["GET"])
 def admin_turnos():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     db = get_db()
@@ -338,7 +347,7 @@ def admin_turnos():
 
 @app.route("/api/admin/turnos/advance", methods=["POST"])
 def admin_turnos_advance():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     data = request.get_json(silent=True) or {}
@@ -383,7 +392,7 @@ def admin_turnos_advance():
 
 @app.route("/api/admin/turnos/mode", methods=["GET", "POST"])
 def admin_turnos_mode():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     if request.method == "GET":
@@ -397,7 +406,7 @@ def admin_turnos_mode():
 
 @app.route("/api/admin/turnos/reset", methods=["POST"])
 def admin_turnos_reset():
-    if not session.get("is_admin"):
+    if not is_admin():
         return jsonify({"error": "admin only"}), 403
 
     db = get_db()
