@@ -29,6 +29,9 @@
   </header>
 
     <div class="carrossel">
+      <button class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="Anterior">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <div class="img-model">
 
         <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar" src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span><span class="img-owner-singlevote" id="imgOwnerSingleVote" style="display:none">Voto único</span></div>
@@ -42,7 +45,7 @@
 
         <div class="buttons">
           <div class="btn-group">
-            <div id="likes-btn"><img src="/static/svg/heart.svg" alt="like"></div>
+            <div id="likes-btn"><img src="/static/svg/upvote.svg" alt="like"></div>
             <span class="likes-count" id="likes-count"></span>
           </div>
           <div class="btn-group">
@@ -62,6 +65,9 @@
         
 
       </div>
+      <button class="carousel-arrow carousel-next" id="carouselNext" aria-label="Próximo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
 
 </body>

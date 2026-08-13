@@ -115,10 +115,10 @@ function updateLikeIcon() {
     const icon = btn.querySelector("img");
     const liked = likedImages.has(currentImageName());
     if (liked) {
-        icon.src = "/static/svg/heart-filled.svg";
+        icon.src = "/static/svg/upvote-filled.svg";
         btn.style.color = "#f43f5e";
     } else {
-        icon.src = "/static/svg/heart.svg";
+        icon.src = "/static/svg/upvote.svg";
         btn.style.color = "";
     }
 }
@@ -146,6 +146,10 @@ track.addEventListener("touchend", e => {
         goTo(current + (dx > 0 ? 1 : -1));
     }
 });
+
+/* === Arrow buttons (desktop) === */
+document.getElementById("carouselPrev")?.addEventListener("click", () => goTo(current - 1));
+document.getElementById("carouselNext")?.addEventListener("click", () => goTo(current + 1));
 
 /* === Keyboard navigation (A/D, arrows) === */
 document.addEventListener("keydown", e => {
