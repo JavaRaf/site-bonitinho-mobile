@@ -158,13 +158,13 @@ header {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem 0.5rem;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .img-owner-avatar {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   object-fit: cover;
   background: #f3f4f6;
@@ -182,7 +182,7 @@ header {
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   color: #0000008c;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .carousel-track {
