@@ -159,7 +159,7 @@ header {
   gap: 0.25rem;
   padding: 0.5rem 0.5rem;
   font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .img-owner-avatar {
@@ -173,17 +173,16 @@ header {
 #imgOwnerName {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  background: rgba(0,0,0,0.5);
-  color: #fff;
+  color: #0000008c;
+  font-family: 'roboto', 'Times New Roman', Times, serif;
 }
 
 .img-owner-singlevote {
   margin-left: auto;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
-  background: #7f7f7f;
-  color: #fff;
-  font-size: 0.625rem;
+  color: #0000008c;
+  font-size: 0.7rem;
 }
 
 .carousel-track {
