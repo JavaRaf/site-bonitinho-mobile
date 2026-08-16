@@ -229,7 +229,6 @@ header {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   color: var(--text-secondary);
-  font-family: 'roboto', 'Times New Roman', Times, serif;
 }
 
 .img-owner-singlevote {
@@ -1013,11 +1012,8 @@ header {
 
 /* === Image caption === */
 .img-caption {
-  padding: 0.4rem 1rem;
-  background: var(--surface-3);
-  font-family: Georgia, "Times New Roman", serif;
+  padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
-  line-height: 1.4;
   color: var(--text-soft);
   word-break: break-word;
   white-space: pre-wrap;
