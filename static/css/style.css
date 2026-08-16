@@ -215,6 +215,7 @@ header {
   padding: 0.5rem 0.5rem;
   font-size: 0.8rem;
   font-weight: 600;
+  min-width: 0;
 }
 
 .img-owner-avatar {
@@ -229,6 +230,11 @@ header {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   color: var(--text-secondary);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .img-owner-singlevote {
@@ -237,6 +243,7 @@ header {
   border-radius: 4px;
   color: var(--text-secondary);
   font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .carousel-track {
@@ -478,6 +485,11 @@ header {
 .comment-user {
   font-weight: 700;
   flex-shrink: 0;
+  max-width: 45%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comment-text {
@@ -629,6 +641,7 @@ header {
   font-size: 0.75rem;
   font-family: inherit;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .grid-thumbs {
@@ -727,6 +740,8 @@ header {
   padding: 0.5rem;
   font-size: 0.8rem;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .feed-avatar {
@@ -741,6 +756,10 @@ header {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .feed-img {
