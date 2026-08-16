@@ -94,6 +94,8 @@ composerPost.addEventListener("click", async () => {
             }
         } else if (res.status === 401) {
             location.href = "/login";
+        } else if (res.status === 413) {
+            alert("Arquivo muito grande (máximo 10 MB).");
         }
     } catch { /* ignore */ }
     composerPost.disabled = true;

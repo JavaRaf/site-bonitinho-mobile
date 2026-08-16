@@ -27,6 +27,8 @@ load_dotenv(BASE_DIR / ".env")
 DB_PATH = BASE_DIR / "db" / "app.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB per individual image (ZIP not limited)
+
 app = Flask(__name__)
 
 app.secret_key = os.getenv("SECRET_KEY") or "dev-secret-key-change-me"
@@ -162,6 +164,16 @@ def upload_images():
     has_zip = bool(zip_file and zip_file.filename)
     if not has_files and not has_zip:
         return jsonify({"error": "no files"}), 400
+
+    # Cap individual image files only; ZIP uploads are not limited
+    for f in files:
+        if not f.filename:
+            continue
+        f.seek(0, os.SEEK_END)
+        size = f.tell()
+        f.seek(0)
+        if size > MAX_IMAGE_BYTES:
+            return jsonify({"error": "image too large (max 10 MB per image)"}), 413
 
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     img_dir = BASE_DIR / "images"

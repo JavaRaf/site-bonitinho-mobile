@@ -221,7 +221,10 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 0.4rem;
+  max-width: calc(100vw - 1.5rem);
   z-index: 50;
 }
 
@@ -230,7 +233,8 @@
   position: static;
   transform: none;
   margin-bottom: 0.75rem;
-  width: max-content;
+  width: auto;
+  max-width: 100%;
 }
 
 .admin-btn {
