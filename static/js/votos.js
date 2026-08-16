@@ -43,7 +43,14 @@ async function loadRanking() {
 
     document.querySelectorAll(".votos-card-main").forEach(main => {
         main.addEventListener("click", () => {
-            main.parentElement.classList.toggle("expanded");
+            const card = main.parentElement;
+            const top = card.getBoundingClientRect().top;
+            const shouldExpand = !card.classList.contains("expanded");
+            document.querySelectorAll(".votos-card").forEach(c => {
+                if (Math.abs(c.getBoundingClientRect().top - top) < 1) {
+                    c.classList.toggle("expanded", shouldExpand);
+                }
+            });
         });
     });
 }

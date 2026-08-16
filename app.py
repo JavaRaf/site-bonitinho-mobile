@@ -612,6 +612,18 @@ def get_likes():
     return jsonify({"likes": [r["image_name"] for r in rows]})
 
 
+@app.route("/api/likers/<path:image_name>", methods=["GET"])
+def get_likers(image_name):
+    db = get_db()
+    rows = db.execute(
+        "SELECT us.username, l.user_id FROM likes l JOIN users us ON l.user_id = us.id "
+        "WHERE l.image_name = ? ORDER BY l.created_at ASC",
+        (image_name,),
+    ).fetchall()
+    db.close()
+    return jsonify([{"username": r["username"], "id": r["user_id"]} for r in rows])
+
+
 @app.route("/api/likes/<path:image_name>", methods=["POST"])
 def toggle_like(image_name):
     if "user_id" not in session:

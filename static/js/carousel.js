@@ -106,6 +106,8 @@ function goTo(index) {
     updateOwnerOverlay();
     updateLikeCount();
     lazyLoadAround(current);
+    const likersSection = document.getElementById("likersSection");
+    if (likersSection) likersSection.hidden = true;
     window.dispatchEvent(new CustomEvent("slideChange", { detail: { index: current } }));
 }
 
@@ -231,6 +233,9 @@ async function toggleLike() {
         updateLikeIcon();
         updateLikeCount();
     }
+
+    const likersSection = document.getElementById("likersSection");
+    if (likersSection && !likersSection.hidden) loadLikers();
 }
 
 /* === Prevent text selection on double-tap === */
@@ -242,6 +247,43 @@ track.addEventListener("mousedown", e => {
 document.getElementById("likes-btn").addEventListener("click", e => {
     e.stopPropagation();
     toggleLike();
+});
+
+/* === Likers (who liked) === */
+function escText(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+}
+
+async function loadLikers() {
+    const imgName = currentImageName();
+    const list = document.getElementById("likersList");
+    const section = document.getElementById("likersSection");
+    if (!imgName || !list || !section) return;
+    try {
+        const res = await fetch(`/api/likers/${imgName}`);
+        const likers = await res.json();
+        list.innerHTML = likers.length
+            ? likers.map(u => `<span class="liker-tag">@${escText(u.username)}</span>`).join("")
+            : `<span class="liker-tag" style="color:#a1a1aa">Ninguém ainda</span>`;
+        section.hidden = false;
+    } catch { /* ignore */ }
+}
+
+document.getElementById("likes-count")?.addEventListener("click", e => {
+    e.stopPropagation();
+    const section = document.getElementById("likersSection");
+    if (section && !section.hidden) {
+        section.hidden = true;
+    } else {
+        loadLikers();
+    }
+});
+
+document.getElementById("likersClose")?.addEventListener("click", () => {
+    const section = document.getElementById("likersSection");
+    if (section) section.hidden = true;
 });
 
 /* === Refresh on tab focus (economical) === */
