@@ -28,6 +28,8 @@ DB_PATH = BASE_DIR / "db" / "app.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB per individual image (ZIP not limited)
+THUMB_DIR = BASE_DIR / "thumbs"
+THUMB_SIZE = 240
 
 app = Flask(__name__)
 
@@ -534,6 +536,35 @@ def ranking_api():
 @app.route("/images/<path:filename>")
 def serve_image(filename):
     return send_from_directory(BASE_DIR / "images", filename)
+
+
+@app.route("/thumbs/<path:filename>")
+def serve_thumb(filename):
+    safe = Path(filename).name
+    thumb_dir = THUMB_DIR
+    thumb_dir.mkdir(parents=True, exist_ok=True)
+    thumb_path = thumb_dir / (safe + ".jpg")
+
+    if not thumb_path.exists():
+        src = BASE_DIR / "images" / safe
+        if not src.exists():
+            return jsonify({"error": "not found"}), 404
+        try:
+            with Image.open(src) as im:
+                im = ImageOps.exif_transpose(im)
+                if im.mode in ("RGBA", "LA", "P"):
+                    im = im.convert("RGBA")
+                    bg = Image.new("RGB", im.size, (255, 255, 255))
+                    bg.paste(im, mask=im.split()[-1])
+                    im = bg
+                else:
+                    im = im.convert("RGB")
+                im.thumbnail((THUMB_SIZE, THUMB_SIZE))
+                im.save(str(thumb_path), format="JPEG", quality=82)
+        except Exception:
+            return send_from_directory(BASE_DIR / "images", safe)
+
+    return send_file(thumb_path, mimetype="image/jpeg")
 
 
 @app.route("/avatars/<path:filename>")

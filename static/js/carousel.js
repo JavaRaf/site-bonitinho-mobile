@@ -296,7 +296,7 @@ function renderGrid() {
     if (!thumbs) return;
     thumbs.innerHTML = allImages.map((img, i) => `
         <button class="grid-thumb ${i === current ? "active" : ""}" data-index="${i}">
-            <img src="/images/${escText(img.name)}" alt="" loading="lazy">
+            <img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">
         </button>
     `).join("");
 
