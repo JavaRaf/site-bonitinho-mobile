@@ -197,13 +197,40 @@ async function toggleLike() {
     const imgName = currentImageName();
     if (!imgName) return;
 
-    const res = await fetch(`/api/likes/${imgName}`, { method: "POST" });
-    if (!res.ok) return;
+    const slides = document.querySelectorAll(".carousel-slide");
+    const slide = slides[current];
+    if (!slide) return;
 
-    await loadLikes();
-    await refreshLikeCounts();
+    // Optimistic update: flip instantly so feedback doesn't wait on the server
+    const wasLiked = likedImages.has(imgName);
+    const delta = wasLiked ? -1 : 1;
+    if (wasLiked) likedImages.delete(imgName);
+    else likedImages.add(imgName);
+    slide.dataset.likes = Math.max(0, (parseInt(slide.dataset.likes) || 0) + delta);
     updateLikeIcon();
     updateLikeCount();
+
+    try {
+        const res = await fetch(`/api/likes/${imgName}`, { method: "POST" });
+        if (!res.ok) throw new Error("request failed");
+        const data = await res.json();
+        if (data.liked !== !wasLiked) {
+            // server disagreed (e.g. changed elsewhere) — resync
+            await loadLikes();
+            await refreshLikeCounts();
+        } else {
+            // background resync keeps counts accurate without blocking UI
+            loadLikes();
+            refreshLikeCounts();
+        }
+    } catch {
+        // revert optimistic change on failure
+        if (wasLiked) likedImages.add(imgName);
+        else likedImages.delete(imgName);
+        slide.dataset.likes = Math.max(0, (parseInt(slide.dataset.likes) || 0) - delta);
+        updateLikeIcon();
+        updateLikeCount();
+    }
 }
 
 /* === Prevent text selection on double-tap === */
