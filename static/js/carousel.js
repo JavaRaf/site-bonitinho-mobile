@@ -2,6 +2,7 @@ let current = 0;
 let likedImages = new Set();
 let allImages = [];
 let feedMode = (localStorage.getItem("viewMode") || "slide") === "feed";
+let sortMode = localStorage.getItem("sortMode") || "likes";
 
 const FEED_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`;
 const SLIDE_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
@@ -62,6 +63,8 @@ async function loadCarousel() {
     loadSingleVoteFlag();
     renderFeed();
     applyViewMode();
+    syncSortSelects();
+    rebuildCarousel();
 }
 
 function updateLikeCount() {
@@ -96,11 +99,16 @@ function updateOwnerOverlay() {
     if (nameEl) nameEl.textContent = owner ? "@" + owner : "";
     if (captionEl) captionEl.textContent = caption;
     if (avatarEl) {
-        if (!avatar || avatar === "default-avatar.svg") {
-            avatarEl.src = "/static/svg/default-avatar.svg";
-        } else {
-            avatarEl.src = `/avatars/${avatar}`;
-            avatarEl.onerror = () => { avatarEl.src = "/static/svg/default-avatar.svg"; };
+        const target = (!avatar || avatar === "default-avatar.svg")
+            ? "/static/svg/default-avatar.svg"
+            : `/avatars/${avatar}`;
+        if (avatarEl.getAttribute("src") !== target) {
+            avatarEl.src = target;
+            if (!avatar || avatar === "default-avatar.svg") {
+                avatarEl.onerror = null;
+            } else {
+                avatarEl.onerror = () => { avatarEl.src = "/static/svg/default-avatar.svg"; };
+            }
         }
     }
 }
@@ -304,24 +312,89 @@ document.getElementById("likersClose")?.addEventListener("click", () => {
 function renderGrid() {
     const thumbs = document.getElementById("gridThumbs");
     if (!thumbs) return;
-    thumbs.innerHTML = allImages.map((img, i) => `
-        <button class="grid-thumb ${i === current ? "active" : ""}" data-index="${i}">
+    const activeName = currentImageName();
+    thumbs.innerHTML = sortedImages().map(img => `
+        <button class="grid-thumb ${img.name === activeName ? "active" : ""}" data-name="${escText(img.name)}">
             <img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">
         </button>
     `).join("");
 
     thumbs.querySelectorAll(".grid-thumb").forEach(btn => {
         btn.addEventListener("click", () => {
-            goTo(parseInt(btn.dataset.index));
+            goTo(carouselIndexByName(btn.dataset.name));
             closeGrid();
         });
     });
 }
 
 function updateGridActive() {
-    document.querySelectorAll(".grid-thumb").forEach((t, i) => {
-        t.classList.toggle("active", i === current);
+    const name = currentImageName();
+    document.querySelectorAll(".grid-thumb").forEach(t => {
+        t.classList.toggle("active", t.dataset.name === name);
     });
+}
+
+function sortedImages() {
+    return [...allImages].sort((a, b) => {
+        if (sortMode === "recent") {
+            return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        }
+        return (b.likes || 0) - (a.likes || 0);
+    });
+}
+
+function carouselIndexByName(name) {
+    const slides = document.querySelectorAll(".carousel-slide");
+    for (let i = 0; i < slides.length; i++) {
+        if (slides[i].dataset.image === name) return i;
+    }
+    return 0;
+}
+
+function setSortMode(mode) {
+    if (mode !== "likes" && mode !== "recent") return;
+    sortMode = mode;
+    localStorage.setItem("sortMode", mode);
+    syncSortSelects();
+    renderGrid();
+    renderFeed();
+    rebuildCarousel();
+}
+
+function rebuildCarousel() {
+    const track = document.getElementById("carouselTrack");
+    const dots = document.getElementById("carouselDots");
+    const slides = document.querySelectorAll(".carousel-slide");
+    if (!track || !dots || !slides.length) return;
+
+    const byName = new Map();
+    slides.forEach(s => byName.set(s.dataset.image, s));
+
+    const sorted = sortedImages();
+    track.innerHTML = "";
+    dots.innerHTML = "";
+    sorted.forEach((img, i) => {
+        const slide = byName.get(img.name);
+        if (!slide) return;
+        track.appendChild(slide);
+        const dot = document.createElement("span");
+        dot.className = "carousel-dot";
+        dot.onclick = () => goTo(i);
+        dots.appendChild(dot);
+    });
+
+    current = 0;
+    track.style.transform = "translateX(0%)";
+    document.querySelectorAll(".carousel-dot").forEach((d, i) => d.classList.toggle("active", i === current));
+    lazyLoadAround(0);
+    updateLikeIcon();
+    updateOwnerOverlay();
+    updateLikeCount();
+    updateGridActive();
+}
+
+function syncSortSelects() {
+    document.querySelectorAll(".sort-select").forEach(sel => { sel.value = sortMode; });
 }
 
 function openGrid() {
@@ -336,6 +409,10 @@ document.getElementById("grid-btn")?.addEventListener("click", openGrid);
 
 document.getElementById("gridClose")?.addEventListener("click", closeGrid);
 
+document.getElementById("sortSelect")?.addEventListener("change", e => setSortMode(e.target.value));
+
+document.getElementById("feedSortSelect")?.addEventListener("change", e => setSortMode(e.target.value));
+
 document.getElementById("gridOverlay")?.addEventListener("click", e => {
     if (e.target === e.currentTarget) closeGrid();
 });
@@ -348,7 +425,7 @@ function avatarUrl(a) {
 function renderFeed() {
     const feed = document.getElementById("feedView");
     if (!feed) return;
-    feed.innerHTML = allImages.map((img) => {
+    feed.innerHTML = sortedImages().map((img) => {
         const liked = likedImages.has(img.name);
         const likes = img.likes || 0;
         const comments = img.comments || 0;
@@ -388,11 +465,13 @@ function renderFeed() {
 function applyViewMode() {
     const carrossel = document.querySelector(".carrossel");
     const feedView = document.getElementById("feedView");
+    const feedSortWrap = document.getElementById("feedSortWrap");
     const toggle = document.getElementById("viewToggle");
     if (!carrossel || !feedView) return;
     if (feedMode) {
         carrossel.style.display = "none";
         feedView.hidden = false;
+        if (feedSortWrap) feedSortWrap.hidden = false;
         if (toggle) {
             toggle.innerHTML = SLIDE_ICON;
             toggle.title = "Alternar para slide";
@@ -401,6 +480,7 @@ function applyViewMode() {
     } else {
         carrossel.style.display = "";
         feedView.hidden = true;
+        if (feedSortWrap) feedSortWrap.hidden = true;
         if (toggle) {
             toggle.innerHTML = FEED_ICON;
             toggle.title = "Alternar para feed";

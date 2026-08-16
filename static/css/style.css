@@ -192,7 +192,6 @@ header {
 
 .img-model {
   background: var(--surface);
-  border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--border);
 }
@@ -620,6 +619,19 @@ header {
   background: var(--surface-2);
 }
 
+.sort-select {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 .grid-thumbs {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
@@ -685,6 +697,22 @@ header {
 
 .feed-view[hidden] {
   display: none;
+}
+
+.feed-sort-wrap {
+  max-width: 640px;
+  margin-top: 10px;
+  padding: 0 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.feed-sort-wrap[hidden] {
+  display: none;
+}
+
+.feed-sort-wrap .sort-select {
+  margin-left: 0;
 }
 
 .feed-card {

@@ -82,7 +82,12 @@
 
       <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar"
           src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span><span class="img-owner-singlevote"
-          id="imgOwnerSingleVote" style="display:none">Voto único</span></div>
+          id="imgOwnerSingleVote" style="display:none">Voto único</span>
+        <select class="sort-select" id="sortSelect" title="Ordenar" aria-label="Ordenar">
+          <option value="likes">Mais votadas</option>
+          <option value="recent">Mais recentes</option>
+        </select>
+      </div>
 
       <div class="img-caption" id="imgCaption"></div>
 
@@ -140,6 +145,13 @@
       </div>
       <div class="grid-thumbs" id="gridThumbs"></div>
     </div>
+  </div>
+
+  <div class="feed-sort-wrap" id="feedSortWrap" hidden>
+    <select class="sort-select" id="feedSortSelect" title="Ordenar" aria-label="Ordenar">
+      <option value="likes">Mais votadas</option>
+      <option value="recent">Mais recentes</option>
+    </select>
   </div>
 
   <div class="feed-view" id="feedView" hidden></div>

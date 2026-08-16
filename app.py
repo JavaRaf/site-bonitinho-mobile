@@ -29,13 +29,14 @@ DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB per individual image (ZIP not limited)
 THUMB_DIR = BASE_DIR / "thumbs"
-THUMB_SIZE = 240
+THUMB_SIZE = 360
 
 app = Flask(__name__)
 
 app.secret_key = os.getenv("SECRET_KEY") or "dev-secret-key-change-me"
 app.config["SESSION_PERMANENT"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 3600
 
 init_db()
 app.register_blueprint(auth_bp)
@@ -125,7 +126,7 @@ def list_images():
     img_dir = BASE_DIR / "images"
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
-    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption,
+    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption, u.created_at,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.image_name = u.image_name) AS comments
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
@@ -144,6 +145,7 @@ def list_images():
                     "owner": r["username"],
                     "likes": r["likes"],
                     "comments": r["comments"],
+                    "created_at": r["created_at"],
                     "owner_avatar": r["owner_avatar"] or "default-avatar.svg",
                     "caption": r["caption"] or "",
                 }
@@ -151,7 +153,7 @@ def list_images():
             seen.add(r["image_name"])
     for fname in sorted(disk_images - seen, reverse=True):
         result.append(
-            {"name": fname, "owner": None, "likes": 0, "comments": 0, "owner_avatar": "default-avatar.svg", "caption": ""}
+            {"name": fname, "owner": None, "likes": 0, "comments": 0, "created_at": "", "owner_avatar": "default-avatar.svg", "caption": ""}
         )
 
     return jsonify(result)
@@ -247,12 +249,18 @@ def admin_delete_images():
         return jsonify({"error": "no images"}), 400
 
     img_dir = BASE_DIR / "images"
+    thumb_dir = BASE_DIR / "thumbs"
     db = get_db()
 
     for name in names:
         filepath = img_dir / name
         if filepath.exists():
             filepath.unlink()
+        thumb_path = thumb_dir / (name + ".jpg")
+        if thumb_path.exists():
+            thumb_path.unlink()
+        db.execute("DELETE FROM likes WHERE image_name = ?", (name,))
+        db.execute("DELETE FROM comments WHERE image_name = ?", (name,))
         db.execute("DELETE FROM uploads WHERE image_name = ?", (name,))
 
     db.commit()
@@ -537,7 +545,7 @@ def ranking_api():
 
 @app.route("/images/<path:filename>")
 def serve_image(filename):
-    return send_from_directory(BASE_DIR / "images", filename)
+    return send_from_directory(BASE_DIR / "images", filename, max_age=604800)
 
 
 @app.route("/thumbs/<path:filename>")
@@ -566,12 +574,12 @@ def serve_thumb(filename):
         except Exception:
             return send_from_directory(BASE_DIR / "images", safe)
 
-    return send_file(thumb_path, mimetype="image/jpeg")
+    return send_file(thumb_path, mimetype="image/jpeg", max_age=604800)
 
 
 @app.route("/avatars/<path:filename>")
 def serve_avatar(filename):
-    return send_from_directory(BASE_DIR / "static" / "avatars", filename)
+    return send_from_directory(BASE_DIR / "static" / "avatars", filename, max_age=604800)
 
 
 @app.route("/api/auth/avatar", methods=["POST", "DELETE"])
