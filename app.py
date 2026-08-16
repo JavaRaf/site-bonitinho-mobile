@@ -126,7 +126,8 @@ def list_images():
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
     rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption,
-                  (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes
+                  (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes,
+                  (SELECT COUNT(*) FROM comments c WHERE c.image_name = u.image_name) AS comments
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
            WHERE u.active = 1
            ORDER BY likes DESC, u.created_at DESC""").fetchall()
@@ -142,6 +143,7 @@ def list_images():
                     "name": r["image_name"],
                     "owner": r["username"],
                     "likes": r["likes"],
+                    "comments": r["comments"],
                     "owner_avatar": r["owner_avatar"] or "default-avatar.svg",
                     "caption": r["caption"] or "",
                 }
@@ -149,7 +151,7 @@ def list_images():
             seen.add(r["image_name"])
     for fname in sorted(disk_images - seen, reverse=True):
         result.append(
-            {"name": fname, "owner": None, "likes": 0, "owner_avatar": "default-avatar.svg", "caption": ""}
+            {"name": fname, "owner": None, "likes": 0, "comments": 0, "owner_avatar": "default-avatar.svg", "caption": ""}
         )
 
     return jsonify(result)

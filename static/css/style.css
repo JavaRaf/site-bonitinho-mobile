@@ -70,6 +70,9 @@ header {
 .user {
   flex-shrink: 0;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 #user-avatar {
@@ -595,6 +598,155 @@ header {
 
 .grid-thumb.active {
   border-color: #111827;
+}
+
+/* === View toggle (header) === */
+.view-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.view-toggle:hover {
+  background: #f9fafb;
+}
+
+/* === Feed view === */
+.feed-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: 100dvh;
+}
+
+.feed-view[hidden] {
+  display: none;
+}
+
+.feed-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.feed-owner {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.feed-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f3f4f6;
+}
+
+.feed-owner-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0000008c;
+}
+
+.feed-img {
+  background: #f3f4f6;
+}
+
+.feed-img img {
+  width: 100%;
+  max-height: 80dvh;
+  object-fit: contain;
+  display: block;
+}
+
+.feed-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0;
+}
+
+.feed-like,
+.feed-comment-toggle,
+.feed-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.feed-like:hover,
+.feed-comment-toggle:hover,
+.feed-download:hover {
+  background: #f3f4f6;
+}
+
+.feed-like img,
+.feed-comment-toggle img,
+.feed-download img {
+  width: 20px;
+  height: 20px;
+}
+
+.feed-likes,
+.feed-comment-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 1.2em;
+}
+
+.feed-likes {
+  cursor: pointer;
+}
+
+.feed-caption {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.feed-likers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.feed-comments {
+  border-top: 1px solid #f3f4f6;
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.feed-comments-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
 }
 
 /* === Composer modal (create post) === */
