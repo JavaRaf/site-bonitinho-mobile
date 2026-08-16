@@ -391,6 +391,8 @@ function rebuildCarousel() {
     updateOwnerOverlay();
     updateLikeCount();
     updateGridActive();
+    // Reload comments for the new first image after reordering.
+    if (typeof loadComments === "function") loadComments();
 }
 
 function syncSortSelects() {
@@ -435,6 +437,7 @@ function renderFeed() {
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
                 <span class="feed-owner-name">@${escText(img.owner || "—")}</span>
             </div>
+            <div class="feed-caption">${escText(img.caption || "")}</div>
             <div class="feed-img"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async"></div>
             <div class="feed-actions">
                 <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
@@ -449,7 +452,6 @@ function renderFeed() {
                     <img src="/static/svg/download.svg" alt="download">
                 </button>
             </div>
-            <div class="feed-caption">${escText(img.caption || "")}</div>
             <div class="feed-likers" hidden></div>
             <div class="feed-comments" hidden>
                 <div class="feed-comments-list"></div>
