@@ -34,62 +34,91 @@
         <h2>Criar post</h2>
         <button class="composer-close" id="composerClose" type="button" aria-label="Fechar">&times;</button>
       </div>
+      <div class="composer-preview composer-zip-preview" id="composerZipPreview" hidden>
+        <span id="composerZipLabel">Arquivo ZIP selecionado</span>
+        <button class="composer-remove" id="composerZipRemove" type="button"
+          aria-label="Remover arquivo">&times;</button>
+      </div>
       <div class="composer-preview" id="composerPreview" hidden>
         <img id="composerPreviewImg" alt="">
         <button class="composer-remove" id="composerRemove" type="button" aria-label="Remover imagem">&times;</button>
       </div>
-      <textarea class="composer-text" id="composerText" placeholder="No que você está pensando?" rows="3" maxlength="250"></textarea>
+      <textarea class="composer-text" id="composerText" placeholder="No que você está pensando?" rows="3"
+        maxlength="250"></textarea>
       <div class="composer-actions">
         <input type="file" id="composerImageInput" accept="image/*" hidden>
-        <button class="composer-add" id="composerAddImage" type="button">Adicionar imagem</button>
-        <button class="composer-post" id="composerPost" type="button" disabled>Publicar</button>
+        <input type="file" id="composerZipInput" accept=".zip,application/zip" hidden>
+        <button class="composer-add" id="composerAddZip" type="button" title="Enviar ZIP" aria-label="Enviar ZIP">
+          <img src="/static/svg/zip.svg" alt="" width="18" height="18">
+        </button>
+
+        <button class="composer-add" id="composerAddImage" type="button" title="Adicionar imagem"
+          aria-label="Adicionar imagem">
+          <img src="/static/svg/image.svg" alt="" width="18" height="18">
+        </button>
+        <button class="composer-post" id="composerPost" type="button" disabled title="Publicar" aria-label="Publicar">
+          <span>Publicar</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        </button>
       </div>
     </div>
   </div>
 
   <div class="carrossel">
-      <button class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="Anterior">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <div class="img-model">
+    <button class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="Anterior">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+    </button>
+    <div class="img-model">
 
-        <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar" src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span><span class="img-owner-singlevote" id="imgOwnerSingleVote" style="display:none">Voto único</span></div>
+      <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar"
+          src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span><span class="img-owner-singlevote"
+          id="imgOwnerSingleVote" style="display:none">Voto único</span></div>
 
-        <div class="img-caption" id="imgCaption"></div>
+      <div class="img-caption" id="imgCaption"></div>
 
-        <div id="img-view">
-          <div class="carousel-track" id="carouselTrack">
-            <img src="/static/svg/image-placeholder.svg" alt="" class="img-placeholder">
-          </div>
-          <div class="carousel-dots" id="carouselDots"></div>
+      <div id="img-view">
+        <div class="carousel-track" id="carouselTrack">
+          <img src="/static/svg/image-placeholder.svg" alt="" class="img-placeholder">
         </div>
-
-        <div class="buttons">
-          <div class="btn-group">
-            <div id="likes-btn"><img src="/static/svg/upvote.svg" alt="like"></div>
-            <span class="likes-count" id="likes-count"></span>
-          </div>
-          <div class="btn-group">
-            <div id="comment-btn"><img src="/static/svg/comments.svg" alt="comment"></div>
-            <span class="likes-count" id="comment-count"></span>
-          </div>
-          <div id="download-btn"><img src="/static/svg/download.svg" alt="download"></div>
-        </div>
-
-        <div class="comments-section" id="commentsSection">
-          <div class="comments-list" id="commentsList"></div>
-          <form class="comment-form" id="commentForm">
-            <input type="text" placeholder="Adicione um comentário..." id="commentInput" autocomplete="off">
-            <button type="submit">Enviar</button>
-          </form>
-        </div>
-        
-
+        <div class="carousel-dots" id="carouselDots"></div>
       </div>
-      <button class="carousel-arrow carousel-next" id="carouselNext" aria-label="Próximo">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+
+      <div class="buttons">
+        <div class="btn-group">
+          <div id="likes-btn"><img src="/static/svg/upvote.svg" alt="like"></div>
+          <span class="likes-count" id="likes-count"></span>
+        </div>
+        <div class="btn-group">
+          <div id="comment-btn"><img src="/static/svg/comments.svg" alt="comment"></div>
+          <span class="likes-count" id="comment-count"></span>
+        </div>
+        <div id="download-btn"><img src="/static/svg/download.svg" alt="download"></div>
+      </div>
+
+      <div class="comments-section" id="commentsSection">
+        <div class="comments-list" id="commentsList"></div>
+        <form class="comment-form" id="commentForm">
+          <input type="text" placeholder="Adicione um comentário..." id="commentInput" autocomplete="off">
+          <button type="submit">Enviar</button>
+        </form>
+      </div>
+
+
     </div>
+    <button class="carousel-arrow carousel-next" id="carouselNext" aria-label="Próximo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </button>
+  </div>
 
 </body>
 

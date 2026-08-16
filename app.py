@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sqlite3
 import uuid
+import zipfile
 from datetime import timedelta
 from io import BytesIO
 from flask import (
@@ -156,7 +157,10 @@ def upload_images():
         return jsonify({"error": "login required"}), 401
 
     files = request.files.getlist("images")
-    if not files or all(not f.filename for f in files):
+    zip_file = request.files.get("zip")
+    has_files = any(f and f.filename for f in files)
+    has_zip = bool(zip_file and zip_file.filename)
+    if not has_files and not has_zip:
         return jsonify({"error": "no files"}), 400
 
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
@@ -177,21 +181,38 @@ def upload_images():
 
     saved = []
 
+    def save_image(data, filename):
+        ext = Path(filename).suffix.lower()
+        if ext not in allowed:
+            return
+        base_name = Path(filename).name
+        salt = uuid.uuid4().hex[:8]
+        new_name = f"{salt}_{base_name}"
+        (img_dir / new_name).write_bytes(data)
+        db.execute(
+            "INSERT INTO uploads (user_id, image_name, original_name, caption) VALUES (?, ?, ?, ?)",
+            (session["user_id"], new_name, base_name, caption),
+        )
+        saved.append(new_name)
+
     try:
         for f in files:
             if not f.filename:
                 continue
-            ext = Path(f.filename).suffix.lower()
-            if ext not in allowed:
-                continue
-            salt = uuid.uuid4().hex[:8]
-            new_name = f"{salt}_{f.filename}"
-            f.save(str(img_dir / new_name))
-            db.execute(
-                "INSERT INTO uploads (user_id, image_name, original_name, caption) VALUES (?, ?, ?, ?)",
-                (session["user_id"], new_name, f.filename, caption),
-            )
-            saved.append(new_name)
+            save_image(f.read(), f.filename)
+
+        if zip_file and zip_file.filename:
+            with zipfile.ZipFile(BytesIO(zip_file.read())) as zf:
+                for entry in zf.infolist():
+                    if entry.is_dir():
+                        continue
+                    if "__MACOSX" in entry.filename:
+                        continue
+                    name = Path(entry.filename).name
+                    if not name or name.startswith("."):
+                        continue
+                    save_image(zf.read(entry.filename), name)
+
         db.commit()
     finally:
         db.close()

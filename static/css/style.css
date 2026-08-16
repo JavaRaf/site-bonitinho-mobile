@@ -519,6 +519,28 @@ header {
   background: #f3f4f6;
 }
 
+.composer-zip-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 2.2rem 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #374151;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 36px;
+}
+
+.composer-zip-preview span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-preview[hidden] {
+  display: none;
+}
+
 .composer-remove {
   position: absolute;
   top: 0.4rem;
@@ -536,7 +558,7 @@ header {
 
 .composer-text {
   width: 100%;
-  min-height: 56px;
+  min-height: 42px;
   padding: 0.5rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -556,20 +578,22 @@ header {
 .composer-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
 .composer-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
   height: 36px;
-  padding: 0 0.9rem;
+  padding: 0;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background: #fff;
   color: #374151;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  font-family: inherit;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -579,8 +603,12 @@ header {
 }
 
 .composer-post {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   height: 36px;
-  padding: 0 1.1rem;
+  padding: 0 0.9rem;
   border: none;
   border-radius: 6px;
   background: #111827;
@@ -588,6 +616,7 @@ header {
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
+  white-space: nowrap;
   cursor: pointer;
   transition: background 0.15s;
 }
