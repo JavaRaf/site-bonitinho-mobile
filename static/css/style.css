@@ -12,10 +12,63 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+:root {
+  color-scheme: light;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #f9fafb;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text: #111827;
+  --text-soft: #374151;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --btn-bg: #111827;
+  --btn-text: #ffffff;
+  --btn-hover: #1f2937;
+  --danger: #ef4444;
+  --danger-soft: #fef2f2;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #121212;
+  --surface-2: #1a1a1a;
+  --surface-3: #262626;
+  --border: #262626;
+  --border-strong: #3a3a3a;
+  --text: #f5f5f5;
+  --text-soft: #e0e0e0;
+  --text-secondary: #a8a8a8;
+  --text-muted: #8e8e8e;
+  --btn-bg: #f5f5f5;
+  --btn-text: #111827;
+  --btn-hover: #e5e5e5;
+  --danger: #ed4956;
+  --danger-soft: #2a1a1a;
+}
+
+[data-theme="dark"] .rank-gold { background: #3a2f14; color: #fcd34d; }
+[data-theme="dark"] .rank-silver { background: #2a2f36; color: #cbd5e1; }
+[data-theme="dark"] .rank-bronze { background: #3a2616; color: #fdba74; }
+
+[data-theme="dark"] img[src$="/upvote.svg"],
+[data-theme="dark"] img[src$="/comments.svg"],
+[data-theme="dark"] img[src$="/download.svg"],
+[data-theme="dark"] img[src$="/grid.svg"],
+[data-theme="dark"] img[src$="/back.svg"],
+[data-theme="dark"] img[src$="/trash.svg"],
+[data-theme="dark"] img[src$="/zip.svg"],
+[data-theme="dark"] img[src$="/image.svg"] {
+  filter: invert(1);
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #111827;
-  background: #fafafa;
+  color: var(--text);
+  background: var(--bg);
   min-height: 100dvh;
   line-height: 1.5;
   -webkit-tap-highlight-color: transparent;
@@ -34,8 +87,8 @@ header {
   justify-content: space-between;
   padding: 0 1rem;
   height: 50px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -63,7 +116,7 @@ header {
 #logo-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
   letter-spacing: -0.2px;
 }
 
@@ -99,7 +152,7 @@ header {
   position: absolute;
   top: 38px;
   right: 0;
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
   overflow: hidden;
@@ -120,13 +173,13 @@ header {
   font-size: 0.8125rem;
   font-family: inherit;
   text-align: left;
-  color: #374151;
+  color: var(--text-soft);
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .menu-item:hover {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 /* === Carrossel === */
@@ -138,10 +191,10 @@ header {
 }
 
 .img-model {
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
 }
 
 #img-view {
@@ -153,7 +206,7 @@ header {
   justify-content: center;
   overflow: hidden;
   position: relative;
-  background: #fafafa;
+  background: var(--bg);
 }
 
 .img-owner {
@@ -170,13 +223,13 @@ header {
   height: 22px;
   border-radius: 50%;
   object-fit: cover;
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 #imgOwnerName {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  color: #0000008c;
+  color: var(--text-secondary);
   font-family: 'roboto', 'Times New Roman', Times, serif;
 }
 
@@ -184,7 +237,7 @@ header {
   margin-left: auto;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
-  color: #0000008c;
+  color: var(--text-secondary);
   font-size: 0.75rem;
 }
 
@@ -210,7 +263,7 @@ header {
   max-width: 100%;
   max-height: 50vh;
   object-fit: contain;
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .carousel-dots {
@@ -223,14 +276,14 @@ header {
   width: 5px;
   height: 5px;
   border-radius: 3px;
-  background: #d1d5db;
+  background: var(--border-strong);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .carousel-dot.active {
   width: 14px;
-  background: #374151;
+  background: var(--text-soft);
 }
 
 .img-placeholder {
@@ -267,20 +320,20 @@ header {
     width: 44px;
     height: 44px;
     flex-shrink: 0;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 50%;
-    background: #fff;
-    color: #374151;
+    background: var(--surface);
+    color: var(--text-soft);
     cursor: pointer;
     transition: background 0.15s;
   }
 
   .carousel-arrow:hover {
-    background: #f3f4f6;
+    background: var(--surface-2);
   }
 
   .carousel-arrow:active {
-    background: #e5e7eb;
+    background: var(--border);
   }
 }
 
@@ -290,7 +343,7 @@ header {
   align-items: center;
   justify-content: space-evenly;
   padding: 0.5rem 1.5rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
 }
 
 .btn-group {
@@ -302,7 +355,7 @@ header {
 .likes-count {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   min-width: 1.2em;
   text-align: center;
 }
@@ -327,14 +380,14 @@ header {
 #comment-btn:hover,
 #download-btn:hover,
 #grid-btn:hover {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 #likes-btn:active,
 #comment-btn:active,
 #download-btn:active,
 #grid-btn:active {
-  background: #e5e7eb;
+  background: var(--border);
 }
 
 #likes-btn img,
@@ -351,7 +404,7 @@ header {
 
 /* === Likers section === */
 .likers-section {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
   padding: 0.75rem 1rem;
 }
 
@@ -365,7 +418,7 @@ header {
 .likers-title {
   font-size: 0.6rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .likers-close {
@@ -374,14 +427,14 @@ header {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .likers-close:hover {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .likers-list {
@@ -395,14 +448,14 @@ header {
 .liker-tag {
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
-  background: #f3f4f6;
+  background: var(--surface-2);
   font-size: 0.75rem;
-  color: #374151;
+  color: var(--text-soft);
 }
 
 /* === Comments === */
 .comments-section {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
   padding: 0.75rem 1rem;
 }
 
@@ -430,7 +483,7 @@ header {
 }
 
 .comment-text {
-  color: #4b5563;
+  color: var(--text-soft);
   word-break: break-word;
   flex: 1;
 }
@@ -444,17 +497,17 @@ header {
   flex: 1;
   height: 34px;
   padding: 0 0.6rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   font-size: 0.8125rem;
   font-family: inherit;
   outline: none;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.15s;
 }
 
 .comment-form input:focus {
-  border-color: #111827;
+  border-color: var(--text);
   box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
 }
 
@@ -463,8 +516,8 @@ header {
   padding: 0 0.75rem;
   border: none;
   border-radius: 6px;
-  background: #111827;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-text);
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
@@ -474,7 +527,7 @@ header {
 }
 
 .comment-form button:hover {
-  background: #1f2937;
+  background: var(--btn-hover);
 }
 
 .comment-delete {
@@ -527,7 +580,7 @@ header {
 }
 
 .grid-panel {
-  background: #fff;
+  background: var(--surface);
   border-radius: 10px;
   width: 100%;
   max-width: 520px;
@@ -542,13 +595,13 @@ header {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border);
 }
 
 .grid-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
 }
 
 .grid-close {
@@ -557,14 +610,14 @@ header {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .grid-close:hover {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .grid-thumbs {
@@ -583,7 +636,7 @@ header {
   border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
-  background: #f3f4f6;
+  background: var(--surface-2);
   padding: 0;
 }
 
@@ -597,7 +650,7 @@ header {
 }
 
 .grid-thumb.active {
-  border-color: #111827;
+  border-color: var(--text);
 }
 
 /* === View toggle (header) === */
@@ -608,15 +661,15 @@ header {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  background: #fff;
-  color: #374151;
+  background: var(--surface);
+  color: var(--text-soft);
   cursor: pointer;
 }
 
 .view-toggle:hover {
-  background: #f9fafb;
+  background: var(--surface-3);
 }
 
 /* === Feed view === */
@@ -635,8 +688,8 @@ header {
 }
 
 .feed-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -655,17 +708,17 @@ header {
   height: 22px;
   border-radius: 50%;
   object-fit: cover;
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .feed-owner-name {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #0000008c;
+  color: var(--text-secondary);
 }
 
 .feed-img {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .feed-img img {
@@ -699,7 +752,7 @@ header {
 .feed-like:hover,
 .feed-comment-toggle:hover,
 .feed-download:hover {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .feed-like img,
@@ -713,7 +766,7 @@ header {
 .feed-comment-count {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-soft);
   min-width: 1.2em;
 }
 
@@ -724,7 +777,7 @@ header {
 .feed-caption {
   padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text-soft);
   word-break: break-word;
   white-space: pre-wrap;
 }
@@ -737,7 +790,7 @@ header {
 }
 
 .feed-comments {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
   padding: 0.5rem 0.75rem 0.75rem;
 }
 
@@ -766,7 +819,7 @@ header {
 }
 
 .composer-card {
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   padding: 1rem;
   width: 100%;
@@ -786,7 +839,7 @@ header {
 .composer-header h2 {
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
 }
 
 .composer-close {
@@ -795,29 +848,29 @@ header {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .composer-close:hover {
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .composer-preview {
   position: relative;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .composer-preview img {
   width: 100%;
   max-height: 240px;
   object-fit: contain;
-  background: #f3f4f6;
+  background: var(--surface-2);
 }
 
 .composer-zip-preview {
@@ -826,7 +879,7 @@ header {
   gap: 0.5rem;
   padding: 0.4rem 2.2rem 0.4rem 0.75rem;
   font-size: 0.8125rem;
-  color: #374151;
+  color: var(--text-soft);
   max-width: 100%;
   min-width: 0;
   min-height: 36px;
@@ -851,7 +904,7 @@ header {
   border: none;
   border-radius: 50%;
   background: rgba(0,0,0,0.55);
-  color: #fff;
+  color: var(--btn-text);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
@@ -861,18 +914,18 @@ header {
   width: 100%;
   min-height: 42px;
   padding: 0.5rem 0.6rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   font-size: 0.875rem;
   font-family: inherit;
   resize: vertical;
   outline: none;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.15s;
 }
 
 .composer-text:focus {
-  border-color: #111827;
+  border-color: var(--text);
   box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
 }
 
@@ -891,16 +944,16 @@ header {
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  background: #fff;
-  color: #374151;
+  background: var(--surface);
+  color: var(--text-soft);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .composer-add:hover {
-  background: #f9fafb;
+  background: var(--surface-3);
 }
 
 .composer-post {
@@ -912,8 +965,8 @@ header {
   padding: 0 0.9rem;
   border: none;
   border-radius: 6px;
-  background: #111827;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-text);
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
@@ -923,22 +976,22 @@ header {
 }
 
 .composer-post:hover:not(:disabled) {
-  background: #1f2937;
+  background: var(--btn-hover);
 }
 
 .composer-post:disabled {
-  background: #d1d5db;
+  background: var(--border-strong);
   cursor: not-allowed;
 }
 
 /* === Image caption === */
 .img-caption {
   padding: 0.4rem 1rem;
-  background: #f9fafb;
+  background: var(--surface-3);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 0.875rem;
   line-height: 1.4;
-  color: #374151;
+  color: var(--text-soft);
   word-break: break-word;
   white-space: pre-wrap;
 }

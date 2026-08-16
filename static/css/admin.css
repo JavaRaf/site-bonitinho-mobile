@@ -1,5 +1,5 @@
 .admin-page {
-  background: #fafafa;
+  background: var(--bg);
   min-height: 100dvh;
   padding: 1rem;
   max-width: 800px;
@@ -27,7 +27,7 @@
 .admin-header h2 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
   flex: 1;
   text-align: center;
 }
@@ -36,7 +36,7 @@
   display: flex;
   gap: 0;
   margin-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
 }
 
 .admin-tab {
@@ -46,15 +46,15 @@
   font-size: 0.8125rem;
   font-weight: 500;
   font-family: inherit;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.15s;
 }
 
 .admin-tab.active {
-  color: #111827;
-  border-bottom-color: #111827;
+  color: var(--text);
+  border-bottom-color: var(--text);
 }
 
 .admin-empty {
@@ -64,7 +64,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 3rem 1rem;
-  color: #71717a;
+  color: var(--text-muted);
 }
 
 .admin-empty p {
@@ -83,14 +83,14 @@
   position: relative;
   border-radius: 6px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: border-color 0.15s;
 }
 
 .admin-card.selected {
-  border-color: #111827;
+  border-color: var(--text);
 }
 
 .admin-card img {
@@ -102,7 +102,7 @@
 .admin-card-info {
   padding: 0.3rem 0.4rem;
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   display: flex;
   justify-content: space-between;
 }
@@ -117,12 +117,12 @@
   z-index: 2;
   padding: 0;
   margin: 0;
-  accent-color: #111827;
+  accent-color: var(--text);
 }
 
 .admin-likers {
   padding: 0.3rem 0.4rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem;
@@ -135,9 +135,9 @@
   max-width: 100%;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
-  background: #f3f4f6;
+  background: var(--surface-2);
   font-size: 0.6875rem;
-  color: #374151;
+  color: var(--text-soft);
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -150,8 +150,8 @@
 }
 
 .admin-liker-tag:hover {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .admin-liker-icon {
@@ -164,10 +164,10 @@
 /* Users table */
 .users-table {
   width: 100%;
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
 }
 
 .users-table th,
@@ -178,16 +178,16 @@
 }
 
 .users-table th {
-  background: #f9fafb;
+  background: var(--surface-3);
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .users-table td {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
 }
 
 .user-badge {
@@ -199,13 +199,13 @@
 }
 
 .badge-admin {
-  background: #111827;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-text);
 }
 
 .badge-user {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--surface-2);
+  color: var(--text-secondary);
 }
 
 /* Actions bar */
@@ -214,10 +214,10 @@
   bottom: 4rem;
   left: 50%;
   transform: translateX(-50%);
-  background: #fff;
+  background: var(--surface);
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
@@ -239,39 +239,39 @@
 
 .admin-btn {
   padding: 0.4rem 0.35rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   font-size: 0.6rem;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
-  background: #fff;
-  color: #374151;
+  background: var(--surface);
+  color: var(--text-soft);
   transition: all 0.15s;
 }
 
 .admin-btn:hover {
-  background: #f9fafb;
+  background: var(--surface-3);
 }
 
 .admin-btn.purple {
-  background: #111827;
-  border-color: #111827;
-  color: #fff;
+  background: var(--btn-bg);
+  border-color: var(--text);
+  color: var(--btn-text);
 }
 
 .admin-btn.purple:hover {
-  background: #1f2937;
+  background: var(--btn-hover);
 }
 
 .admin-btn.danger {
   border-color: #fecaca;
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .admin-btn.danger:hover {
-  background: #fef2f2;
+  background: var(--danger-soft);
 }
 
 .admin-btn.small {
@@ -281,7 +281,7 @@
 
 #adminStatus {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-left: auto;
 }
 
@@ -301,7 +301,7 @@
 }
 
 .confirm-card {
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   padding: 1.25rem;
   max-width: 300px;
@@ -311,7 +311,7 @@
 
 .confirm-card p {
   font-size: 0.875rem;
-  color: #111827;
+  color: var(--text);
   margin-bottom: 1rem;
 }
 
@@ -323,13 +323,13 @@
 
 /* Turnos panel */
 .turnos-panel {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
   font-size: 0.8125rem;
-  color: #374151;
+  color: var(--text-soft);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -347,25 +347,25 @@
   gap: 0.15rem;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  background: #f9fafb;
+  background: var(--surface-3);
 }
 
 .turnos-stat-label {
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .turnos-stat strong {
   font-size: 1.125rem;
-  color: #111827;
+  color: var(--text);
 }
 
 .turnos-stat input[type="number"] {
   width: 100%;
   padding: 0.3rem 0.4rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   font-size: 0.8125rem;
   font-family: inherit;
@@ -391,19 +391,19 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   padding-top: 0.5rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
 }
 
 .turnos-history p {
   width: 100%;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-soft);
 }
 
 .turnos-history-item {
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
-  background: #f3f4f6;
+  background: var(--surface-2);
 }

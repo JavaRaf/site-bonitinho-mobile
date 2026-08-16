@@ -1,5 +1,5 @@
 .votos-page {
-  background: #fafafa;
+  background: var(--bg);
   min-height: 100dvh;
   padding: 1rem;
 }
@@ -29,7 +29,7 @@
 .votos-header h2 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
 }
 
 .votos-list {
@@ -45,7 +45,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 3rem 1rem;
-  color: #71717a;
+  color: var(--text-muted);
 }
 
 .votos-empty p {
@@ -54,17 +54,17 @@
 }
 
 .votos-card {
-  background: #fff;
+  background: var(--surface);
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   cursor: pointer;
   position: relative;
   transition: border-color 0.15s;
 }
 
 .votos-card.expanded {
-  border-color: #d1d5db;
+  border-color: var(--border-strong);
 }
 
 .votos-card-main {
@@ -94,7 +94,7 @@
 .rank-gold { background: #fef3c7; color: #92400e; }
 .rank-silver { background: #f1f5f9; color: #475569; }
 .rank-bronze { background: #fff7ed; color: #9a3412; }
-.rank-normal { background: #f3f4f6; color: #6b7280; }
+.rank-normal { background: var(--surface-2); color: var(--text-secondary); }
 
 .votos-card-img {
   width: 100%;
@@ -111,19 +111,19 @@
 
 .votos-card-owner {
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .votos-card-likes {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .votos-likers {
   display: none;
   padding: 0.4rem 0.5rem 0.5rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border);
 }
 
 .votos-card.expanded .votos-likers {
@@ -133,7 +133,7 @@
 .votos-likers-title {
   font-size: 0.6875rem;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
 
@@ -146,7 +146,7 @@
 .votos-liker-tag {
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
-  background: #f3f4f6;
+  background: var(--surface-2);
   font-size: 0.6875rem;
-  color: #374151;
+  color: var(--text-soft);
 }
