@@ -306,7 +306,8 @@ header {
 
 #likes-btn,
 #comment-btn,
-#download-btn {
+#download-btn,
+#grid-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -321,19 +322,22 @@ header {
 
 #likes-btn:hover,
 #comment-btn:hover,
-#download-btn:hover {
+#download-btn:hover,
+#grid-btn:hover {
   background: #f3f4f6;
 }
 
 #likes-btn:active,
 #comment-btn:active,
-#download-btn:active {
+#download-btn:active,
+#grid-btn:active {
   background: #e5e7eb;
 }
 
 #likes-btn img,
 #comment-btn img,
-#download-btn img {
+#download-btn img,
+#grid-btn img {
   width: 20px;
   height: 20px;
 }
@@ -501,6 +505,92 @@ header {
   height: 18px;
   vertical-align: middle;
   opacity: 0.6;
+}
+
+/* === Grid gallery === */
+.grid-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.grid-overlay.open {
+  display: flex;
+}
+
+.grid-panel {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.grid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.grid-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.grid-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7280;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.grid-close:hover {
+  background: #f3f4f6;
+}
+
+.grid-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.4rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.grid-thumb {
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #f3f4f6;
+  padding: 0;
+}
+
+.grid-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.grid-thumb.active {
+  border-color: #111827;
 }
 
 /* === Composer modal (create post) === */

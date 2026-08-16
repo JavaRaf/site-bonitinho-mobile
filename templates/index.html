@@ -100,6 +100,7 @@
           <span class="likes-count" id="comment-count"></span>
         </div>
         <div id="download-btn"><img src="/static/svg/download.svg" alt="download"></div>
+        <div id="grid-btn"><img src="/static/svg/grid.svg" alt="grid"></div>
       </div>
 
       <div class="likers-section" id="likersSection" hidden>
@@ -126,6 +127,16 @@
         <polyline points="9 18 15 12 9 6" />
       </svg>
     </button>
+  </div>
+
+  <div class="grid-overlay" id="gridOverlay">
+    <div class="grid-panel">
+      <div class="grid-header">
+        <span class="grid-title">Galeria</span>
+        <button class="grid-close" id="gridClose" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="grid-thumbs" id="gridThumbs"></div>
+    </div>
   </div>
 
 </body>

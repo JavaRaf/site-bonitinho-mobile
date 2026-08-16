@@ -1,5 +1,6 @@
 let current = 0;
 let likedImages = new Set();
+let allImages = [];
 
 async function loadLikes() {
     try {
@@ -22,6 +23,8 @@ async function loadSingleVoteFlag() {
 async function loadCarousel() {
     const res = await fetch("/api/images");
     const images = await res.json();
+    allImages = images;
+    renderGrid();
 
     const track = document.getElementById("carouselTrack");
     const dots = document.getElementById("carouselDots");
@@ -102,6 +105,7 @@ function goTo(index) {
     current = ((index % slides.length) + slides.length) % slides.length;
     document.getElementById("carouselTrack").style.transform = `translateX(-${current * 100}%)`;
     document.querySelectorAll(".carousel-dot").forEach((d, i) => d.classList.toggle("active", i === current));
+    updateGridActive();
     updateLikeIcon();
     updateOwnerOverlay();
     updateLikeCount();
@@ -284,6 +288,46 @@ document.getElementById("likes-count")?.addEventListener("click", e => {
 document.getElementById("likersClose")?.addEventListener("click", () => {
     const section = document.getElementById("likersSection");
     if (section) section.hidden = true;
+});
+
+/* === Grid gallery === */
+function renderGrid() {
+    const thumbs = document.getElementById("gridThumbs");
+    if (!thumbs) return;
+    thumbs.innerHTML = allImages.map((img, i) => `
+        <button class="grid-thumb ${i === current ? "active" : ""}" data-index="${i}">
+            <img src="/images/${escText(img.name)}" alt="" loading="lazy">
+        </button>
+    `).join("");
+
+    thumbs.querySelectorAll(".grid-thumb").forEach(btn => {
+        btn.addEventListener("click", () => {
+            goTo(parseInt(btn.dataset.index));
+            closeGrid();
+        });
+    });
+}
+
+function updateGridActive() {
+    document.querySelectorAll(".grid-thumb").forEach((t, i) => {
+        t.classList.toggle("active", i === current);
+    });
+}
+
+function openGrid() {
+    document.getElementById("gridOverlay")?.classList.add("open");
+}
+
+function closeGrid() {
+    document.getElementById("gridOverlay")?.classList.remove("open");
+}
+
+document.getElementById("grid-btn")?.addEventListener("click", openGrid);
+
+document.getElementById("gridClose")?.addEventListener("click", closeGrid);
+
+document.getElementById("gridOverlay")?.addEventListener("click", e => {
+    if (e.target === e.currentTarget) closeGrid();
 });
 
 /* === Refresh on tab focus (economical) === */
