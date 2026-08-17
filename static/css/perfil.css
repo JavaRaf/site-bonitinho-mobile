@@ -40,12 +40,17 @@
   margin-bottom: 1.25rem;
 }
 
+.perfil-avatar-wrap {
+  position: relative;
+  width: 72px;
+  margin: 0 auto 0.5rem;
+}
+
 .perfil-avatar {
   width: 72px;
   height: 72px;
   border-radius: 50%;
   overflow: hidden;
-  margin: 0 auto 0.5rem;
 }
 
 .perfil-avatar img {
@@ -54,22 +59,73 @@
   object-fit: cover;
 }
 
+.perfil-avatar-edit {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--surface-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.perfil-avatar-edit img {
+  width: 13px;
+  height: 13px;
+}
+
+.perfil-avatar-edit:hover {
+  background: var(--surface-3);
+}
+
+.perfil-avatar-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 168px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 20;
+  padding: 0.25rem;
+}
+
+.perfil-avatar-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.perfil-avatar-menu-item:hover {
+  background: var(--surface-3);
+}
+
+.perfil-avatar-menu-item.danger {
+  color: var(--danger);
+}
+
 .perfil-label {
   font-size: 0.8125rem;
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
-}
-
-.perfil-avatar-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.perfil-avatar-actions .perfil-btn {
-  height: 34px;
-  padding: 0 1rem;
-  font-size: 0.8125rem;
 }
 
 .perfil-btn.outline {

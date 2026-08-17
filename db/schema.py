@@ -19,6 +19,7 @@ def init_db():
             username    TEXT    NOT NULL UNIQUE,
             password    TEXT    NOT NULL,
             is_admin    INTEGER NOT NULL DEFAULT 0,
+            birthday    TEXT    NOT NULL DEFAULT '',
             created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
         );
 
@@ -73,6 +74,11 @@ def init_db():
     # migration: add color if missing
     try:
         conn.execute("ALTER TABLE users ADD COLUMN color TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    # migration: add birthday if missing
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN birthday TEXT NOT NULL DEFAULT ''")
     except sqlite3.OperationalError:
         pass
     # migration: add active flag on uploads

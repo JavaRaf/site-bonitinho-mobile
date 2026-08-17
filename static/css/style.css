@@ -61,7 +61,8 @@ html {
 [data-theme="dark"] img[src$="/back.svg"],
 [data-theme="dark"] img[src$="/trash.svg"],
 [data-theme="dark"] img[src$="/zip.svg"],
-[data-theme="dark"] img[src$="/image.svg"] {
+[data-theme="dark"] img[src$="/image.svg"],
+[data-theme="dark"] img[src$="/camera.svg"] {
   filter: invert(1);
 }
 

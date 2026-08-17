@@ -1,5 +1,5 @@
 const AVATAR_DEFAULT = "/static/svg/default-avatar.svg";
-const COLOR_OPTIONS = ["#f43f5e", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
+const COLOR_OPTIONS = ["#f43f5e", "#ef4444", "#6366f1", "#3b82f6", "#10b981", "#22c55e", "#f59e0b", "#f97316", "#8b5cf6", "#a855f7", "#0ea5e9", "#06b6d4", "#ec4899", "#d946ef", "#84cc16", "#14b8a6", "#eab308", "#64748b"];
 let selectedColor = "";
 
 async function loadProfile() {
@@ -8,6 +8,7 @@ async function loadProfile() {
         const data = await res.json();
         if (!data.user) { window.location.href = "/login"; return; }
         document.getElementById("perfilUsername").value = data.user.username;
+        document.getElementById("perfilBirthday").value = data.user.birthday || "";
         setAvatarSrc(data.user.avatar);
         selectedColor = data.user.color || "";
         buildColorPicker();
@@ -24,7 +25,22 @@ function setAvatarSrc(avatar) {
     img.onerror = () => { img.src = AVATAR_DEFAULT; };
 }
 
+const avatarMenu = document.getElementById("perfilAvatarMenu");
+const avatarMenuBtn = document.getElementById("perfilAvatarMenuBtn");
+
+avatarMenuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    avatarMenu.hidden = !avatarMenu.hidden;
+});
+
+document.addEventListener("click", (e) => {
+    if (!avatarMenu.hidden && !avatarMenu.contains(e.target) && !avatarMenuBtn.contains(e.target)) {
+        avatarMenu.hidden = true;
+    }
+});
+
 document.getElementById("perfilAvatarUpload").addEventListener("click", () => {
+    avatarMenu.hidden = true;
     document.getElementById("perfilAvatarInput").click();
 });
 
@@ -54,6 +70,7 @@ document.getElementById("perfilAvatarInput").addEventListener("change", async ()
 document.getElementById("perfilAvatarRemove").addEventListener("click", async () => {
     const errEl = document.getElementById("perfilError");
     errEl.textContent = "";
+    avatarMenu.hidden = true;
     try {
         const res = await fetch("/api/auth/avatar", { method: "DELETE" });
         const data = await res.json();
@@ -93,7 +110,7 @@ document.getElementById("perfilSave").addEventListener("click", async () => {
     const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, color: selectedColor })
+        body: JSON.stringify({ username, color: selectedColor, birthday: document.getElementById("perfilBirthday").value })
     });
     const data = await res.json();
 

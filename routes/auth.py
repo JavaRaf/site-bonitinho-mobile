@@ -44,7 +44,7 @@ def register():
         (username, hash_password(password), is_admin)
     )
     db.commit()
-    user = db.execute("SELECT id, username, is_admin, avatar, color FROM users WHERE username = ?", (username,)).fetchone()
+    user = db.execute("SELECT id, username, is_admin, avatar, color, birthday FROM users WHERE username = ?", (username,)).fetchone()
     db.close()
 
     session.clear()
@@ -53,9 +53,10 @@ def register():
     session["is_admin"] = bool(user["is_admin"])
     session["avatar"] = user["avatar"]
     session["color"] = user["color"] or ""
+    session["birthday"] = user["birthday"] or ""
     session.permanent = True
 
-    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"], "color": user["color"] or ""}), 201
+    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"], "color": user["color"] or "", "birthday": user["birthday"] or ""}), 201
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
@@ -65,7 +66,7 @@ def login():
     password = (data.get("password") or "").strip()
 
     db = get_db()
-    user = db.execute("SELECT id, username, password, is_admin, avatar, color FROM users WHERE username = ?", (username,)).fetchone()
+    user = db.execute("SELECT id, username, password, is_admin, avatar, color, birthday FROM users WHERE username = ?", (username,)).fetchone()
     db.close()
 
     if not user or not verify_password(password, user["password"]):
@@ -77,9 +78,10 @@ def login():
     session["is_admin"] = bool(user["is_admin"])
     session["avatar"] = user["avatar"]
     session["color"] = user["color"] or ""
+    session["birthday"] = user["birthday"] or ""
     session.permanent = True
 
-    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"], "color": user["color"] or ""})
+    return jsonify({"id": user["id"], "username": user["username"], "is_admin": bool(user["is_admin"]), "avatar": user["avatar"], "color": user["color"] or "", "birthday": user["birthday"] or ""})
 
 
 @auth_bp.route("/api/auth/logout", methods=["POST"])
@@ -92,12 +94,21 @@ def logout():
 def me():
     if "user_id" not in session:
         return jsonify({"user": None})
+    db = get_db()
+    user = db.execute(
+        "SELECT id, username, is_admin, avatar, color, birthday FROM users WHERE id = ?",
+        (session["user_id"],)
+    ).fetchone()
+    db.close()
+    if not user:
+        return jsonify({"user": None})
     return jsonify({"user": {
-        "id": session["user_id"],
-        "username": session["username"],
-        "is_admin": session.get("is_admin", False),
-        "avatar": session.get("avatar", "default-avatar.svg"),
-        "color": session.get("color", "")
+        "id": user["id"],
+        "username": user["username"],
+        "is_admin": bool(user["is_admin"]),
+        "avatar": user["avatar"],
+        "color": user["color"] or "",
+        "birthday": user["birthday"] or ""
     }})
 
 
@@ -133,6 +144,18 @@ def update_profile():
         db.execute("UPDATE users SET color = ? WHERE id = ?", (color, session["user_id"]))
         session["color"] = color
 
+    if "birthday" in data:
+        birthday = (data["birthday"] or "").strip()
+        if birthday:
+            try:
+                from datetime import date
+                date.fromisoformat(birthday)
+            except ValueError:
+                db.close()
+                return jsonify({"error": "invalid birthday"}), 400
+        db.execute("UPDATE users SET birthday = ? WHERE id = ?", (birthday, session["user_id"]))
+        session["birthday"] = birthday
+
     db.commit()
     db.close()
-    return jsonify({"username": session["username"], "avatar": session.get("avatar", "default-avatar.svg"), "color": session.get("color", "")})
+    return jsonify({"username": session["username"], "avatar": session.get("avatar", "default-avatar.svg"), "color": session.get("color", ""), "birthday": session.get("birthday", "")})
