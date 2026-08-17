@@ -281,6 +281,20 @@
   gap: 0.5rem;
 }
 
+@media (min-width: 48rem) {
+  .users-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .users-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .user-card {
   display: flex;
   flex-direction: column;
@@ -289,7 +303,6 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   transition: border-color 0.15s;
-  gap: 0.5rem;
 }
 
 .user-card:hover {
@@ -366,7 +379,9 @@
   display: flex;
   gap: 0.375rem;
   flex-shrink: 0;
-  padding-left: calc(40px + 0.75rem);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border);
 }
 
 .user-card-rename-input {

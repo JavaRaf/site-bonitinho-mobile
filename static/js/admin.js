@@ -186,7 +186,7 @@ function renderUsers(filter = "") {
                 </div>
             </div>
             <div class="user-card-actions">
-                ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Admin</button>` : ""}
+                ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Promover</button>` : ""}
                 <button class="admin-btn small" data-rename="${u.id}" data-name="${esc(u.username)}">Renomear</button>
                 <button class="admin-btn danger small" data-delete="${u.id}">Excluir</button>
             </div>
