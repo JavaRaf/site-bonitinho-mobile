@@ -127,20 +127,29 @@ document.getElementById("adminRemoveLikes").addEventListener("click", async () =
 });
 
 document.getElementById("adminExportCollage").addEventListener("click", async () => {
-    const res = await api("POST", "/api/admin/collage", { images: [...selected] });
-    if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        showStatus(data?.error || "Erro ao exportar");
-        return;
+    const btn = document.getElementById("adminExportCollage");
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Aguarde...";
+    try {
+        const res = await api("POST", "/api/admin/collage", { images: [...selected] });
+        if (!res.ok) {
+            const data = await res.json().catch(() => null);
+            showStatus(data?.error || "Erro ao exportar");
+            return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "collage.png";
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus("Collage exportada");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
     }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "collage.png";
-    a.click();
-    URL.revokeObjectURL(url);
-    showStatus("Collage exportada");
 });
 
 /* === Users tab === */
