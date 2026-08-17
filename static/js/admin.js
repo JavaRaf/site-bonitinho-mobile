@@ -44,7 +44,7 @@ async function loadImages() {
             <input type="checkbox" class="admin-select">
             <div class="admin-card-info">
                 <span>${esc(img.owner || "—")}</span>
-                <span class="admin-card-likes">❤ ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
+                <span class="admin-card-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
             </div>
             <div class="admin-likers">
                 ${img.likers && img.likers.length
@@ -291,7 +291,7 @@ async function loadTurnos() {
             <img src="/images/${img.name}" alt="${img.name}" loading="lazy">
             <div class="admin-card-info">
                 <span>${esc(img.owner || "—")}</span>
-                <span>❤ ${img.likes || 0}</span>
+                <span><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}</span>
             </div>
         </div>
     `).join("");

@@ -184,6 +184,13 @@
   gap: 0.25rem;
 }
 
+.admin-card-upvote {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .admin-card-arrow {
   display: inline-block;
   width: 0;

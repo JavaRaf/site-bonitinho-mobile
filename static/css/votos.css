@@ -118,6 +118,30 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.votos-upvote {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+}
+
+.votos-card-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.votos-card.expanded .votos-card-arrow {
+  transform: rotate(180deg);
 }
 
 .votos-likers {

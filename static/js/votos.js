@@ -27,7 +27,7 @@ async function loadRanking() {
                         <img src="/images/${esc(item.name)}" alt="" loading="lazy">
                     </div>
                     <div class="votos-card-owner">@${esc(item.owner || "—")}</div>
-                    <div class="votos-card-likes">❤ ${item.likes}</div>
+                    <div class="votos-card-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="votos-upvote"> ${item.likes}${item.likers && item.likers.length ? '<span class="votos-card-arrow"></span>' : ""}</div>
                 </div>
                 <div class="votos-likers">
                     <div class="votos-likers-title">Curtido por:</div>
