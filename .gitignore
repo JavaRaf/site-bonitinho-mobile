@@ -1,6 +1,7 @@
 .venv
 images/
 thumbs/
+static/avatars/
 db/app.db
 __pycache__
 */__pycache__

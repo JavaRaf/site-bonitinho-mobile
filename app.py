@@ -299,6 +299,20 @@ def admin_remove_single_like(image_name, user_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/users/search", methods=["GET"])
+def search_users():
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 1:
+        return jsonify([])
+    db = get_db()
+    users = db.execute(
+        "SELECT id, username, avatar FROM users WHERE username LIKE ? ORDER BY username LIMIT 8",
+        (f"%{q}%",),
+    ).fetchall()
+    db.close()
+    return jsonify([dict(u) for u in users])
+
+
 @app.route("/api/admin/users", methods=["GET"])
 def admin_list_users():
     if not is_admin():

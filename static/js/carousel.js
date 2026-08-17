@@ -651,7 +651,7 @@ function renderFeedNode(c, depth, currentUserId, isAdmin) {
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
     html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.username)}</span>`;
-    html += `<span class="comment-text">${escText(c.text)}</span>`;
+    html += `<span class="comment-text">${escText(c.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>')}</span>`;
     html += `</div>`;
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${feedTimeAgo(c.created_at)}</span>`;
@@ -837,6 +837,19 @@ document.getElementById("feedView")?.addEventListener("submit", async e => {
             if (countEl) countEl.textContent = img.comments > 0 ? img.comments : "";
         }
     } catch { /* ignore */ }
+    if (typeof hideMentionDropdown === "function") hideMentionDropdown();
+});
+
+document.getElementById("feedView")?.addEventListener("input", e => {
+    if (e.target.matches(".feed-comment-form input") && typeof handleMentionInput === "function") {
+        handleMentionInput(e);
+    }
+});
+
+document.getElementById("feedView")?.addEventListener("keydown", e => {
+    if (e.target.matches(".feed-comment-form input") && typeof handleMentionKeydown === "function") {
+        handleMentionKeydown(e);
+    }
 });
 
 document.getElementById("viewToggle")?.addEventListener("click", () => {

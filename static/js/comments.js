@@ -54,6 +54,10 @@ function esc(str) {
     return div.innerHTML;
 }
 
+function parseMentions(text) {
+    return esc(text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>');
+}
+
 async function loadComments(forceRefresh = false) {
     const imgName = currentImageName();
     const list = document.getElementById("commentsList");
@@ -102,7 +106,7 @@ function renderNode(c, depth) {
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
     html += `<span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.username)}</span>`;
-    html += `<span class="comment-text">${esc(c.text)}</span>`;
+    html += `<span class="comment-text">${parseMentions(c.text)}</span>`;
     html += `</div>`;
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${timeAgo(c.created_at)}</span>`;
@@ -139,11 +143,120 @@ function renderComments(comments) {
     list.innerHTML = tree.map(c => renderNode(c, 0)).join("");
 }
 
+/* === Autocomplete @mentions === */
+let mentionDropdown = null;
+let mentionInput = null;
+let mentionStart = -1;
+let mentionQuery = "";
+let mentionUsers = [];
+let mentionIndex = 0;
+
+function createMentionDropdown() {
+    if (mentionDropdown) mentionDropdown.remove();
+    mentionDropdown = document.createElement("div");
+    mentionDropdown.className = "mention-dropdown";
+    document.body.appendChild(mentionDropdown);
+}
+
+function hideMentionDropdown() {
+    if (mentionDropdown) { mentionDropdown.remove(); mentionDropdown = null; }
+    mentionUsers = [];
+    mentionIndex = 0;
+    mentionStart = -1;
+}
+
+async function searchUsers(query) {
+    try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+        return await res.json();
+    } catch { return []; }
+}
+
+function renderMentionDropdown() {
+    if (!mentionDropdown || !mentionUsers.length) { hideMentionDropdown(); return; }
+
+    const filtered = mentionUsers.filter(u => u.username.toLowerCase().includes(mentionQuery.toLowerCase()));
+    if (!filtered.length) { hideMentionDropdown(); return; }
+
+    mentionDropdown.innerHTML = filtered.map((u, i) => `
+        <div class="mention-option${i === mentionIndex ? " active" : ""}" data-username="${esc(u.username)}">
+            <img class="mention-option-avatar" src="${avatarUrl(u.avatar)}" alt="">
+            <span class="mention-option-name">${esc(u.username)}</span>
+        </div>
+    `).join("");
+
+    const rect = mentionInput.getBoundingClientRect();
+    mentionDropdown.style.left = rect.left + "px";
+    mentionDropdown.style.top = (rect.bottom + 4) + "px";
+    mentionDropdown.style.width = Math.min(220, rect.width) + "px";
+
+    mentionDropdown.querySelectorAll(".mention-option").forEach(opt => {
+        opt.addEventListener("mousedown", e => {
+            e.preventDefault();
+            insertMention(opt.dataset.username);
+        });
+    });
+}
+
+function insertMention(username) {
+    const val = mentionInput.value;
+    const before = val.slice(0, mentionStart);
+    const after = val.slice(mentionInput.selectionStart);
+    mentionInput.value = before + "@" + username + " " + after;
+    mentionInput.focus();
+    const pos = before.length + username.length + 2;
+    mentionInput.setSelectionRange(pos, pos);
+    hideMentionDropdown();
+}
+
+function handleMentionInput(e) {
+    const input = e.target;
+    const val = input.value;
+    const cursor = input.selectionStart;
+    const textBefore = val.slice(0, cursor);
+    const atMatch = textBefore.match(/@(\w*)$/);
+
+    if (atMatch) {
+        mentionStart = atMatch.index;
+        mentionQuery = atMatch[1];
+        if (!mentionDropdown) createMentionDropdown();
+        searchUsers(mentionQuery).then(users => {
+            mentionUsers = users;
+            mentionIndex = 0;
+            renderMentionDropdown();
+        });
+    } else {
+        hideMentionDropdown();
+    }
+}
+
+function handleMentionKeydown(e) {
+    if (!mentionDropdown || !mentionUsers.length) return;
+    const filtered = mentionUsers.filter(u => u.username.toLowerCase().includes(mentionQuery.toLowerCase()));
+    if (!filtered.length) return;
+
+    if (e.key === "ArrowDown") {
+        e.preventDefault();
+        mentionIndex = (mentionIndex + 1) % filtered.length;
+        renderMentionDropdown();
+    } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        mentionIndex = (mentionIndex - 1 + filtered.length) % filtered.length;
+        renderMentionDropdown();
+    } else if (e.key === "Enter" && mentionStart >= 0) {
+        e.preventDefault();
+        insertMention(filtered[mentionIndex].username);
+    } else if (e.key === "Escape") {
+        hideMentionDropdown();
+    }
+}
+
 document.addEventListener("click", async e => {
     const replyBtn = e.target.closest(".comment-reply-btn");
     if (replyBtn) {
         e.stopPropagation();
         document.querySelectorAll(".comment-reply-form").forEach(f => f.remove());
+        hideMentionDropdown();
         const commentEl = replyBtn.closest(".comment");
         const commentId = replyBtn.dataset.id;
         const username = replyBtn.dataset.user;
@@ -157,11 +270,14 @@ document.addEventListener("click", async e => {
         commentEl.appendChild(form);
 
         const input = form.querySelector("input");
+        mentionInput = input;
+        input.addEventListener("input", handleMentionInput);
+        input.addEventListener("keydown", handleMentionKeydown);
         input.focus();
 
         const send = async () => {
             const text = input.value.trim();
-            if (!text) { form.remove(); return; }
+            if (!text) { form.remove(); hideMentionDropdown(); return; }
             const imgName = currentImageName();
             try {
                 const res = await fetch(`/api/comments/${imgName}`, {
@@ -174,12 +290,13 @@ document.addEventListener("click", async e => {
                     await loadComments(true);
                 }
             } catch { /* ignore */ }
+            hideMentionDropdown();
         };
 
         form.querySelector(".comment-reply-send").addEventListener("click", send);
         input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter") send();
-            if (ev.key === "Escape") form.remove();
+            if (ev.key === "Enter" && mentionStart < 0) send();
+            if (ev.key === "Escape") { form.remove(); hideMentionDropdown(); }
         });
         return;
     }
@@ -221,8 +338,22 @@ document.getElementById("commentForm").addEventListener("submit", async e => {
             await loadComments(true);
         }
     } catch { /* ignore */ }
+    hideMentionDropdown();
 });
 
-window.addEventListener("slideChange", () => loadComments());
+const mainCommentInput = document.getElementById("commentInput");
+if (mainCommentInput) {
+    mentionInput = mainCommentInput;
+    mainCommentInput.addEventListener("input", handleMentionInput);
+    mainCommentInput.addEventListener("keydown", handleMentionKeydown);
+}
+
+document.addEventListener("mousedown", e => {
+    if (mentionDropdown && !mentionDropdown.contains(e.target) && e.target !== mentionInput) {
+        hideMentionDropdown();
+    }
+});
+
+window.addEventListener("slideChange", () => { loadComments(); hideMentionDropdown(); });
 
 fetchCurrentUser().then(() => loadComments());
