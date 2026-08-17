@@ -305,7 +305,7 @@ def admin_list_users():
         return jsonify({"error": "admin only"}), 403
     db = get_db()
     users = db.execute(
-        "SELECT id, username, is_admin FROM users ORDER BY id"
+        "SELECT id, username, is_admin, avatar, color, created_at FROM users ORDER BY id"
     ).fetchall()
     db.close()
     return jsonify([dict(u) for u in users])
@@ -345,6 +345,27 @@ def admin_promote_user(user_id):
         return jsonify({"error": "admin only"}), 403
     db = get_db()
     db.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user_id,))
+    db.commit()
+    db.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/users/<int:user_id>/rename", methods=["PUT"])
+def admin_rename_user(user_id):
+    if not is_admin():
+        return jsonify({"error": "admin only"}), 403
+    data = request.get_json()
+    username = (data.get("username") or "").strip()
+    if len(username) < 3:
+        return jsonify({"error": "username min 3 chars"}), 400
+    db = get_db()
+    existing = db.execute(
+        "SELECT id FROM users WHERE username = ? AND id != ?", (username, user_id)
+    ).fetchone()
+    if existing:
+        db.close()
+        return jsonify({"error": "username already taken"}), 409
+    db.execute("UPDATE users SET username = ? WHERE id = ?", (username, user_id))
     db.commit()
     db.close()
     return jsonify({"ok": True})

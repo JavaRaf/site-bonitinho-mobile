@@ -144,37 +144,106 @@ document.getElementById("adminExportCollage").addEventListener("click", async ()
 });
 
 /* === Users tab === */
-async function loadUsers() {
-    const res = await fetch("/api/admin/users");
-    const users = await res.json();
-    const table = document.getElementById("usersTable");
+let allUsers = [];
 
-    table.innerHTML = `
-        <tr><th>Usuário</th><th>Tipo</th><th>Tornar admin</th><th>Excluir</th></tr>
-        ${users.map(u => `
-            <tr>
-                <td>${esc(u.username)}</td>
-                <td><span class="user-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span></td>
-                <td>
-                    ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Tornar admin</button>` : ""}
-                </td>
-                <td>
-                    <button class="admin-btn danger small" data-delete="${u.id}">Excluir</button>
-                </td>
-            </tr>
-        `).join("")}
-    `;
+function getUserAvatar(avatar) {
+    if (!avatar || avatar === "default-avatar.svg") return "/static/svg/default-avatar.svg";
+    return `/avatars/${avatar}`;
+}
 
-    table.querySelectorAll("[data-promote]").forEach(btn => {
-        btn.addEventListener("click", async () => {
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "Z");
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function renderUsers(filter = "") {
+    const list = document.getElementById("usersList");
+    const count = document.getElementById("usersCount");
+    const filtered = filter
+        ? allUsers.filter(u => u.username.toLowerCase().includes(filter.toLowerCase()))
+        : allUsers;
+
+    count.textContent = `${filtered.length} de ${allUsers.length}`;
+
+    if (!filtered.length) {
+        list.innerHTML = `<div class="users-empty">${filter ? "Nenhum usuário encontrado" : "Nenhum usuário ainda."}</div>`;
+        return;
+    }
+
+    list.innerHTML = filtered.map(u => `
+        <div class="user-card" data-user-id="${u.id}">
+            <div class="user-card-avatar">
+                <img src="${getUserAvatar(u.avatar)}" alt="${esc(u.username)}">
+            </div>
+            <div class="user-card-info">
+                <div class="user-card-name" style="color:${u.color || 'var(--text)'}">${esc(u.username)}</div>
+                <div class="user-card-meta">
+                    <span class="user-card-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span>
+                    <span>${formatDate(u.created_at)}</span>
+                </div>
+            </div>
+            <div class="user-card-actions">
+                ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Admin</button>` : ""}
+                <button class="admin-btn small" data-rename="${u.id}" data-name="${esc(u.username)}">Renomear</button>
+                <button class="admin-btn danger small" data-delete="${u.id}">Excluir</button>
+            </div>
+        </div>
+    `).join("");
+
+    list.querySelectorAll("[data-promote]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!await askConfirm("Tornar este usuário admin?")) return;
             await api("PUT", `/api/admin/users/${btn.dataset.promote}/promote`);
             showStatus("Usuário promovido a admin");
             loadUsers();
         });
     });
 
-    table.querySelectorAll("[data-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
+    list.querySelectorAll("[data-rename]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const card = btn.closest(".user-card");
+            const nameEl = card.querySelector(".user-card-name");
+            const actionsEl = card.querySelector(".user-card-actions");
+            const currentName = btn.dataset.name;
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "user-card-rename-input";
+            input.value = currentName;
+            input.minLength = 3;
+
+            nameEl.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const save = async () => {
+                const newName = input.value.trim();
+                if (newName.length < 3) { showStatus("Mínimo 3 caracteres"); return; }
+                if (newName === currentName) { input.replaceWith(nameEl); return; }
+                const res = await api("PUT", `/api/admin/users/${btn.dataset.rename}/rename`, { username: newName });
+                const data = await res.json().catch(() => null);
+                if (res.ok) {
+                    showStatus("Usuário renomeado");
+                    loadUsers();
+                } else {
+                    showStatus(data?.error || "Erro ao renomear");
+                }
+            };
+
+            input.addEventListener("keydown", e => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") input.replaceWith(nameEl);
+            });
+            input.addEventListener("blur", save);
+        });
+    });
+
+    list.querySelectorAll("[data-delete]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
             if (!await askConfirm("Excluir este usuário?")) return;
             await api("DELETE", `/api/admin/users/${btn.dataset.delete}`);
             showStatus("Usuário excluído");
@@ -182,6 +251,19 @@ async function loadUsers() {
         });
     });
 }
+
+async function loadUsers() {
+    const list = document.getElementById("usersList");
+    list.innerHTML = `<div class="users-empty">Carregando...</div>`;
+    const res = await fetch("/api/admin/users");
+    allUsers = await res.json();
+    const search = document.getElementById("usersSearch");
+    renderUsers(search.value);
+}
+
+document.getElementById("usersSearch").addEventListener("input", e => {
+    renderUsers(e.target.value);
+});
 
 /* === Turnos tab === */
 async function loadTurnos() {
