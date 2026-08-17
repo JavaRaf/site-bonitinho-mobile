@@ -267,7 +267,7 @@ header {
 
 .carousel-slide img {
   max-width: 100%;
-  max-height: 50vh;
+  max-height: 58vh;
   object-fit: contain;
   background: var(--surface-2);
 }
