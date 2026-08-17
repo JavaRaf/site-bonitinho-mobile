@@ -173,14 +173,16 @@ function renderUsers(filter = "") {
 
     list.innerHTML = filtered.map(u => `
         <div class="user-card" data-user-id="${u.id}">
-            <div class="user-card-avatar">
-                <img src="${getUserAvatar(u.avatar)}" alt="${esc(u.username)}">
-            </div>
-            <div class="user-card-info">
-                <div class="user-card-name" style="color:${u.color || 'var(--text)'}">${esc(u.username)}</div>
-                <div class="user-card-meta">
-                    <span class="user-card-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span>
-                    <span>${formatDate(u.created_at)}</span>
+            <div class="user-card-row">
+                <div class="user-card-avatar">
+                    <img src="${getUserAvatar(u.avatar)}" alt="${esc(u.username)}">
+                </div>
+                <div class="user-card-info">
+                    <div class="user-card-name" style="color:${u.color || 'var(--text)'}">${esc(u.username)}</div>
+                    <div class="user-card-meta">
+                        <span class="user-card-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span>
+                        <span>${formatDate(u.created_at)}</span>
+                    </div>
                 </div>
             </div>
             <div class="user-card-actions">
@@ -206,7 +208,7 @@ function renderUsers(filter = "") {
             e.stopPropagation();
             const card = btn.closest(".user-card");
             const nameEl = card.querySelector(".user-card-name");
-            const actionsEl = card.querySelector(".user-card-actions");
+            const infoEl = card.querySelector(".user-card-info");
             const currentName = btn.dataset.name;
 
             const input = document.createElement("input");
@@ -219,10 +221,15 @@ function renderUsers(filter = "") {
             input.focus();
             input.select();
 
+            const restore = () => {
+                const el = card.querySelector(".user-card-rename-input");
+                if (el) el.replaceWith(nameEl);
+            };
+
             const save = async () => {
                 const newName = input.value.trim();
-                if (newName.length < 3) { showStatus("Mínimo 3 caracteres"); return; }
-                if (newName === currentName) { input.replaceWith(nameEl); return; }
+                if (newName.length < 3) { showStatus("Mínimo 3 caracteres"); restore(); return; }
+                if (newName === currentName) { restore(); return; }
                 const res = await api("PUT", `/api/admin/users/${btn.dataset.rename}/rename`, { username: newName });
                 const data = await res.json().catch(() => null);
                 if (res.ok) {
@@ -230,12 +237,13 @@ function renderUsers(filter = "") {
                     loadUsers();
                 } else {
                     showStatus(data?.error || "Erro ao renomear");
+                    restore();
                 }
             };
 
             input.addEventListener("keydown", e => {
-                if (e.key === "Enter") save();
-                if (e.key === "Escape") input.replaceWith(nameEl);
+                if (e.key === "Enter") { e.preventDefault(); save(); }
+                if (e.key === "Escape") restore();
             });
             input.addEventListener("blur", save);
         });
