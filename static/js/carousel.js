@@ -3,6 +3,7 @@ let likedImages = new Set();
 let allImages = [];
 let feedMode = (localStorage.getItem("viewMode") || "slide") === "feed";
 let sortMode = localStorage.getItem("sortMode") || "likes";
+let singleVoteMode = false;
 
 const FEED_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`;
 const SLIDE_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
@@ -20,8 +21,10 @@ async function loadSingleVoteFlag() {
     try {
         const res = await fetch("/api/singlevote");
         const data = await res.json();
+        singleVoteMode = data.enabled || false;
         const el = document.getElementById("imgOwnerSingleVote");
-        if (el) el.style.display = data.enabled ? "" : "none";
+        if (el) el.style.display = singleVoteMode ? "" : "none";
+        renderFeed();
     } catch { /* ignore */ }
 }
 
@@ -445,6 +448,7 @@ function renderFeed() {
             <div class="feed-owner">
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
                 <span class="feed-owner-name">@${escText(img.owner || "—")}</span>
+                ${singleVoteMode ? '<span class="feed-singlevote">Voto único</span>' : ''}
             </div>
             <div class="feed-caption">${escText(img.caption || "")}</div>
             <div class="feed-img"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async"></div>
@@ -523,6 +527,34 @@ async function toggleFeedLike(btn) {
     document.querySelectorAll(".carousel-slide").forEach(s => {
         if (s.dataset.image === name) s.dataset.likes = Math.max(0, (parseInt(s.dataset.likes) || 0) + delta);
     });
+
+    let prevUnlikedName = null;
+    let prevUnlikedImg = null;
+    if (singleVoteMode && liked) {
+        for (const n of likedImages) {
+            if (n !== name) {
+                prevUnlikedName = n;
+                likedImages.delete(n);
+                prevUnlikedImg = allImages.find(x => x.name === n);
+                if (prevUnlikedImg) prevUnlikedImg.likes = Math.max(0, (prevUnlikedImg.likes || 0) - 1);
+                document.querySelectorAll(".carousel-slide").forEach(s => {
+                    if (s.dataset.image === n) s.dataset.likes = Math.max(0, (parseInt(s.dataset.likes) || 0) - 1);
+                });
+                const prevBtn = document.querySelector(`.feed-like[data-name="${CSS.escape(n)}"]`);
+                if (prevBtn) {
+                    prevBtn.classList.remove("liked");
+                    prevBtn.querySelector("img").src = "/static/svg/upvote.svg";
+                }
+                const prevCountEl = document.querySelector(`.feed-likes[data-name="${CSS.escape(n)}"]`);
+                if (prevCountEl) {
+                    const pv = parseInt(prevCountEl.textContent) || 0;
+                    prevCountEl.textContent = Math.max(0, pv - 1) > 0 ? Math.max(0, pv - 1) : "";
+                }
+                break;
+            }
+        }
+    }
+
     updateLikeIcon();
     updateLikeCount();
 
@@ -544,6 +576,23 @@ async function toggleFeedLike(btn) {
         document.querySelectorAll(".carousel-slide").forEach(s => {
             if (s.dataset.image === name) s.dataset.likes = Math.max(0, (parseInt(s.dataset.likes) || 0) - delta);
         });
+        if (prevUnlikedName) {
+            likedImages.add(prevUnlikedName);
+            if (prevUnlikedImg) prevUnlikedImg.likes = (prevUnlikedImg.likes || 0) + 1;
+            document.querySelectorAll(".carousel-slide").forEach(s => {
+                if (s.dataset.image === prevUnlikedName) s.dataset.likes = (parseInt(s.dataset.likes) || 0) + 1;
+            });
+            const prevBtn = document.querySelector(`.feed-like[data-name="${CSS.escape(prevUnlikedName)}"]`);
+            if (prevBtn) {
+                prevBtn.classList.add("liked");
+                prevBtn.querySelector("img").src = "/static/svg/upvote-filled.svg";
+            }
+            const prevCountEl = document.querySelector(`.feed-likes[data-name="${CSS.escape(prevUnlikedName)}"]`);
+            if (prevCountEl) {
+                const pv = parseInt(prevCountEl.textContent) || 0;
+                prevCountEl.textContent = pv + 1 > 0 ? pv + 1 : "";
+            }
+        }
         updateLikeIcon();
         updateLikeCount();
     }
