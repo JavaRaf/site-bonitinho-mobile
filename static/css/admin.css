@@ -149,7 +149,7 @@
   box-shadow: 0 0 0 1px var(--text);
 }
 
-.admin-card img {
+.admin-card > img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
