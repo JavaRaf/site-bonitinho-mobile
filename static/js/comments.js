@@ -186,9 +186,20 @@ function renderMentionDropdown() {
     `).join("");
 
     const rect = mentionInput.getBoundingClientRect();
+    const ddHeight = Math.min(filtered.length * 40, 200);
+    const spaceAbove = rect.top;
+    const showAbove = spaceAbove >= ddHeight + 8;
+
     mentionDropdown.style.left = rect.left + "px";
-    mentionDropdown.style.top = (rect.bottom + 4) + "px";
     mentionDropdown.style.width = Math.min(220, rect.width) + "px";
+
+    if (showAbove) {
+        mentionDropdown.style.top = "";
+        mentionDropdown.style.bottom = (window.innerHeight - rect.top + 4) + "px";
+    } else {
+        mentionDropdown.style.bottom = "";
+        mentionDropdown.style.top = (rect.bottom + 4) + "px";
+    }
 
     mentionDropdown.querySelectorAll(".mention-option").forEach(opt => {
         opt.addEventListener("mousedown", e => {
@@ -354,6 +365,10 @@ document.addEventListener("mousedown", e => {
         hideMentionDropdown();
     }
 });
+
+window.addEventListener("scroll", () => {
+    if (mentionDropdown && mentionInput) renderMentionDropdown();
+}, true);
 
 window.addEventListener("slideChange", () => { loadComments(); hideMentionDropdown(); });
 
