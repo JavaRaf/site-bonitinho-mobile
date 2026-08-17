@@ -176,11 +176,15 @@
         resetZoom();
     }
 
+    let isOpen = false;
+
     function openLightbox(index, sourceImages) {
         images = sourceImages;
         currentIndex = index;
         overlay.classList.add("open");
         document.body.style.overflow = "hidden";
+        isOpen = true;
+        history.pushState({ lightbox: true }, "");
         updateLightboxInfo();
     }
 
@@ -188,9 +192,14 @@
         overlay.classList.remove("open");
         document.body.style.overflow = "";
         resetZoom();
+        isOpen = false;
     }
 
     closeBtn.addEventListener("click", closeLightbox);
+
+    window.addEventListener("popstate", () => {
+        if (isOpen) closeLightbox();
+    });
 
     overlay.addEventListener("click", e => {
         if (e.target === overlay) closeLightbox();
