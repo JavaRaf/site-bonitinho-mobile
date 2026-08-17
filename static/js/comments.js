@@ -51,34 +51,126 @@ async function loadComments(forceRefresh = false) {
     }
 }
 
+function buildTree(comments) {
+    const map = new Map();
+    const roots = [];
+    comments.forEach(c => map.set(c.id, { ...c, replies: [] }));
+    comments.forEach(c => {
+        const node = map.get(c.id);
+        if (c.parent_id && map.has(c.parent_id)) {
+            map.get(c.parent_id).replies.push(node);
+        } else {
+            roots.push(node);
+        }
+    });
+    return roots;
+}
+
+function esc(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+}
+
+function renderNode(c, depth) {
+    const canDelete = isAdmin || currentUserId === c.user_id;
+    const isSelf = currentUserId === c.user_id;
+    const cls = ["comment"];
+    if (depth > 0) cls.push("comment-reply");
+    if (depth === 1) cls.push("comment-depth-1");
+    if (depth >= 2) cls.push("comment-depth-2");
+
+    let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
+    html += `<div class="comment-main">`;
+    html += `<span class="comment-user${isSelf ? " is-self" : ""}" style="color:${c.color || userColor(c.username)}">${esc(c.username)}</span>`;
+    html += `<span class="comment-text">${esc(c.text)}</span>`;
+    html += `<div class="comment-btns">`;
+    if (currentUserId) {
+        html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${esc(c.username)}">Responder</button>`;
+    }
+    if (canDelete) {
+        html += `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>`;
+    }
+    html += `</div></div>`;
+
+    if (c.replies && c.replies.length) {
+        html += `<div class="comment-children">`;
+        html += c.replies.map(r => renderNode(r, depth + 1)).join("");
+        html += `</div>`;
+    }
+
+    html += `</div>`;
+    return html;
+}
+
 function renderComments(comments) {
     const list = document.getElementById("commentsList");
     const countEl = document.getElementById("comment-count");
     if (countEl) countEl.textContent = comments.length > 0 ? comments.length : "";
-    list.innerHTML = comments.length
-        ? comments.map(c => {
-            const canDelete = isAdmin || currentUserId === c.user_id;
-            const isSelf = currentUserId === c.user_id;
-            return `
-                <div class="comment" data-id="${c.id}">
-                    <span class="comment-user${isSelf ? " is-self" : ""}" style="color:${c.color || userColor(c.username)}">${escapeHtml(c.username)}</span>
-                    <span class="comment-text">${escapeHtml(c.text)}</span>
-                    ${canDelete ? `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>` : ""}
-                </div>`;
-        }).join("")
-        : `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
+
+    if (!comments.length) {
+        list.innerHTML = `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
+        return;
+    }
+
+    const tree = buildTree(comments);
+    list.innerHTML = tree.map(c => renderNode(c, 0)).join("");
 }
 
 document.addEventListener("click", async e => {
+    const replyBtn = e.target.closest(".comment-reply-btn");
+    if (replyBtn) {
+        e.stopPropagation();
+        document.querySelectorAll(".comment-reply-form").forEach(f => f.remove());
+        const commentEl = replyBtn.closest(".comment");
+        const commentId = replyBtn.dataset.id;
+        const username = replyBtn.dataset.user;
+
+        const form = document.createElement("div");
+        form.className = "comment-reply-form";
+        form.innerHTML = `
+            <input type="text" placeholder="Responder @${username}..." autocomplete="off">
+            <button type="button" class="comment-reply-send">Enviar</button>`;
+        commentEl.appendChild(form);
+
+        const input = form.querySelector("input");
+        input.focus();
+
+        const send = async () => {
+            const text = input.value.trim();
+            if (!text) { form.remove(); return; }
+            const imgName = currentImageName();
+            try {
+                const res = await fetch(`/api/comments/${imgName}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text, parent_id: parseInt(commentId) })
+                });
+                if (res.ok) {
+                    commentsCache.delete(imgName);
+                    await loadComments(true);
+                }
+            } catch { /* ignore */ }
+        };
+
+        form.querySelector(".comment-reply-send").addEventListener("click", send);
+        input.addEventListener("keydown", ev => {
+            if (ev.key === "Enter") send();
+            if (ev.key === "Escape") form.remove();
+        });
+        return;
+    }
+
     const btn = e.target.closest(".comment-delete");
-    if (!btn) return;
-    e.stopPropagation();
-    try {
-        await fetch(`/api/comments/id/${btn.dataset.id}`, { method: "DELETE" });
-        const imgName = currentImageName();
-        commentsCache.delete(imgName);
-        await loadComments(true);
-    } catch { /* ignore */ }
+    if (btn) {
+        e.stopPropagation();
+        try {
+            await fetch(`/api/comments/id/${btn.dataset.id}`, { method: "DELETE" });
+            const imgName = currentImageName();
+            commentsCache.delete(imgName);
+            await loadComments(true);
+        } catch { /* ignore */ }
+    }
 });
 
 function escapeHtml(str) {
@@ -108,8 +200,7 @@ document.getElementById("commentForm").addEventListener("submit", async e => {
         });
         if (res.ok) {
             input.value = "";
-            const imgName = currentImageName();
-            commentsCache.delete(imgName);
+            commentsCache.delete(currentImageName());
             await loadComments(true);
         }
     } catch { /* ignore */ }

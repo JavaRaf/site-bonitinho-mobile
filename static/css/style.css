@@ -468,19 +468,22 @@ header {
 .comments-list {
   display: flex;
   flex-direction: column;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   margin-bottom: 0.5rem;
 }
 
 .comment {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.comment-main {
   display: flex;
   align-items: flex-start;
   gap: 0.4rem;
-  font-size: 0.8125rem;
   padding: 0.25rem 0;
-  min-height: 32px;
-  line-height: 1.4;
+  min-height: 28px;
 }
 
 .comment-user {
@@ -497,6 +500,89 @@ header {
   color: var(--text-soft);
   word-break: break-word;
   flex: 1;
+}
+
+.comment-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.comment-reply-btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.comment-reply-btn:hover {
+  color: var(--text-secondary);
+  background: var(--surface-2);
+}
+
+.comment-children {
+  padding-left: 1rem;
+  border-left: 2px solid var(--border);
+  margin-left: 0.35rem;
+}
+
+.comment-depth-1 .comment-children {
+  border-left-color: var(--border-strong);
+}
+
+.comment-depth-2 .comment-children {
+  border-left-color: transparent;
+}
+
+.comment-reply-form {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.35rem 0 0.25rem;
+  margin-left: 1rem;
+}
+
+.comment-reply-form input {
+  flex: 1;
+  height: 30px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  outline: none;
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+
+.comment-reply-form input:focus {
+  border-color: var(--text);
+}
+
+.comment-reply-send {
+  height: 30px;
+  padding: 0 0.6rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.comment-reply-send:hover {
+  background: var(--btn-hover);
 }
 
 .comment-form {
@@ -545,26 +631,26 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-left: auto;
+  width: 22px;
+  height: 22px;
   border: none;
-  border-radius: 50%;
+  border-radius: 4px;
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
-  padding: 4px;
-  opacity: 0.4;
-  transition: opacity 0.15s;
+  padding: 3px;
+  opacity: 0.3;
+  transition: opacity 0.15s, background 0.15s;
 }
 
 .comment-delete:hover {
   opacity: 0.8;
+  background: var(--danger-soft);
 }
 
 .comment-delete img {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
 }
 
 .back-icon {

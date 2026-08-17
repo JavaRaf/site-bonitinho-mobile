@@ -85,5 +85,10 @@ def init_db():
         conn.execute("ALTER TABLE uploads ADD COLUMN caption TEXT NOT NULL DEFAULT ''")
     except sqlite3.OperationalError:
         pass
+    # migration: add parent_id on comments
+    try:
+        conn.execute("ALTER TABLE comments ADD COLUMN parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     conn.close()

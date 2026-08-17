@@ -737,7 +737,7 @@ def handle_comments(image_name):
 
     if request.method == "GET":
         rows = db.execute(
-            """SELECT c.id, c.text, c.created_at, u.username, u.color, c.user_id
+            """SELECT c.id, c.text, c.created_at, c.parent_id, u.username, u.color, c.user_id
                FROM comments c JOIN users u ON c.user_id = u.id
                WHERE c.image_name = ?
                ORDER BY c.created_at ASC""",
@@ -757,14 +757,26 @@ def handle_comments(image_name):
         db.close()
         return jsonify({"error": "text is required"}), 400
 
+    parent_id = data.get("parent_id")
+    if parent_id:
+        parent = db.execute(
+            "SELECT id, parent_id FROM comments WHERE id = ? AND image_name = ?",
+            (parent_id, image_name),
+        ).fetchone()
+        if not parent:
+            db.close()
+            return jsonify({"error": "parent comment not found"}), 404
+        if parent["parent_id"]:
+            parent_id = parent["parent_id"]
+
     db.execute(
-        "INSERT INTO comments (user_id, image_name, text) VALUES (?, ?, ?)",
-        (session["user_id"], image_name, text),
+        "INSERT INTO comments (user_id, image_name, text, parent_id) VALUES (?, ?, ?, ?)",
+        (session["user_id"], image_name, text, parent_id),
     )
     db.commit()
 
     row = db.execute(
-        """SELECT c.id, c.text, c.created_at, u.username
+        """SELECT c.id, c.text, c.created_at, c.parent_id, u.username, u.color
            FROM comments c JOIN users u ON c.user_id = u.id
            WHERE c.id = ?""",
         (db.execute("SELECT last_insert_rowid()").fetchone()[0],),
@@ -794,7 +806,7 @@ def delete_comment(comment_id):
         db.close()
         return jsonify({"error": "forbidden"}), 403
 
-    db.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
+    db.execute("DELETE FROM comments WHERE id = ? OR parent_id = ?", (comment_id, comment_id))
     db.commit()
     db.close()
     return jsonify({"ok": True})

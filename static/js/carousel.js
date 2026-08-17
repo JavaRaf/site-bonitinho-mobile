@@ -572,15 +572,54 @@ function userColorFeed(username) {
     return colors[hash % colors.length];
 }
 
+function buildFeedTree(comments) {
+    const map = new Map();
+    const roots = [];
+    comments.forEach(c => map.set(c.id, { ...c, replies: [] }));
+    comments.forEach(c => {
+        const node = map.get(c.id);
+        if (c.parent_id && map.has(c.parent_id)) {
+            map.get(c.parent_id).replies.push(node);
+        } else {
+            roots.push(node);
+        }
+    });
+    return roots;
+}
+
+function renderFeedNode(c, depth) {
+    const maxDepth = 2;
+    const cls = ["comment"];
+    if (depth > 0) cls.push("comment-reply");
+    if (depth === 1) cls.push("comment-depth-1");
+    if (depth >= 2) cls.push("comment-depth-2");
+
+    let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
+    html += `<div class="comment-main">`;
+    html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.username)}</span>`;
+    html += `<span class="comment-text">${escText(c.text)}</span>`;
+    html += `</div>`;
+    if (c.replies && c.replies.length) {
+        html += `<div class="comment-children">`;
+        html += c.replies.map(r => renderFeedNode(r, depth + 1)).join("");
+        html += `</div>`;
+    }
+    html += `</div>`;
+    return html;
+}
+
 async function loadFeedComments(card) {
     const name = card.dataset.name;
     const list = card.querySelector(".feed-comments-list");
     try {
         const res = await fetch(`/api/comments/${encodeURIComponent(name)}`);
         const comments = await res.json();
-        list.innerHTML = comments.length
-            ? comments.map(c => `<div class="comment"><span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.username)}</span><span class="comment-text">${escText(c.text)}</span></div>`).join("")
-            : `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
+        if (!comments.length) {
+            list.innerHTML = `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
+            return;
+        }
+        const tree = buildFeedTree(comments);
+        list.innerHTML = tree.map(c => renderFeedNode(c, 0)).join("");
     } catch { list.innerHTML = ""; }
 }
 
