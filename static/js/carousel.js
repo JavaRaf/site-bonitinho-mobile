@@ -816,6 +816,7 @@ function downloadFeedImage(name) {
 document.getElementById("feedView")?.addEventListener("submit", async e => {
     if (!e.target.matches(".feed-comment-form")) return;
     e.preventDefault();
+    if (typeof mentionDropdown !== "undefined" && mentionDropdown && typeof mentionUsers !== "undefined" && mentionUsers.length) return;
     const form = e.target;
     const input = form.querySelector("input");
     const text = input.value.trim();

@@ -315,6 +315,7 @@ document.addEventListener("click", async e => {
 
 document.getElementById("commentForm").addEventListener("submit", async e => {
     e.preventDefault();
+    if (mentionDropdown && mentionUsers.length) return;
     const input = document.getElementById("commentInput");
     const text = input.value.trim();
     if (!text) return;
