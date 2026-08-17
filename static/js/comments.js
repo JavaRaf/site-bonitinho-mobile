@@ -221,6 +221,7 @@ function insertMention(username) {
 }
 
 function handleMentionInput(e) {
+    mentionInput = e.target;
     const input = e.target;
     const val = input.value;
     const cursor = input.selectionStart;
