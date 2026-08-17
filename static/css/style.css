@@ -1042,3 +1042,163 @@ header {
 .img-caption:empty {
   display: none;
 }
+
+/* === Lightbox === */
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 500;
+  flex-direction: column;
+}
+
+.lightbox-overlay.open {
+  display: flex;
+}
+
+.lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.lightbox-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.lightbox-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.lightbox-owner {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lightbox-likes {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  flex-shrink: 0;
+}
+
+.lightbox-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.lightbox-close:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.lightbox-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.lightbox-img-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+.lightbox-img-wrap.zoomed {
+  cursor: grab;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.lightbox-nav:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.lightbox-prev {
+  left: 0.75rem;
+}
+
+.lightbox-next {
+  right: 0.75rem;
+}
+
+.lightbox-caption {
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  word-break: break-word;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+}
+
+.lightbox-caption:empty {
+  display: none;
+}
+
+/* Make feed images clickable */
+.feed-img {
+  cursor: zoom-in;
+}
+
+.carousel-slide img {
+  cursor: zoom-in;
+}

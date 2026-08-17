@@ -186,16 +186,25 @@ document.addEventListener("keydown", e => {
     }
 });
 
-/* === Double-tap → toggle like (per-image, via API) === */
+/* === Double-tap → toggle like, single-tap → open lightbox === */
+let tapTimeout = null;
+
 track.addEventListener("click", e => {
     const img = e.target.closest(".carousel-slide img");
     if (!img) return;
     const now = Date.now();
     if (now - lastTapTime < 350) {
+        clearTimeout(tapTimeout);
+        tapTimeout = null;
         toggleLike();
         lastTapTime = 0;
     } else {
         lastTapTime = now;
+        tapTimeout = setTimeout(() => {
+            if (lastTapTime === now && typeof openLightbox === "function") {
+                openLightbox(current, sortedImages());
+            }
+        }, 360);
     }
 });
 
@@ -587,6 +596,17 @@ function toggleFeedComments(btn) {
 }
 
 document.getElementById("feedView")?.addEventListener("click", e => {
+    const feedImg = e.target.closest(".feed-img img");
+    if (feedImg) {
+        const card = feedImg.closest(".feed-card");
+        if (card && typeof openLightbox === "function") {
+            const name = card.dataset.name;
+            const sorted = sortedImages();
+            const idx = sorted.findIndex(x => x.name === name);
+            openLightbox(idx >= 0 ? idx : 0, sorted);
+        }
+        return;
+    }
     const likeBtn = e.target.closest(".feed-like");
     if (likeBtn) { toggleFeedLike(likeBtn); return; }
     const likersEl = e.target.closest(".feed-likes");
