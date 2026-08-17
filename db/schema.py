@@ -59,6 +59,16 @@ def init_db():
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS comment_likes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            comment_id  INTEGER NOT NULL,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+            UNIQUE(user_id, comment_id)
+        );
     """)
     # migration: add is_admin if missing
     try:
@@ -88,6 +98,11 @@ def init_db():
     # migration: add parent_id on comments
     try:
         conn.execute("ALTER TABLE comments ADD COLUMN parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE")
+    except sqlite3.OperationalError:
+        pass
+    # migration: add nsfw flag on uploads
+    try:
+        conn.execute("ALTER TABLE uploads ADD COLUMN nsfw INTEGER NOT NULL DEFAULT 0")
     except sqlite3.OperationalError:
         pass
     conn.commit()

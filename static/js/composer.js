@@ -143,12 +143,16 @@ composerPost.addEventListener("click", async () => {
     if (selectedFile) form.append("images", imageToUpload, imageName);
     if (selectedZip) form.append("zip", selectedZip);
     form.append("caption", composerText.value.trim());
+    const nsfwCheck = document.getElementById("composerNsfw");
+    if (nsfwCheck && nsfwCheck.checked) form.append("nsfw", "1");
     try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
             clearImage();
             clearZip();
             composerText.value = "";
+            const nsfwCheck = document.getElementById("composerNsfw");
+            if (nsfwCheck) nsfwCheck.checked = false;
             closeComposer();
             if (typeof loadCarousel === "function") {
                 await loadCarousel();

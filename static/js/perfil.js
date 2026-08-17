@@ -43,14 +43,116 @@ document.getElementById("perfilAvatarUpload").addEventListener("click", () => {
     document.getElementById("perfilAvatarInput").click();
 });
 
-document.getElementById("perfilAvatarInput").addEventListener("change", async () => {
-    const input = document.getElementById("perfilAvatarInput");
-    const file = input.files[0];
-    if (!file) return;
+/* === Avatar Crop === */
+const cropOverlay = document.getElementById("cropOverlay");
+const cropCanvas = document.getElementById("cropCanvas");
+const cropArea = document.getElementById("cropArea");
+const cropCtx = cropCanvas.getContext("2d");
+let cropImg = null;
+let cropOffsetX = 0;
+let cropOffsetY = 0;
+let cropScale = 1;
+let cropDragStart = null;
+let cropImgStartX = 0;
+let cropImgStartY = 0;
+
+function openCrop(file) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+        cropImg = img;
+        cropOverlay.classList.add("open");
+        resetCrop();
+    };
+    img.src = url;
+}
+
+function resetCrop() {
+    if (!cropImg) return;
+    const areaSize = cropArea.clientWidth;
+    cropCanvas.width = areaSize;
+    cropCanvas.height = areaSize;
+
+    const minDim = Math.min(cropImg.naturalWidth, cropImg.naturalHeight);
+    cropScale = areaSize / minDim;
+    cropOffsetX = (areaSize - cropImg.naturalWidth * cropScale) / 2;
+    cropOffsetY = (areaSize - cropImg.naturalHeight * cropScale) / 2;
+    drawCrop();
+}
+
+function drawCrop() {
+    if (!cropImg) return;
+    const w = cropCanvas.width;
+    const h = cropCanvas.height;
+    cropCtx.clearRect(0, 0, w, h);
+    cropCtx.save();
+    cropCtx.beginPath();
+    cropCtx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
+    cropCtx.clip();
+    cropCtx.drawImage(cropImg, cropOffsetX, cropOffsetY, cropImg.naturalWidth * cropScale, cropImg.naturalHeight * cropScale);
+    cropCtx.restore();
+}
+
+function getCroppedBlob() {
+    return new Promise(resolve => {
+        const size = 256;
+        const c = document.createElement("canvas");
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext("2d");
+        const imgW = cropImg.naturalWidth * cropScale;
+        const imgH = cropImg.naturalHeight * cropScale;
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.clip();
+        const srcX = (-cropOffsetX / cropScale);
+        const srcY = (-cropOffsetY / cropScale);
+        const srcS = size / cropScale;
+        ctx.drawImage(cropImg, srcX, srcY, srcS, srcS, 0, 0, size, size);
+        c.toBlob(blob => resolve(blob), "image/png");
+    });
+}
+
+cropArea.addEventListener("pointerdown", e => {
+    cropDragStart = { x: e.clientX, y: e.clientY };
+    cropImgStartX = cropOffsetX;
+    cropImgStartY = cropOffsetY;
+    cropArea.setPointerCapture(e.pointerId);
+    cropArea.style.cursor = "grabbing";
+});
+
+cropArea.addEventListener("pointermove", e => {
+    if (!cropDragStart) return;
+    cropOffsetX = cropImgStartX + (e.clientX - cropDragStart.x);
+    cropOffsetY = cropImgStartY + (e.clientY - cropDragStart.y);
+    drawCrop();
+});
+
+cropArea.addEventListener("pointerup", () => {
+    cropDragStart = null;
+    cropArea.style.cursor = "grab";
+});
+
+document.getElementById("cropClose").addEventListener("click", () => {
+    cropOverlay.classList.remove("open");
+    cropImg = null;
+});
+
+document.getElementById("cropCancel").addEventListener("click", () => {
+    cropOverlay.classList.remove("open");
+    cropImg = null;
+});
+
+document.getElementById("cropConfirm").addEventListener("click", async () => {
+    if (!cropImg) return;
+    const blob = await getCroppedBlob();
+    cropOverlay.classList.remove("open");
+    cropImg = null;
+
     const errEl = document.getElementById("perfilError");
     errEl.textContent = "";
     const form = new FormData();
-    form.append("avatar", file);
+    form.append("avatar", blob, "avatar.png");
     try {
         const res = await fetch("/api/auth/avatar", { method: "POST", body: form });
         const data = await res.json();
@@ -61,9 +163,15 @@ document.getElementById("perfilAvatarInput").addEventListener("change", async ()
         }
     } catch {
         errEl.textContent = "Erro ao enviar avatar";
-    } finally {
-        input.value = "";
     }
+});
+
+document.getElementById("perfilAvatarInput").addEventListener("change", async () => {
+    const input = document.getElementById("perfilAvatarInput");
+    const file = input.files[0];
+    if (!file) return;
+    openCrop(file);
+    input.value = "";
 });
 
 document.getElementById("perfilAvatarRemove").addEventListener("click", async () => {

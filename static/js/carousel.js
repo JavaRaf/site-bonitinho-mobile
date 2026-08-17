@@ -50,6 +50,7 @@ async function loadCarousel() {
         div.dataset.avatar = img.owner_avatar || "";
         div.dataset.likes = img.likes || 0;
         div.dataset.caption = img.caption || "";
+        if (img.nsfw) div.dataset.nsfw = "1";
         const loadNow = i <= 1;
         div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false">`;
         track.appendChild(div);
@@ -443,15 +444,17 @@ function renderFeed() {
         const liked = likedImages.has(img.name);
         const likes = img.likes || 0;
         const comments = img.comments || 0;
+        const nsfwClass = img.nsfw ? " nsfw-blur" : "";
         return `
         <article class="feed-card" data-name="${escText(img.name)}">
             <div class="feed-owner">
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
                 <span class="feed-owner-name">@${escText(img.owner || "—")}</span>
                 ${singleVoteMode ? '<span class="feed-singlevote">Voto único</span>' : ''}
+                ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
             </div>
             <div class="feed-caption">${escText(img.caption || "")}</div>
-            <div class="feed-img"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async"></div>
+            <div class="feed-img"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}"></div>
             <div class="feed-actions">
                 <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
                     <img src="${liked ? "/static/svg/upvote-filled.svg" : "/static/svg/upvote.svg"}" alt="like">

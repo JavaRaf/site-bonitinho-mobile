@@ -1,6 +1,7 @@
 let currentUserId = null;
 let isAdmin = false;
 const commentsCache = new Map();
+let myCommentLikes = new Set();
 
 const commentColors = ["#f43f5e", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
 
@@ -20,6 +21,14 @@ async function fetchCurrentUser() {
             currentUserId = data.user.id;
             isAdmin = data.user.is_admin || false;
         }
+    } catch { /* ignore */ }
+}
+
+async function fetchMyCommentLikes() {
+    try {
+        const res = await fetch("/api/comment-likes");
+        const data = await res.json();
+        myCommentLikes = new Set(data.likes || []);
     } catch { /* ignore */ }
 }
 
@@ -100,6 +109,9 @@ function renderNode(c, depth) {
     if (depth === 1) cls.push("comment-depth-1");
     if (depth >= 2) cls.push("comment-depth-2");
 
+    const liked = myCommentLikes.has(c.id);
+    const likes = c.likes || 0;
+
     let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
     html += `<div class="comment-main">`;
     html += `<div class="comment-avatar"><img src="${avatarUrl(c.avatar)}" alt=""></div>`;
@@ -111,6 +123,7 @@ function renderNode(c, depth) {
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${timeAgo(c.created_at)}</span>`;
     if (currentUserId) {
+        html += `<button class="comment-like-btn${liked ? " liked" : ""}" data-id="${c.id}"><svg width="12" height="12" viewBox="0 0 20 20" fill="${liked ? "#f43f5e" : "none"}" stroke="${liked ? "#f43f5e" : "currentColor"}" stroke-width="2"><path d="M10 19a3.966 3.966 0 01-3.96-3.962V10.98H2.838a1.731 1.731 0 01-1.605-1.073 1.734 1.734 0 01.377-1.895L9.364.254a.925.925 0 011.272 0l7.754 7.759c.498.499.646 1.242.376 1.894-.27.652-.9 1.073-1.605 1.073h-3.202v4.058A3.965 3.965 0 019.999 19H10z"/></svg> ${likes > 0 ? likes : ""}</button>`;
         html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${esc(c.username)}">Responder</button>`;
     }
     html += `</div></div>`;
@@ -142,6 +155,40 @@ function renderComments(comments) {
     const tree = buildTree(comments);
     list.innerHTML = tree.map(c => renderNode(c, 0)).join("");
 }
+
+/* === Comment Like === */
+document.addEventListener("click", async e => {
+    const likeBtn = e.target.closest(".comment-like-btn");
+    if (likeBtn) {
+        e.stopPropagation();
+        const id = parseInt(likeBtn.dataset.id);
+        const wasLiked = myCommentLikes.has(id);
+        const delta = wasLiked ? -1 : 1;
+        if (wasLiked) myCommentLikes.delete(id);
+        else myCommentLikes.add(id);
+
+        const svg = likeBtn.querySelector("svg");
+        const num = likeBtn.childNodes[likeBtn.childNodes.length - 1];
+        const count = (parseInt(num.textContent) || 0) + delta;
+        svg.setAttribute("fill", !wasLiked ? "#f43f5e" : "none");
+        svg.setAttribute("stroke", !wasLiked ? "#f43f5e" : "currentColor");
+        num.textContent = count > 0 ? " " + count : "";
+        likeBtn.classList.toggle("liked", !wasLiked);
+
+        try {
+            const res = await fetch(`/api/comment-likes/${id}`, { method: wasLiked ? "DELETE" : "POST" });
+            if (!res.ok) throw new Error();
+        } catch {
+            if (wasLiked) myCommentLikes.add(id);
+            else myCommentLikes.delete(id);
+            svg.setAttribute("fill", wasLiked ? "#f43f5e" : "none");
+            svg.setAttribute("stroke", wasLiked ? "#f43f5e" : "currentColor");
+            const newCount = (parseInt(num.textContent) || 0) - delta;
+            num.textContent = newCount > 0 ? " " + newCount : "";
+            likeBtn.classList.toggle("liked", wasLiked);
+        }
+        return;
+    }
 
 /* === Autocomplete @mentions === */
 let mentionDropdown = null;
@@ -263,7 +310,7 @@ function handleMentionKeydown(e) {
     }
 }
 
-document.addEventListener("click", async e => {
+/* === Reply === */
     const replyBtn = e.target.closest(".comment-reply-btn");
     if (replyBtn) {
         e.stopPropagation();
@@ -313,6 +360,7 @@ document.addEventListener("click", async e => {
         return;
     }
 
+/* === Delete === */
     const btn = e.target.closest(".comment-delete");
     if (btn) {
         e.stopPropagation();
@@ -325,6 +373,7 @@ document.addEventListener("click", async e => {
     }
 });
 
+/* === Main form === */
 document.getElementById("commentForm").addEventListener("submit", async e => {
     e.preventDefault();
     if (mentionDropdown && mentionUsers.length) return;
@@ -373,4 +422,4 @@ window.addEventListener("scroll", () => {
 
 window.addEventListener("slideChange", () => { loadComments(); hideMentionDropdown(); });
 
-fetchCurrentUser().then(() => loadComments());
+fetchCurrentUser().then(() => fetchMyCommentLikes().then(() => loadComments()));

@@ -52,6 +52,24 @@
     <p class="perfil-ok" id="perfilOk"></p>
   </div>
 
+  <div class="crop-overlay" id="cropOverlay">
+    <div class="crop-card">
+      <div class="crop-header">
+        <h3>Ajustar avatar</h3>
+        <button class="crop-close" id="cropClose" type="button">&times;</button>
+      </div>
+      <div class="crop-area" id="cropArea">
+        <canvas id="cropCanvas"></canvas>
+        <div class="crop-circle" id="cropCircle"></div>
+      </div>
+      <p class="crop-hint">Arraste para posicionar</p>
+      <div class="crop-actions">
+        <button class="crop-cancel" id="cropCancel" type="button">Cancelar</button>
+        <button class="crop-confirm" id="cropConfirm" type="button">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/static/js/perfil.js"></script>
 </body>
 </html>

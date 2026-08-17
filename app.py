@@ -126,7 +126,7 @@ def list_images():
     img_dir = BASE_DIR / "images"
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
-    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption, u.created_at,
+    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption, u.created_at, u.nsfw,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.image_name = u.image_name) AS comments
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
@@ -148,6 +148,7 @@ def list_images():
                     "created_at": r["created_at"],
                     "owner_avatar": r["owner_avatar"] or "default-avatar.svg",
                     "caption": r["caption"] or "",
+                    "nsfw": bool(r["nsfw"]),
                 }
             )
             seen.add(r["image_name"])
@@ -196,6 +197,7 @@ def upload_images():
         return jsonify({"error": "session expired, please login again"}), 401
 
     caption = (request.form.get("caption") or "").strip()[:250]
+    nsfw = 1 if request.form.get("nsfw") == "1" else 0
 
     saved = []
 
@@ -208,8 +210,8 @@ def upload_images():
         new_name = f"{salt}_{base_name}"
         (img_dir / new_name).write_bytes(data)
         db.execute(
-            "INSERT INTO uploads (user_id, image_name, original_name, caption) VALUES (?, ?, ?, ?)",
-            (session["user_id"], new_name, base_name, caption),
+            "INSERT INTO uploads (user_id, image_name, original_name, caption, nsfw) VALUES (?, ?, ?, ?, ?)",
+            (session["user_id"], new_name, base_name, caption, nsfw),
         )
         saved.append(new_name)
 
@@ -751,7 +753,8 @@ def handle_comments(image_name):
 
     if request.method == "GET":
         rows = db.execute(
-            """SELECT c.id, c.text, c.created_at, c.parent_id, u.username, u.color, u.avatar, c.user_id
+            """SELECT c.id, c.text, c.created_at, c.parent_id, u.username, u.color, u.avatar, c.user_id,
+                      (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) AS likes
                FROM comments c JOIN users u ON c.user_id = u.id
                WHERE c.image_name = ?
                ORDER BY c.created_at ASC""",
@@ -824,6 +827,56 @@ def delete_comment(comment_id):
     db.commit()
     db.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/comment-likes/<int:comment_id>", methods=["POST", "DELETE"])
+def toggle_comment_like(comment_id):
+    if "user_id" not in session:
+        return jsonify({"error": "login required"}), 401
+
+    db = get_db()
+    if request.method == "DELETE":
+        existing = db.execute(
+            "SELECT id FROM comment_likes WHERE user_id = ? AND comment_id = ?",
+            (session["user_id"], comment_id),
+        ).fetchone()
+        if existing:
+            db.execute("DELETE FROM comment_likes WHERE id = ?", (existing["id"],))
+            db.commit()
+        db.close()
+        return jsonify({"liked": False})
+
+    existing = db.execute(
+        "SELECT id FROM comment_likes WHERE user_id = ? AND comment_id = ?",
+        (session["user_id"], comment_id),
+    ).fetchone()
+
+    if existing:
+        db.execute("DELETE FROM comment_likes WHERE id = ?", (existing["id"],))
+        db.commit()
+        db.close()
+        return jsonify({"liked": False})
+    else:
+        db.execute(
+            "INSERT INTO comment_likes (user_id, comment_id) VALUES (?, ?)",
+            (session["user_id"], comment_id),
+        )
+        db.commit()
+        db.close()
+        return jsonify({"liked": True})
+
+
+@app.route("/api/comment-likes", methods=["GET"])
+def get_my_comment_likes():
+    if "user_id" not in session:
+        return jsonify({"likes": []})
+    db = get_db()
+    rows = db.execute(
+        "SELECT comment_id FROM comment_likes WHERE user_id = ?",
+        (session["user_id"],),
+    ).fetchall()
+    db.close()
+    return jsonify({"likes": [r["comment_id"] for r in rows]})
 
 
 if __name__ == "__main__":
