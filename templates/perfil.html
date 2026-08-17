@@ -34,22 +34,17 @@
       <input type="file" id="perfilAvatarInput" accept="image/*" hidden>
     </div>
 
+    <div class="perfil-field">
+      <label for="perfilUsername">Nome de usuário</label>
+      <input type="text" id="perfilUsername" minlength="3" autocomplete="off" placeholder="Seu nome de exibição">
+    </div>
+
     <div class="perfil-section">
       <button type="button" class="perfil-section-toggle" id="perfilColorToggle">
         <p class="perfil-section-title">Cor do seu nome</p>
         <img src="/static/svg/arrow-down.svg" alt="" class="perfil-section-arrow">
       </button>
       <div class="perfil-color-list" id="perfilColorList"></div>
-    </div>
-
-    <div class="perfil-field">
-      <label for="perfilUsername">Nome de usuário</label>
-      <input type="text" id="perfilUsername" minlength="3" autocomplete="off" placeholder="Seu nome de exibição">
-    </div>
-
-    <div class="perfil-field">
-      <label for="perfilBirthday">Data de nascimento</label>
-      <input type="date" id="perfilBirthday">
     </div>
 
     <button id="perfilSave" class="perfil-btn">Salvar alterações</button>

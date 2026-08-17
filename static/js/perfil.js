@@ -8,7 +8,6 @@ async function loadProfile() {
         const data = await res.json();
         if (!data.user) { window.location.href = "/login"; return; }
         document.getElementById("perfilUsername").value = data.user.username;
-        document.getElementById("perfilBirthday").value = data.user.birthday || "";
         setAvatarSrc(data.user.avatar);
         selectedColor = data.user.color || "";
         buildColorPicker();
@@ -120,7 +119,7 @@ document.getElementById("perfilSave").addEventListener("click", async () => {
     const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, color: selectedColor, birthday: document.getElementById("perfilBirthday").value })
+        body: JSON.stringify({ username, color: selectedColor })
     });
     const data = await res.json();
 
