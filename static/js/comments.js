@@ -31,6 +31,29 @@ function currentImageName() {
     return slides[idx]?.dataset.image || "";
 }
 
+function avatarUrl(avatar) {
+    if (!avatar || avatar === "default-avatar.svg") return "/static/svg/default-avatar.svg";
+    return `/avatars/${avatar}`;
+}
+
+function timeAgo(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "Z");
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return "agora";
+    if (diff < 3600) return `${Math.floor(diff / 60)}min`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+function esc(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+}
+
 async function loadComments(forceRefresh = false) {
     const imgName = currentImageName();
     const list = document.getElementById("commentsList");
@@ -66,15 +89,8 @@ function buildTree(comments) {
     return roots;
 }
 
-function esc(str) {
-    const div = document.createElement("div");
-    div.textContent = str || "";
-    return div.innerHTML;
-}
-
 function renderNode(c, depth) {
     const canDelete = isAdmin || currentUserId === c.user_id;
-    const isSelf = currentUserId === c.user_id;
     const cls = ["comment"];
     if (depth > 0) cls.push("comment-reply");
     if (depth === 1) cls.push("comment-depth-1");
@@ -82,16 +98,22 @@ function renderNode(c, depth) {
 
     let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
     html += `<div class="comment-main">`;
-    html += `<span class="comment-user${isSelf ? " is-self" : ""}" style="color:${c.color || userColor(c.username)}">${esc(c.username)}</span>`;
+    html += `<div class="comment-avatar"><img src="${avatarUrl(c.avatar)}" alt=""></div>`;
+    html += `<div class="comment-body">`;
+    html += `<div class="comment-bubble">`;
+    html += `<span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.username)}</span>`;
     html += `<span class="comment-text">${esc(c.text)}</span>`;
-    html += `<div class="comment-btns">`;
+    html += `</div>`;
+    html += `<div class="comment-meta">`;
+    html += `<span class="comment-time">${timeAgo(c.created_at)}</span>`;
     if (currentUserId) {
         html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${esc(c.username)}">Responder</button>`;
     }
+    html += `</div></div>`;
     if (canDelete) {
         html += `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>`;
     }
-    html += `</div></div>`;
+    html += `</div>`;
 
     if (c.replies && c.replies.length) {
         html += `<div class="comment-children">`;
@@ -109,7 +131,7 @@ function renderComments(comments) {
     if (countEl) countEl.textContent = comments.length > 0 ? comments.length : "";
 
     if (!comments.length) {
-        list.innerHTML = `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
+        list.innerHTML = `<div class="comment"><div class="comment-main"><div class="comment-body"><span class="comment-text" style="color:var(--text-muted)">Nenhum comentário ainda</span></div></div></div>`;
         return;
     }
 
@@ -129,6 +151,7 @@ document.addEventListener("click", async e => {
         const form = document.createElement("div");
         form.className = "comment-reply-form";
         form.innerHTML = `
+            <div class="comment-reply-form-avatar"><img src="${avatarUrl()}" alt=""></div>
             <input type="text" placeholder="Responder @${username}..." autocomplete="off">
             <button type="button" class="comment-reply-send">Enviar</button>`;
         commentEl.appendChild(form);
@@ -172,12 +195,6 @@ document.addEventListener("click", async e => {
         } catch { /* ignore */ }
     }
 });
-
-function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-}
 
 document.getElementById("commentForm").addEventListener("submit", async e => {
     e.preventDefault();

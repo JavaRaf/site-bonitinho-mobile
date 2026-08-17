@@ -572,6 +572,59 @@ function userColorFeed(username) {
     return colors[hash % colors.length];
 }
 
+function feedAvatarUrl(avatar) {
+    if (!avatar || avatar === "default-avatar.svg") return "/static/svg/default-avatar.svg";
+    return `/avatars/${avatar}`;
+}
+
+function feedTimeAgo(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "Z");
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return "agora";
+    if (diff < 3600) return `${Math.floor(diff / 60)}min`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+function renderFeedNode(c, depth, currentUserId, isAdmin) {
+    const canDelete = isAdmin || currentUserId === c.user_id;
+    const cls = ["comment"];
+    if (depth > 0) cls.push("comment-reply");
+    if (depth === 1) cls.push("comment-depth-1");
+    if (depth >= 2) cls.push("comment-depth-2");
+
+    let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
+    html += `<div class="comment-main">`;
+    html += `<div class="comment-avatar"><img src="${feedAvatarUrl(c.avatar)}" alt=""></div>`;
+    html += `<div class="comment-body">`;
+    html += `<div class="comment-bubble">`;
+    html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.username)}</span>`;
+    html += `<span class="comment-text">${escText(c.text)}</span>`;
+    html += `</div>`;
+    html += `<div class="comment-meta">`;
+    html += `<span class="comment-time">${feedTimeAgo(c.created_at)}</span>`;
+    if (currentUserId) {
+        html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${escText(c.username)}">Responder</button>`;
+    }
+    html += `</div></div>`;
+    if (canDelete) {
+        html += `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>`;
+    }
+    html += `</div>`;
+
+    if (c.replies && c.replies.length) {
+        html += `<div class="comment-children">`;
+        html += c.replies.map(r => renderFeedNode(r, depth + 1, currentUserId, isAdmin)).join("");
+        html += `</div>`;
+    }
+
+    html += `</div>`;
+    return html;
+}
+
 function buildFeedTree(comments) {
     const map = new Map();
     const roots = [];
@@ -587,39 +640,28 @@ function buildFeedTree(comments) {
     return roots;
 }
 
-function renderFeedNode(c, depth) {
-    const maxDepth = 2;
-    const cls = ["comment"];
-    if (depth > 0) cls.push("comment-reply");
-    if (depth === 1) cls.push("comment-depth-1");
-    if (depth >= 2) cls.push("comment-depth-2");
-
-    let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
-    html += `<div class="comment-main">`;
-    html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.username)}</span>`;
-    html += `<span class="comment-text">${escText(c.text)}</span>`;
-    html += `</div>`;
-    if (c.replies && c.replies.length) {
-        html += `<div class="comment-children">`;
-        html += c.replies.map(r => renderFeedNode(r, depth + 1)).join("");
-        html += `</div>`;
-    }
-    html += `</div>`;
-    return html;
-}
-
 async function loadFeedComments(card) {
     const name = card.dataset.name;
     const list = card.querySelector(".feed-comments-list");
+    let feedCurrentUserId = null;
+    let feedIsAdmin = false;
+    try {
+        const me = await fetch("/api/auth/me");
+        const meData = await me.json();
+        if (meData.user) {
+            feedCurrentUserId = meData.user.id;
+            feedIsAdmin = meData.user.is_admin || false;
+        }
+    } catch { /* ignore */ }
     try {
         const res = await fetch(`/api/comments/${encodeURIComponent(name)}`);
         const comments = await res.json();
         if (!comments.length) {
-            list.innerHTML = `<div class="comment"><span class="comment-text" style="color:#a1a1aa">Nenhum comentário ainda</span></div>`;
+            list.innerHTML = `<div class="comment"><div class="comment-main"><div class="comment-body"><span class="comment-text" style="color:var(--text-muted)">Nenhum comentário ainda</span></div></div></div>`;
             return;
         }
         const tree = buildFeedTree(comments);
-        list.innerHTML = tree.map(c => renderFeedNode(c, 0)).join("");
+        list.innerHTML = tree.map(c => renderFeedNode(c, 0, feedCurrentUserId, feedIsAdmin)).join("");
     } catch { list.innerHTML = ""; }
 }
 
@@ -646,6 +688,62 @@ document.getElementById("feedView")?.addEventListener("click", e => {
         }
         return;
     }
+
+    const feedReplyBtn = e.target.closest(".comment-reply-btn");
+    if (feedReplyBtn) {
+        e.stopPropagation();
+        document.querySelectorAll(".comment-reply-form").forEach(f => f.remove());
+        const commentEl = feedReplyBtn.closest(".comment");
+        const commentId = feedReplyBtn.dataset.id;
+        const username = feedReplyBtn.dataset.user;
+
+        const form = document.createElement("div");
+        form.className = "comment-reply-form";
+        form.innerHTML = `
+            <div class="comment-reply-form-avatar"><img src="/static/svg/default-avatar.svg" alt=""></div>
+            <input type="text" placeholder="Responder @${username}..." autocomplete="off">
+            <button type="button" class="comment-reply-send">Enviar</button>`;
+        commentEl.appendChild(form);
+
+        const input = form.querySelector("input");
+        input.focus();
+
+        const send = async () => {
+            const text = input.value.trim();
+            if (!text) { form.remove(); return; }
+            const feedCard = commentEl.closest(".feed-card");
+            const imgName = feedCard.dataset.name;
+            try {
+                const res = await fetch(`/api/comments/${imgName}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text, parent_id: parseInt(commentId) })
+                });
+                if (res.ok) {
+                    loadFeedComments(feedCard);
+                }
+            } catch { /* ignore */ }
+        };
+
+        form.querySelector(".comment-reply-send").addEventListener("click", send);
+        input.addEventListener("keydown", ev => {
+            if (ev.key === "Enter") send();
+            if (ev.key === "Escape") form.remove();
+        });
+        return;
+    }
+
+    const feedDeleteBtn = e.target.closest(".comment-delete");
+    if (feedDeleteBtn) {
+        e.stopPropagation();
+        fetch(`/api/comments/id/${feedDeleteBtn.dataset.id}`, { method: "DELETE" })
+            .then(() => {
+                const feedCard = feedDeleteBtn.closest(".feed-card");
+                if (feedCard) loadFeedComments(feedCard);
+            });
+        return;
+    }
+
     const likeBtn = e.target.closest(".feed-like");
     if (likeBtn) { toggleFeedLike(likeBtn); return; }
     const likersEl = e.target.closest(".feed-likes");
