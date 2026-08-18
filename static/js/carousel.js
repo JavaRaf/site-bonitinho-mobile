@@ -777,11 +777,16 @@ document.getElementById("feedView")?.addEventListener("click", e => {
         commentEl.appendChild(form);
 
         const input = form.querySelector("input");
+        if (typeof handleMentionInput === "function") {
+            mentionInput = input;
+            input.addEventListener("input", handleMentionInput);
+            input.addEventListener("keydown", handleMentionKeydown);
+        }
         input.focus();
 
         const send = async () => {
             const text = input.value.trim();
-            if (!text) { form.remove(); return; }
+            if (!text) { form.remove(); if (typeof hideMentionDropdown === "function") hideMentionDropdown(); return; }
             const feedCard = commentEl.closest(".feed-card");
             const imgName = feedCard.dataset.name;
             try {
@@ -794,12 +799,13 @@ document.getElementById("feedView")?.addEventListener("click", e => {
                     loadFeedComments(feedCard);
                 }
             } catch { /* ignore */ }
+            if (typeof hideMentionDropdown === "function") hideMentionDropdown();
         };
 
         form.querySelector(".comment-reply-send").addEventListener("click", send);
         input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter") send();
-            if (ev.key === "Escape") form.remove();
+            if (ev.key === "Enter" && !(typeof mentionStart !== "undefined" && mentionStart >= 0)) send();
+            if (ev.key === "Escape") { form.remove(); if (typeof hideMentionDropdown === "function") hideMentionDropdown(); }
         });
         return;
     }
