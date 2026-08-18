@@ -998,6 +998,7 @@ header {
   border: none;
   border-radius: 50%;
   background: var(--btn-bg);
+  color: var(--btn-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1018,7 +1019,6 @@ header {
 .feed-create-send img {
   width: 16px;
   height: 16px;
-  color: var(--btn-text);
 }
 
 .feed-create-preview {
