@@ -59,3 +59,29 @@ document.getElementById("menuLogout").addEventListener("click", async () => {
 
 loadProfile();
 
+/* === Auto-hide header on scroll === */
+(function () {
+    const header = document.querySelector("header");
+    if (!header) return;
+    let lastScroll = 0;
+    let ticking = false;
+
+    window.addEventListener("scroll", () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const scrollY = window.scrollY;
+                if (scrollY < 60) {
+                    header.classList.remove("hidden");
+                } else if (scrollY > lastScroll + 5) {
+                    header.classList.add("hidden");
+                } else if (scrollY < lastScroll - 5) {
+                    header.classList.remove("hidden");
+                }
+                lastScroll = scrollY;
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
+})();
+
