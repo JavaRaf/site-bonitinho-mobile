@@ -878,26 +878,6 @@ document.getElementById("viewToggle")?.addEventListener("click", () => {
     applyViewMode();
 });
 
-/* === NSFW filter toggle === */
-function updateNsfwToggle() {
-    const btn = document.getElementById("nsfwToggle");
-    if (!btn) return;
-    btn.dataset.level = nsfwFilter;
-    btn.title = nsfwFilter === "all" ? "+18: Ver tudo" : nsfwFilter === "blur" ? "+18: Borrar" : "+18: Ocultar";
-}
-
-document.getElementById("nsfwToggle")?.addEventListener("click", () => {
-    const modes = ["all", "blur", "hide"];
-    const idx = modes.indexOf(nsfwFilter);
-    nsfwFilter = modes[(idx + 1) % modes.length];
-    localStorage.setItem("nsfwFilter", nsfwFilter);
-    updateNsfwToggle();
-    renderFeed();
-    rebuildCarousel();
-});
-
-updateNsfwToggle();
-
 /* === Refresh on tab focus (economical) === */
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {

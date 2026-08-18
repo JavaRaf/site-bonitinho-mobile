@@ -915,24 +915,6 @@ header {
   background: var(--surface-3);
 }
 
-.nsfw-toggle {
-  font-size: 0.625rem;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.nsfw-toggle[data-level="blur"] {
-  background: #fef3c7;
-  border-color: #f59e0b;
-  color: #92400e;
-}
-
-.nsfw-toggle[data-level="hide"] {
-  background: var(--danger-soft);
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
 /* === Feed view === */
 .feed-view {
   display: flex;

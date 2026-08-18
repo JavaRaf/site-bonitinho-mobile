@@ -11,6 +11,9 @@ async function loadProfile() {
         setAvatarSrc(data.user.avatar);
         selectedColor = data.user.color || "";
         buildColorPicker();
+        const savedNsfw = localStorage.getItem("nsfwFilter") || "blur";
+        const radio = document.querySelector(`input[name="nsfw"][value="${savedNsfw}"]`);
+        if (radio) radio.checked = true;
     } catch { /* ignore */ }
 }
 
@@ -222,6 +225,11 @@ document.getElementById("perfilSave").addEventListener("click", async () => {
     if (username.length < 3) {
         errEl.textContent = "Nome deve ter no mínimo 3 caracteres";
         return;
+    }
+
+    const nsfwRadio = document.querySelector('input[name="nsfw"]:checked');
+    if (nsfwRadio) {
+        localStorage.setItem("nsfwFilter", nsfwRadio.value);
     }
 
     const res = await fetch("/api/auth/profile", {

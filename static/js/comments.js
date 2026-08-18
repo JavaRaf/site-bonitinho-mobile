@@ -156,40 +156,6 @@ function renderComments(comments) {
     list.innerHTML = tree.map(c => renderNode(c, 0)).join("");
 }
 
-/* === Comment Like === */
-document.addEventListener("click", async e => {
-    const likeBtn = e.target.closest(".comment-like-btn");
-    if (likeBtn) {
-        e.stopPropagation();
-        const id = parseInt(likeBtn.dataset.id);
-        const wasLiked = myCommentLikes.has(id);
-        const delta = wasLiked ? -1 : 1;
-        if (wasLiked) myCommentLikes.delete(id);
-        else myCommentLikes.add(id);
-
-        const svg = likeBtn.querySelector("svg");
-        const num = likeBtn.childNodes[likeBtn.childNodes.length - 1];
-        const count = (parseInt(num.textContent) || 0) + delta;
-        svg.setAttribute("fill", !wasLiked ? "#f43f5e" : "none");
-        svg.setAttribute("stroke", !wasLiked ? "#f43f5e" : "currentColor");
-        num.textContent = count > 0 ? " " + count : "";
-        likeBtn.classList.toggle("liked", !wasLiked);
-
-        try {
-            const res = await fetch(`/api/comment-likes/${id}`, { method: wasLiked ? "DELETE" : "POST" });
-            if (!res.ok) throw new Error();
-        } catch {
-            if (wasLiked) myCommentLikes.add(id);
-            else myCommentLikes.delete(id);
-            svg.setAttribute("fill", wasLiked ? "#f43f5e" : "none");
-            svg.setAttribute("stroke", wasLiked ? "#f43f5e" : "currentColor");
-            const newCount = (parseInt(num.textContent) || 0) - delta;
-            num.textContent = newCount > 0 ? " " + newCount : "";
-            likeBtn.classList.toggle("liked", wasLiked);
-        }
-        return;
-    }
-
 /* === Autocomplete @mentions === */
 let mentionDropdown = null;
 let mentionInput = null;
@@ -310,7 +276,41 @@ function handleMentionKeydown(e) {
     }
 }
 
-/* === Reply === */
+/* === Comment Like === */
+document.addEventListener("click", async e => {
+    const likeBtn = e.target.closest(".comment-like-btn");
+    if (likeBtn) {
+        e.stopPropagation();
+        const id = parseInt(likeBtn.dataset.id);
+        const wasLiked = myCommentLikes.has(id);
+        const delta = wasLiked ? -1 : 1;
+        if (wasLiked) myCommentLikes.delete(id);
+        else myCommentLikes.add(id);
+
+        const svg = likeBtn.querySelector("svg");
+        const num = likeBtn.childNodes[likeBtn.childNodes.length - 1];
+        const count = (parseInt(num.textContent) || 0) + delta;
+        svg.setAttribute("fill", !wasLiked ? "#f43f5e" : "none");
+        svg.setAttribute("stroke", !wasLiked ? "#f43f5e" : "currentColor");
+        num.textContent = count > 0 ? " " + count : "";
+        likeBtn.classList.toggle("liked", !wasLiked);
+
+        try {
+            const res = await fetch(`/api/comment-likes/${id}`, { method: wasLiked ? "DELETE" : "POST" });
+            if (!res.ok) throw new Error();
+        } catch {
+            if (wasLiked) myCommentLikes.add(id);
+            else myCommentLikes.delete(id);
+            svg.setAttribute("fill", wasLiked ? "#f43f5e" : "none");
+            svg.setAttribute("stroke", wasLiked ? "#f43f5e" : "currentColor");
+            const newCount = (parseInt(num.textContent) || 0) - delta;
+            num.textContent = newCount > 0 ? " " + newCount : "";
+            likeBtn.classList.toggle("liked", wasLiked);
+        }
+        return;
+    }
+
+    /* === Reply === */
     const replyBtn = e.target.closest(".comment-reply-btn");
     if (replyBtn) {
         e.stopPropagation();
@@ -360,7 +360,7 @@ function handleMentionKeydown(e) {
         return;
     }
 
-/* === Delete === */
+    /* === Delete === */
     const btn = e.target.closest(".comment-delete");
     if (btn) {
         e.stopPropagation();
