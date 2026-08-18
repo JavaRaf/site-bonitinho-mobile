@@ -926,7 +926,8 @@ document.getElementById("feedCreatePreviewRemove")?.addEventListener("click", ()
     feedCreateNsfw = false;
     document.getElementById("feedCreatePreview").hidden = true;
     document.getElementById("feedCreatePreviewImg").src = "";
-    document.getElementById("feedCreateNsfw")?.classList.remove("visible", "active");
+    const nsfw = document.getElementById("feedCreateNsfw");
+    if (nsfw) { nsfw.classList.remove("visible", "active"); }
     updateFeedCreateBtn();
 });
 
@@ -970,7 +971,8 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
             document.getElementById("feedCreateText").value = "";
             document.getElementById("feedCreatePreview").hidden = true;
             document.getElementById("feedCreatePreviewImg").src = "";
-            document.getElementById("feedCreateNsfw").classList.remove("active");
+            const nsfw = document.getElementById("feedCreateNsfw");
+            if (nsfw) nsfw.classList.remove("visible", "active");
             await loadCarousel();
         } else if (res.status === 401) {
             location.href = "/login";
