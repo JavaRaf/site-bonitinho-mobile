@@ -203,15 +203,19 @@ function buildColorPicker() {
             opt.classList.add("selected");
         });
     });
-    if (selectedColor) {
-        container.closest('.perfil-section').classList.add('open');
-    }
 }
 
 const colorToggle = document.getElementById("perfilColorToggle");
 if (colorToggle) {
     colorToggle.addEventListener("click", () => {
         colorToggle.closest('.perfil-section').classList.toggle('open');
+    });
+}
+
+const nsfwToggle = document.getElementById("perfilNsfwToggle");
+if (nsfwToggle) {
+    nsfwToggle.addEventListener("click", () => {
+        nsfwToggle.closest('.perfil-section').classList.toggle('open');
     });
 }
 
