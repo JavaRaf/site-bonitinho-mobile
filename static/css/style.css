@@ -1020,6 +1020,15 @@ header {
   color: var(--btn-text);
 }
 
+.feed-create-nsfw {
+  color: var(--text-muted);
+}
+
+.feed-create-nsfw.active {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
 .feed-create-preview {
   position: relative;
   border-radius: 8px;

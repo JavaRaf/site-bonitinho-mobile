@@ -896,9 +896,15 @@ loadCarousel();
 
 /* === Feed create post (compact) === */
 let feedCreateFile = null;
+let feedCreateNsfw = false;
 
 document.getElementById("feedCreateImg")?.addEventListener("click", () => {
     document.getElementById("feedCreateFile")?.click();
+});
+
+document.getElementById("feedCreateNsfw")?.addEventListener("click", () => {
+    feedCreateNsfw = !feedCreateNsfw;
+    document.getElementById("feedCreateNsfw").classList.toggle("active", feedCreateNsfw);
 });
 
 document.getElementById("feedCreateFile")?.addEventListener("change", () => {
@@ -951,21 +957,23 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
         form.append("images", imageToUpload, imageName);
     }
     form.append("caption", text);
+    if (feedCreateNsfw) form.append("nsfw", "1");
 
     try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
             feedCreateFile = null;
+            feedCreateNsfw = false;
             document.getElementById("feedCreateText").value = "";
             document.getElementById("feedCreatePreview").hidden = true;
             document.getElementById("feedCreatePreviewImg").src = "";
+            document.getElementById("feedCreateNsfw").classList.remove("active");
             await loadCarousel();
         } else if (res.status === 401) {
             location.href = "/login";
         }
     } catch { /* ignore */ }
 
-    btn.textContent = "";
     updateFeedCreateBtn();
 });
 
