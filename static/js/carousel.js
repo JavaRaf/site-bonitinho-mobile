@@ -934,7 +934,6 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
     const text = document.getElementById("feedCreateText")?.value.trim();
     if (!feedCreateFile && !text) return;
     btn.disabled = true;
-    btn.textContent = "Publicando...";
 
     const form = new FormData();
     if (feedCreateFile) {
@@ -966,7 +965,7 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
         }
     } catch { /* ignore */ }
 
-    btn.textContent = "Publicar";
+    btn.textContent = "";
     updateFeedCreateBtn();
 });
 
