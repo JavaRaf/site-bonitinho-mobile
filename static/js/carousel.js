@@ -804,7 +804,7 @@ document.getElementById("feedView")?.addEventListener("click", e => {
 
         form.querySelector(".comment-reply-send").addEventListener("click", send);
         input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter" && !(typeof mentionStart !== "undefined" && mentionStart >= 0)) send();
+            if (ev.key === "Enter" && !(typeof mentionDropdown !== "undefined" && mentionDropdown)) send();
             if (ev.key === "Escape") { form.remove(); if (typeof hideMentionDropdown === "function") hideMentionDropdown(); }
         });
         return;

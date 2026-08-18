@@ -354,7 +354,7 @@ document.addEventListener("click", async e => {
 
         form.querySelector(".comment-reply-send").addEventListener("click", send);
         input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter" && mentionStart < 0) send();
+            if (ev.key === "Enter" && !mentionDropdown) send();
             if (ev.key === "Escape") { form.remove(); hideMentionDropdown(); }
         });
         return;
