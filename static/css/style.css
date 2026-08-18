@@ -915,6 +915,79 @@ header {
   background: var(--surface-3);
 }
 
+/* === Feed create post === */
+.feed-create {
+  max-width: 640px;
+  margin: 0.75rem auto;
+  padding: 0 1rem;
+}
+
+.feed-create[hidden] {
+  display: none;
+}
+
+.feed-create-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.feed-create-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+
+.feed-create-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.feed-create-input:hover {
+  background: var(--surface-3);
+}
+
+.feed-create-img {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.feed-create-img:hover {
+  background: var(--surface-2);
+}
+
+.feed-create-img img {
+  width: 20px;
+  height: 20px;
+}
+
 /* === Feed view === */
 .feed-view {
   display: flex;

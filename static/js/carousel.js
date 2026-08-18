@@ -490,12 +490,14 @@ function applyViewMode() {
     const carrossel = document.querySelector(".carrossel");
     const feedView = document.getElementById("feedView");
     const feedSortWrap = document.getElementById("feedSortWrap");
+    const feedCreate = document.getElementById("feedCreate");
     const toggle = document.getElementById("viewToggle");
     if (!carrossel || !feedView) return;
     if (feedMode) {
         carrossel.style.display = "none";
         feedView.hidden = false;
         if (feedSortWrap) feedSortWrap.hidden = false;
+        if (feedCreate) feedCreate.hidden = false;
         if (toggle) {
             toggle.innerHTML = SLIDE_ICON;
             toggle.title = "Alternar para slide";
@@ -505,6 +507,7 @@ function applyViewMode() {
         carrossel.style.display = "";
         feedView.hidden = true;
         if (feedSortWrap) feedSortWrap.hidden = true;
+        if (feedCreate) feedCreate.hidden = true;
         if (toggle) {
             toggle.innerHTML = FEED_ICON;
             toggle.title = "Alternar para feed";
@@ -890,4 +893,66 @@ document.addEventListener("visibilitychange", () => {
 });
 
 loadCarousel();
+
+/* === Feed create post (compact) === */
+document.getElementById("feedCreateBtn")?.addEventListener("click", () => {
+    document.getElementById("feedCreateFile")?.click();
+});
+
+document.getElementById("feedCreateImg")?.addEventListener("click", () => {
+    document.getElementById("feedCreateFile")?.click();
+});
+
+document.getElementById("feedCreateFile")?.addEventListener("change", async () => {
+    const fileInput = document.getElementById("feedCreateFile");
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const btn = document.getElementById("feedCreateBtn");
+    const originalText = btn.textContent;
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+
+    try {
+        let imageToUpload = file;
+        let imageName = file.name;
+        if (typeof compressImage === "function") {
+            try {
+                imageToUpload = await compressImage(file);
+                if (imageToUpload !== file) {
+                    const ext = file.type === "image/png" ? ".png" : ".jpg";
+                    imageName = file.name.replace(/\.[^.]+$/, "") + ext;
+                }
+            } catch { /* keep original */ }
+        }
+
+        const form = new FormData();
+        form.append("images", imageToUpload, imageName);
+        const res = await fetch("/api/upload", { method: "POST", body: form });
+        if (res.ok) {
+            await loadCarousel();
+        } else if (res.status === 401) {
+            location.href = "/login";
+        }
+    } catch { /* ignore */ }
+
+    btn.textContent = originalText;
+    btn.disabled = false;
+    fileInput.value = "";
+});
+
+(async () => {
+    try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (data.user) {
+            const avatar = document.getElementById("feedCreateAvatar");
+            if (avatar) {
+                const src = (!data.user.avatar || data.user.avatar === "default-avatar.svg")
+                    ? "/static/svg/default-avatar.svg" : `/avatars/${data.user.avatar}`;
+                avatar.src = src;
+            }
+        }
+    } catch { /* ignore */ }
+})();
 
