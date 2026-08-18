@@ -4,6 +4,7 @@ let allImages = [];
 let feedMode = (localStorage.getItem("viewMode") || "slide") === "feed";
 let sortMode = localStorage.getItem("sortMode") || "likes";
 let singleVoteMode = false;
+let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
 
 const FEED_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`;
 const SLIDE_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
@@ -52,7 +53,8 @@ async function loadCarousel() {
         div.dataset.caption = img.caption || "";
         if (img.nsfw) div.dataset.nsfw = "1";
         const loadNow = i <= 1;
-        div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false">`;
+        const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
+        div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false" class="${nsfwClass.trim()}">`;
         track.appendChild(div);
 
         const dot = document.createElement("span");
@@ -348,7 +350,11 @@ function updateGridActive() {
 }
 
 function sortedImages() {
-    return [...allImages].sort((a, b) => {
+    let imgs = [...allImages];
+    if (nsfwFilter === "hide") {
+        imgs = imgs.filter(i => !i.nsfw);
+    }
+    return imgs.sort((a, b) => {
         if (sortMode === "recent") {
             return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         }
@@ -444,7 +450,7 @@ function renderFeed() {
         const liked = likedImages.has(img.name);
         const likes = img.likes || 0;
         const comments = img.comments || 0;
-        const nsfwClass = img.nsfw ? " nsfw-blur" : "";
+        const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
         return `
         <article class="feed-card" data-name="${escText(img.name)}">
             <div class="feed-owner">
@@ -641,12 +647,15 @@ function feedTimeAgo(dateStr) {
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-function renderFeedNode(c, depth, currentUserId, isAdmin) {
+function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     const canDelete = isAdmin || currentUserId === c.user_id;
     const cls = ["comment"];
     if (depth > 0) cls.push("comment-reply");
     if (depth === 1) cls.push("comment-depth-1");
     if (depth >= 2) cls.push("comment-depth-2");
+
+    const liked = myCommentLikes.has(c.id);
+    const likes = c.likes || 0;
 
     let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
     html += `<div class="comment-main">`;
@@ -659,6 +668,7 @@ function renderFeedNode(c, depth, currentUserId, isAdmin) {
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${feedTimeAgo(c.created_at)}</span>`;
     if (currentUserId) {
+        html += `<button class="comment-like-btn${liked ? " liked" : ""}" data-id="${c.id}"><svg width="12" height="12" viewBox="0 0 20 20" fill="${liked ? "#f43f5e" : "none"}" stroke="${liked ? "#f43f5e" : "currentColor"}" stroke-width="2"><path d="M10 19a3.966 3.966 0 01-3.96-3.962V10.98H2.838a1.731 1.731 0 01-1.605-1.073 1.734 1.734 0 01.377-1.895L9.364.254a.925.925 0 011.272 0l7.754 7.759c.498.499.646 1.242.376 1.894-.27.652-.9 1.073-1.605 1.073h-3.202v4.058A3.965 3.965 0 019.999 19H10z"/></svg> ${likes > 0 ? likes : ""}</button>`;
         html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${escText(c.username)}">Responder</button>`;
     }
     html += `</div></div>`;
@@ -669,7 +679,7 @@ function renderFeedNode(c, depth, currentUserId, isAdmin) {
 
     if (c.replies && c.replies.length) {
         html += `<div class="comment-children">`;
-        html += c.replies.map(r => renderFeedNode(r, depth + 1, currentUserId, isAdmin)).join("");
+        html += c.replies.map(r => renderFeedNode(r, depth + 1, currentUserId, isAdmin, myCommentLikes)).join("");
         html += `</div>`;
     }
 
@@ -697,6 +707,7 @@ async function loadFeedComments(card) {
     const list = card.querySelector(".feed-comments-list");
     let feedCurrentUserId = null;
     let feedIsAdmin = false;
+    let feedMyLikes = new Set();
     try {
         const me = await fetch("/api/auth/me");
         const meData = await me.json();
@@ -706,6 +717,11 @@ async function loadFeedComments(card) {
         }
     } catch { /* ignore */ }
     try {
+        const likesRes = await fetch("/api/comment-likes");
+        const likesData = await likesRes.json();
+        feedMyLikes = new Set(likesData.likes || []);
+    } catch { /* ignore */ }
+    try {
         const res = await fetch(`/api/comments/${encodeURIComponent(name)}`);
         const comments = await res.json();
         if (!comments.length) {
@@ -713,7 +729,7 @@ async function loadFeedComments(card) {
             return;
         }
         const tree = buildFeedTree(comments);
-        list.innerHTML = tree.map(c => renderFeedNode(c, 0, feedCurrentUserId, feedIsAdmin)).join("");
+        list.innerHTML = tree.map(c => renderFeedNode(c, 0, feedCurrentUserId, feedIsAdmin, feedMyLikes)).join("");
     } catch { list.innerHTML = ""; }
 }
 
@@ -861,6 +877,26 @@ document.getElementById("viewToggle")?.addEventListener("click", () => {
     localStorage.setItem("viewMode", feedMode ? "feed" : "slide");
     applyViewMode();
 });
+
+/* === NSFW filter toggle === */
+function updateNsfwToggle() {
+    const btn = document.getElementById("nsfwToggle");
+    if (!btn) return;
+    btn.dataset.level = nsfwFilter;
+    btn.title = nsfwFilter === "all" ? "+18: Ver tudo" : nsfwFilter === "blur" ? "+18: Borrar" : "+18: Ocultar";
+}
+
+document.getElementById("nsfwToggle")?.addEventListener("click", () => {
+    const modes = ["all", "blur", "hide"];
+    const idx = modes.indexOf(nsfwFilter);
+    nsfwFilter = modes[(idx + 1) % modes.length];
+    localStorage.setItem("nsfwFilter", nsfwFilter);
+    updateNsfwToggle();
+    renderFeed();
+    rebuildCarousel();
+});
+
+updateNsfwToggle();
 
 /* === Refresh on tab focus (economical) === */
 document.addEventListener("visibilitychange", () => {
