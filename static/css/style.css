@@ -1017,7 +1017,7 @@ header {
 .feed-create-send img {
   width: 16px;
   height: 16px;
-  filter: invert(1);
+  color: var(--btn-text);
 }
 
 .feed-create-preview {
