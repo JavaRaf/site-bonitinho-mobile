@@ -34,12 +34,22 @@
   <div class="feed-create" id="feedCreate" hidden>
     <div class="feed-create-inner">
       <img class="feed-create-avatar" id="feedCreateAvatar" src="/static/svg/default-avatar.svg" alt="">
-      <button class="feed-create-input" id="feedCreateBtn" type="button">No que você está pensando?</button>
-      <input type="file" id="feedCreateFile" accept="image/*" hidden>
-      <button class="feed-create-img" id="feedCreateImg" type="button" title="Adicionar imagem">
-        <img src="/static/svg/image.svg" alt="">
-      </button>
+      <div class="feed-create-body">
+        <input type="text" class="feed-create-input" id="feedCreateText" placeholder="No que você está pensando?" autocomplete="off">
+        <div class="feed-create-preview" id="feedCreatePreview" hidden>
+          <img id="feedCreatePreviewImg" src="" alt="">
+          <button type="button" class="feed-create-preview-remove" id="feedCreatePreviewRemove">&times;</button>
+        </div>
+        <div class="feed-create-actions">
+          <button class="feed-create-img" id="feedCreateImg" type="button" title="Adicionar imagem">
+            <img src="/static/svg/image.svg" alt="">
+            <span>Imagem</span>
+          </button>
+          <button class="feed-create-send" id="feedCreateSend" type="button" disabled>Publicar</button>
+        </div>
+      </div>
     </div>
+    <input type="file" id="feedCreateFile" accept="image/*" hidden>
   </div>
 
   <div class="composer-overlay" id="composerModal">

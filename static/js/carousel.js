@@ -895,50 +895,79 @@ document.addEventListener("visibilitychange", () => {
 loadCarousel();
 
 /* === Feed create post (compact) === */
-document.getElementById("feedCreateBtn")?.addEventListener("click", () => {
-    document.getElementById("feedCreateFile")?.click();
-});
+let feedCreateFile = null;
 
 document.getElementById("feedCreateImg")?.addEventListener("click", () => {
     document.getElementById("feedCreateFile")?.click();
 });
 
-document.getElementById("feedCreateFile")?.addEventListener("change", async () => {
+document.getElementById("feedCreateFile")?.addEventListener("change", () => {
     const fileInput = document.getElementById("feedCreateFile");
     const file = fileInput.files[0];
     if (!file) return;
+    feedCreateFile = file;
+    const preview = document.getElementById("feedCreatePreview");
+    const previewImg = document.getElementById("feedCreatePreviewImg");
+    previewImg.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    updateFeedCreateBtn();
+    fileInput.value = "";
+});
 
-    const btn = document.getElementById("feedCreateBtn");
-    const originalText = btn.textContent;
-    btn.textContent = "Publicando...";
+document.getElementById("feedCreatePreviewRemove")?.addEventListener("click", () => {
+    feedCreateFile = null;
+    document.getElementById("feedCreatePreview").hidden = true;
+    document.getElementById("feedCreatePreviewImg").src = "";
+    updateFeedCreateBtn();
+});
+
+document.getElementById("feedCreateText")?.addEventListener("input", updateFeedCreateBtn);
+
+function updateFeedCreateBtn() {
+    const btn = document.getElementById("feedCreateSend");
+    const text = document.getElementById("feedCreateText")?.value.trim();
+    btn.disabled = !feedCreateFile && !text;
+}
+
+document.getElementById("feedCreateSend")?.addEventListener("click", async () => {
+    const btn = document.getElementById("feedCreateSend");
+    const text = document.getElementById("feedCreateText")?.value.trim();
+    if (!feedCreateFile && !text) return;
     btn.disabled = true;
+    btn.textContent = "Publicando...";
 
-    try {
-        let imageToUpload = file;
-        let imageName = file.name;
+    const form = new FormData();
+    if (feedCreateFile) {
+        let imageToUpload = feedCreateFile;
+        let imageName = feedCreateFile.name;
         if (typeof compressImage === "function") {
             try {
-                imageToUpload = await compressImage(file);
-                if (imageToUpload !== file) {
-                    const ext = file.type === "image/png" ? ".png" : ".jpg";
-                    imageName = file.name.replace(/\.[^.]+$/, "") + ext;
+                imageToUpload = await compressImage(feedCreateFile);
+                if (imageToUpload !== feedCreateFile) {
+                    const ext = feedCreateFile.type === "image/png" ? ".png" : ".jpg";
+                    imageName = feedCreateFile.name.replace(/\.[^.]+$/, "") + ext;
                 }
             } catch { /* keep original */ }
         }
-
-        const form = new FormData();
         form.append("images", imageToUpload, imageName);
+    }
+    form.append("caption", text);
+
+    try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
+            feedCreateFile = null;
+            document.getElementById("feedCreateText").value = "";
+            document.getElementById("feedCreatePreview").hidden = true;
+            document.getElementById("feedCreatePreviewImg").src = "";
             await loadCarousel();
         } else if (res.status === 401) {
             location.href = "/login";
         }
     } catch { /* ignore */ }
 
-    btn.textContent = originalText;
-    btn.disabled = false;
-    fileInput.value = "";
+    btn.textContent = "Publicar";
+    updateFeedCreateBtn();
 });
 
 (async () => {
