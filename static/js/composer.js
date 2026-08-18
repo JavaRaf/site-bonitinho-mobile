@@ -12,9 +12,11 @@ const composerText = document.getElementById("composerText");
 const composerPreview = document.getElementById("composerPreview");
 const composerPreviewImg = document.getElementById("composerPreviewImg");
 const composerRemove = document.getElementById("composerRemove");
+const composerNsfwBtn = document.getElementById("composerNsfw");
 
 let selectedFile = null;
 let selectedZip = null;
+let composerNsfwActive = false;
 
 function closeComposer() {
     composerModal.classList.remove("open");
@@ -34,6 +36,8 @@ function clearImage() {
     composerImageInput.value = "";
     composerPreviewImg.removeAttribute("src");
     composerPreview.hidden = true;
+    composerNsfwActive = false;
+    if (composerNsfwBtn) composerNsfwBtn.classList.remove("visible", "active");
 }
 
 function clearZip() {
@@ -50,6 +54,7 @@ composerImageInput.addEventListener("change", () => {
     selectedFile = file;
     composerPreviewImg.src = URL.createObjectURL(file);
     composerPreview.hidden = false;
+    if (composerNsfwBtn) composerNsfwBtn.classList.add("visible");
     composerPost.disabled = false;
 });
 
@@ -72,6 +77,13 @@ composerZipRemove.addEventListener("click", () => {
     clearZip();
     composerPost.disabled = true;
 });
+
+if (composerNsfwBtn) {
+    composerNsfwBtn.addEventListener("click", () => {
+        composerNsfwActive = !composerNsfwActive;
+        composerNsfwBtn.classList.toggle("active", composerNsfwActive);
+    });
+}
 
 function loadImageFallback(file) {
     return new Promise((resolve, reject) => {
@@ -143,16 +155,13 @@ composerPost.addEventListener("click", async () => {
     if (selectedFile) form.append("images", imageToUpload, imageName);
     if (selectedZip) form.append("zip", selectedZip);
     form.append("caption", composerText.value.trim());
-    const nsfwCheck = document.getElementById("composerNsfw");
-    if (nsfwCheck && nsfwCheck.checked) form.append("nsfw", "1");
+    if (composerNsfwActive) form.append("nsfw", "1");
     try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
             clearImage();
             clearZip();
             composerText.value = "";
-            const nsfwCheck = document.getElementById("composerNsfw");
-            if (nsfwCheck) nsfwCheck.checked = false;
             closeComposer();
             if (typeof loadCarousel === "function") {
                 await loadCarousel();
