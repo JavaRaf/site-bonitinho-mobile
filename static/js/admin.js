@@ -42,6 +42,8 @@ async function loadImages() {
         <div class="admin-card" data-name="${esc(img.name)}">
             <img src="/images/${img.name}" alt="${img.name}" loading="lazy">
             <input type="checkbox" class="admin-select">
+            ${img.nsfw ? '<span class="admin-nsfw-badge">18+</span>' : ''}
+            <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar +18">18+</button>
             <div class="admin-card-info">
                 <span>${esc(img.owner || "—")}</span>
                 <span class="admin-card-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
@@ -56,10 +58,35 @@ async function loadImages() {
 
     document.querySelectorAll(".admin-card").forEach(card => {
         card.addEventListener("click", e => {
-            if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select")) return;
+            if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select") || e.target.closest(".admin-nsfw-btn")) return;
             const likers = card.querySelector(".admin-likers");
             if (likers) card.classList.toggle("expanded");
         });
+
+        const nsfwBtn = card.querySelector(".admin-nsfw-btn");
+        if (nsfwBtn) {
+            nsfwBtn.addEventListener("click", async e => {
+                e.stopPropagation();
+                const name = nsfwBtn.dataset.name;
+                const isActive = nsfwBtn.classList.contains("active");
+                nsfwBtn.classList.toggle("active");
+                let badge = card.querySelector(".admin-nsfw-badge");
+                if (!isActive) {
+                    if (!badge) {
+                        badge = document.createElement("span");
+                        badge.className = "admin-nsfw-badge";
+                        badge.textContent = "18+";
+                        card.querySelector("img").insertAdjacentElement("afterend", badge);
+                    }
+                } else {
+                    if (badge) badge.remove();
+                }
+                try {
+                    await api("POST", "/api/admin/nsfw", { name, nsfw: !isActive });
+                    showStatus(isActive ? "NSFW removido" : "Marcado como +18");
+                } catch { /* revert */ nsfwBtn.classList.toggle("active"); }
+            });
+        }
 
         const selectBtn = card.querySelector(".admin-select");
         if (selectBtn) {

@@ -301,6 +301,24 @@ def admin_remove_single_like(image_name, user_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/nsfw", methods=["POST"])
+def admin_toggle_nsfw():
+    if not is_admin():
+        return jsonify({"error": "admin only"}), 403
+
+    data = request.get_json()
+    name = data.get("name")
+    nsfw = data.get("nsfw", False)
+    if not name:
+        return jsonify({"error": "name required"}), 400
+
+    db = get_db()
+    db.execute("UPDATE uploads SET nsfw = ? WHERE image_name = ?", (1 if nsfw else 0, name))
+    db.commit()
+    db.close()
+    return jsonify({"ok": True, "nsfw": bool(nsfw)})
+
+
 @app.route("/api/users/search", methods=["GET"])
 def search_users():
     q = (request.args.get("q") or "").strip()
