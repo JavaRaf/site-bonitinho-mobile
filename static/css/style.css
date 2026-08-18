@@ -979,6 +979,7 @@ header {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+  color: var(--text-secondary);
   transition: background 0.15s;
 }
 
@@ -1021,7 +1022,12 @@ header {
 }
 
 .feed-create-nsfw {
+  display: none;
   color: var(--text-muted);
+}
+
+.feed-create-nsfw.visible {
+  display: flex;
 }
 
 .feed-create-nsfw.active {

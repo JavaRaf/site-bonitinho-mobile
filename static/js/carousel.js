@@ -916,14 +916,17 @@ document.getElementById("feedCreateFile")?.addEventListener("change", () => {
     const previewImg = document.getElementById("feedCreatePreviewImg");
     previewImg.src = URL.createObjectURL(file);
     preview.hidden = false;
+    document.getElementById("feedCreateNsfw")?.classList.add("visible");
     updateFeedCreateBtn();
     fileInput.value = "";
 });
 
 document.getElementById("feedCreatePreviewRemove")?.addEventListener("click", () => {
     feedCreateFile = null;
+    feedCreateNsfw = false;
     document.getElementById("feedCreatePreview").hidden = true;
     document.getElementById("feedCreatePreviewImg").src = "";
+    document.getElementById("feedCreateNsfw")?.classList.remove("visible", "active");
     updateFeedCreateBtn();
 });
 
