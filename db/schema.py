@@ -69,6 +69,24 @@ def init_db():
             FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
             UNIQUE(user_id, comment_id)
         );
+
+        CREATE TABLE IF NOT EXISTS push_tokens (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            token       TEXT    NOT NULL UNIQUE,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS push_notifications (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            title       TEXT    NOT NULL,
+            body        TEXT    NOT NULL,
+            read        INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
     """)
     # migration: add is_admin if missing
     try:
@@ -103,6 +121,11 @@ def init_db():
     # migration: add nsfw flag on uploads
     try:
         conn.execute("ALTER TABLE uploads ADD COLUMN nsfw INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    # migration: add image_name on push_notifications
+    try:
+        conn.execute("ALTER TABLE push_notifications ADD COLUMN image_name TEXT NOT NULL DEFAULT ''")
     except sqlite3.OperationalError:
         pass
     conn.commit()

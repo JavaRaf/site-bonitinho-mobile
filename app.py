@@ -20,6 +20,7 @@ from flask.cli import load_dotenv
 
 from db.schema import init_db, get_db
 from routes.auth import auth_bp
+from routes.push import push_bp, send_push
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -40,6 +41,7 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 3600
 
 init_db()
 app.register_blueprint(auth_bp)
+app.register_blueprint(push_bp)
 
 
 def get_setting(key, default=None):
@@ -189,7 +191,7 @@ def upload_images():
 
     # verify user still exists
     user = db.execute(
-        "SELECT id FROM users WHERE id = ?", (session["user_id"],)
+        "SELECT id, username FROM users WHERE id = ?", (session["user_id"],)
     ).fetchone()
     if not user:
         db.close()
@@ -200,6 +202,8 @@ def upload_images():
     nsfw = 1 if request.form.get("nsfw") == "1" else 0
 
     saved = []
+    uploader_name = user["username"]
+    uploader_id = user["id"]
 
     def save_image(data, filename):
         ext = Path(filename).suffix.lower()
@@ -236,6 +240,29 @@ def upload_images():
         db.commit()
     finally:
         db.close()
+
+    if saved:
+        link_image = saved[0]
+        def _notify_upload():
+            try:
+                db2 = get_db()
+                users = db2.execute(
+                    "SELECT DISTINCT u.id FROM users u "
+                    "JOIN push_tokens pt ON pt.user_id = u.id WHERE u.id != ?",
+                    (uploader_id,),
+                ).fetchall()
+                db2.close()
+                for u in users:
+                    send_push(
+                        f"Novo post de @{uploader_name}",
+                        f"@{uploader_name} postou {len(saved)} imagem(ns)",
+                        u["id"],
+                        image_name=link_image,
+                    )
+            except Exception:
+                pass
+        from threading import Thread
+        Thread(target=_notify_upload, daemon=True).start()
 
     return jsonify({"saved": saved}), 201
 
@@ -816,7 +843,29 @@ def handle_comments(image_name):
            WHERE c.id = ?""",
         (db.execute("SELECT last_insert_rowid()").fetchone()[0],),
     ).fetchone()
+
+    commenter_name = row["username"] if row else "Alguém"
+
+    owner = db.execute(
+        "SELECT u.id, u.username FROM uploads up JOIN users u ON up.user_id = u.id WHERE up.image_name = ?",
+        (image_name,),
+    ).fetchone()
     db.close()
+
+    if owner and owner["id"] != session["user_id"]:
+        def _notify_comment():
+            try:
+                send_push(
+                    f"Novo comentário de @{commenter_name}",
+                    text[:100],
+                    owner["id"],
+                    image_name=image_name,
+                )
+            except Exception:
+                pass
+        from threading import Thread
+        Thread(target=_notify_comment, daemon=True).start()
+
     return jsonify(dict(row)), 201
 
 
@@ -907,6 +956,12 @@ def get_my_comment_likes():
     ).fetchall()
     db.close()
     return jsonify({"likes": [r["comment_id"] for r in rows]})
+
+
+@app.route("/firebase-messaging-sw.js")
+def service_worker():
+    return send_from_directory(BASE_DIR, "firebase-messaging-sw.js",
+                               mimetype="application/javascript")
 
 
 if __name__ == "__main__":

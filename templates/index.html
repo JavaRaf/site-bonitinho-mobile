@@ -19,6 +19,10 @@
 
     <div class="user">
       <button class="view-toggle" id="viewToggle" type="button" title="Alternar visualização" aria-label="Alternar visualização"></button>
+      <button class="header-bell" id="headerBell" type="button" title="Notificações" aria-label="Notificações">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="header-bell-badge" id="bellBadge" hidden>0</span>
+      </button>
       <div id="user-avatar"><img src="/static/svg/default-avatar.svg" type="image/svg"></div>
       <div class="user-menu" id="userMenu">
         <button class="menu-item" id="menuPerfil">Perfil</button>
@@ -27,6 +31,17 @@
         <button class="menu-item" id="menuDarkToggle">Alternar tema</button>
         <button class="menu-item" id="menuAdmin">Admin</button>
         <button class="menu-item" id="menuLogout">Sair</button>
+      </div>
+      <div class="notif-panel" id="notifPanel" hidden>
+        <div class="notif-header">
+          <span class="notif-title">Notificações</span>
+          <button class="notif-push-toggle" id="notifPushToggle" type="button" title="Ativar/desativar notificações">
+            <svg class="notif-bell-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+        </div>
+        <div class="notif-list" id="notifList">
+          <p class="notif-empty">Nenhuma notificação</p>
+        </div>
       </div>
     </div>
   </header>
@@ -202,5 +217,6 @@
 <script src="/static/js/user-menu.js"></script>
 <script src="/static/js/composer.js"></script>
 <script src="/static/js/lightbox.js"></script>
+<script src="/static/js/notifications.js"></script>
 
 </html>
