@@ -9,7 +9,7 @@
     const avatarEl = document.getElementById("lightboxAvatar");
     const likesEl = document.getElementById("lightboxLikes");
     const captionEl = document.getElementById("lightboxCaption");
-    const deleteBtn = document.getElementById("lightboxDelete");
+    const imgDeleteBtn = document.getElementById("imgDelete");
 
     let zoom = 1;
     let panX = 0;
@@ -174,9 +174,9 @@
         captionEl.textContent = imgData.caption || "";
         img.src = `/images/${imgData.name}`;
         img.alt = imgData.name;
-        if (deleteBtn) {
+        if (imgDeleteBtn) {
             const isOwner = typeof myUserId !== "undefined" && myUserId && imgData.owner_id === myUserId;
-            deleteBtn.style.display = isOwner ? "" : "none";
+            imgDeleteBtn.style.display = isOwner ? "" : "none";
         }
         resetZoom();
     }
@@ -202,8 +202,8 @@
 
     closeBtn.addEventListener("click", closeLightbox);
 
-    if (deleteBtn) {
-        deleteBtn.addEventListener("click", e => {
+    if (imgDeleteBtn) {
+        imgDeleteBtn.addEventListener("click", e => {
             e.stopPropagation();
             const imgData = images[currentIndex];
             if (!imgData) return;

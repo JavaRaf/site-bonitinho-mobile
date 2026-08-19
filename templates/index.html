@@ -119,6 +119,7 @@
       <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar"
           src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span><span class="img-owner-singlevote"
           id="imgOwnerSingleVote" style="display:none">Voto único</span>
+        <button class="img-delete" id="imgDelete" type="button" title="Apagar post" style="display:none"><img src="/static/svg/trash.svg" alt="delete"></button>
         <select class="sort-select" id="sortSelect" title="Ordenar" aria-label="Ordenar">
           <option value="likes">Mais votadas</option>
           <option value="recent">Mais recentes</option>
@@ -199,9 +200,6 @@
         <span class="lightbox-owner" id="lightboxOwner"></span>
         <span class="lightbox-likes" id="lightboxLikes"></span>
       </div>
-      <button class="lightbox-delete" id="lightboxDelete" type="button" title="Apagar post" style="display:none">
-        <img src="/static/svg/trash.svg" alt="delete">
-      </button>
       <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Fechar">&times;</button>
     </div>
     <div class="lightbox-body" id="lightboxBody">

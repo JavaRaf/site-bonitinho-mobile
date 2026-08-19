@@ -414,6 +414,29 @@ header.hidden {
   flex-shrink: 0;
 }
 
+.img-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.img-delete:hover {
+  background: var(--surface-2);
+}
+
+.img-delete img {
+  width: 16px;
+  height: 16px;
+}
+
 .carousel-track {
   display: flex;
   width: 100%;
@@ -1744,31 +1767,6 @@ header.hidden {
 
 .lightbox-close:hover {
   background: rgba(255,255,255,0.2);
-}
-
-.lightbox-delete {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-}
-
-.lightbox-delete:hover {
-  background: rgba(244, 63, 94, 0.4);
-}
-
-.lightbox-delete img {
-  width: 18px;
-  height: 18px;
-  filter: invert(1);
 }
 
 .lightbox-body {
