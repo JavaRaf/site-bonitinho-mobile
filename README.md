@@ -96,15 +96,15 @@ Substitua os valores nos seguintes arquivos:
 ### 7.4 Baixe a Service Account Key
 
 1. No Firebase Console, vá em **Configurações do projeto** → aba **Service accounts**.
-2. Clique em **Generate new private key** (botão vermelho).
+2. Clique em **Generate new private key** (botão azul).
 3. Salve o JSON baixado como `firebase-service-account.json` na **raiz do projeto**.
 
 > ⚠️ Este arquivo contém a chave privada e **não deve ser versionado**. Já está no `.gitignore`.
 
-### 7.5 Instale as dependências extras
+### 7.5 Reinstale as dependências
 
 ```bash
-pip install PyJWT cryptography requests
+pip install -r requirements.txt
 ```
 
 ### 7.6 Recarregue o app

@@ -1,0 +1,25 @@
+{
+  "name": "ArteBonitinha",
+  "short_name": "ArteBonitinha",
+  "description": "Rede social de imagens",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f43f5e",
+  "theme_color": "#f43f5e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/png/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/png/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "photo"]
+}

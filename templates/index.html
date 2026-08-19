@@ -4,6 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#f43f5e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ArteBonitinha">
+  <link rel="apple-touch-icon" href="/static/png/icon-128x128.png">
   <link rel="icon" href="/static/svg/logo.svg">
   <title>Site Bonitinho</title>
   <link rel="stylesheet" href="/static/css/style.css">
@@ -209,14 +215,23 @@
     <div class="lightbox-caption" id="lightboxCaption"></div>
   </div>
 
-</body>
-
 <script src="/static/js/carousel.js"></script>
 <script src="/static/js/download.js"></script>
 <script src="/static/js/comments.js"></script>
 <script src="/static/js/user-menu.js"></script>
 <script src="/static/js/composer.js"></script>
 <script src="/static/js/lightbox.js"></script>
+<script src="/static/js/notifications.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then((reg) => console.log('Service Worker registrado', reg.scope))
+      .catch((err) => console.error('Falha ao registrar Service Worker:', err));
+  });
+}
+</script>
 <script src="/static/js/notifications.js"></script>
 
 </html>
