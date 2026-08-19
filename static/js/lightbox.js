@@ -9,6 +9,7 @@
     const avatarEl = document.getElementById("lightboxAvatar");
     const likesEl = document.getElementById("lightboxLikes");
     const captionEl = document.getElementById("lightboxCaption");
+    const deleteBtn = document.getElementById("lightboxDelete");
 
     let zoom = 1;
     let panX = 0;
@@ -173,6 +174,10 @@
         captionEl.textContent = imgData.caption || "";
         img.src = `/images/${imgData.name}`;
         img.alt = imgData.name;
+        if (deleteBtn) {
+            const isOwner = typeof myUserId !== "undefined" && myUserId && imgData.owner_id === myUserId;
+            deleteBtn.style.display = isOwner ? "" : "none";
+        }
         resetZoom();
     }
 
@@ -196,6 +201,28 @@
     }
 
     closeBtn.addEventListener("click", closeLightbox);
+
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            const imgData = images[currentIndex];
+            if (!imgData) return;
+            if (!confirm("Apagar este post?")) return;
+            fetch(`/api/my-images/${encodeURIComponent(imgData.name)}`, { method: "DELETE", credentials: "include" })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        if (typeof allImages !== "undefined") {
+                            window.allImages = allImages.filter(x => x.name !== imgData.name);
+                        }
+                        closeLightbox();
+                        if (typeof renderFeed === "function") renderFeed();
+                        if (typeof renderGrid === "function") renderGrid();
+                        if (typeof loadCarousel === "function") loadCarousel();
+                    }
+                });
+        });
+    }
 
     window.addEventListener("popstate", () => {
         if (isOpen) closeLightbox();
