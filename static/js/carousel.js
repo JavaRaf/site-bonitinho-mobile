@@ -54,7 +54,8 @@ async function loadCarousel() {
         if (img.nsfw) div.dataset.nsfw = "1";
         const loadNow = i <= 1;
         const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
-        div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false" class="${nsfwClass.trim()}">`;
+        const nsfwBtn = (img.nsfw && nsfwFilter === "blur") ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : "";
+        div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false" class="${nsfwClass.trim()}">${nsfwBtn}`;
         track.appendChild(div);
 
         const dot = document.createElement("span");
@@ -196,6 +197,16 @@ document.addEventListener("keydown", e => {
 let tapTimeout = null;
 
 track.addEventListener("click", e => {
+    const revealBtn = e.target.closest(".nsfw-reveal-btn");
+    if (revealBtn) {
+        e.stopPropagation();
+        const slide = revealBtn.closest(".carousel-slide");
+        if (slide) {
+            slide.querySelector("img")?.classList.remove("nsfw-blur");
+            revealBtn.remove();
+        }
+        return;
+    }
     const img = e.target.closest(".carousel-slide img");
     if (!img) return;
     const now = Date.now();
@@ -460,7 +471,7 @@ function renderFeed() {
                 ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
             </div>
             <div class="feed-caption">${escText(img.caption || "")}</div>
-            <div class="feed-img"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}"></div>
+            <div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>
             <div class="feed-actions">
                 <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
                     <img src="${liked ? "/static/svg/upvote-filled.svg" : "/static/svg/upvote.svg"}" alt="like">
@@ -474,7 +485,7 @@ function renderFeed() {
                     <img src="/static/svg/download.svg" alt="download">
                 </button>
             </div>
-            <div class="feed-likers" hidden></div>
+            <div class="feed-likers"></div>
             <div class="feed-comments" hidden>
                 <div class="feed-comments-list"></div>
                 <form class="comment-form feed-comment-form">
@@ -614,16 +625,16 @@ async function toggleFeedLikers(el) {
     const name = el.dataset.name;
     const card = el.closest(".feed-card");
     const box = card.querySelector(".feed-likers");
-    if (!box.hidden) { box.hidden = true; return; }
+    if (box.classList.contains("open")) { box.classList.remove("open"); box.innerHTML = ""; return; }
     box.innerHTML = "Carregando...";
-    box.hidden = false;
+    box.classList.add("open");
     try {
         const res = await fetch(`/api/likers/${encodeURIComponent(name)}`);
         const likers = await res.json();
         box.innerHTML = likers.length
             ? likers.map(u => `<span class="liker-tag">@${escText(u.username)}</span>`).join("")
             : `<span class="liker-tag" style="color:#a1a1aa">Ninguém ainda</span>`;
-    } catch { box.hidden = true; }
+    } catch { box.classList.remove("open"); box.innerHTML = ""; }
 }
 
 function userColorFeed(username) {
@@ -671,7 +682,9 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${feedTimeAgo(c.created_at)}</span>`;
     if (currentUserId) {
-        html += `<button class="comment-like-btn${liked ? " liked" : ""}" data-id="${c.id}"><svg width="12" height="12" viewBox="0 0 20 20" fill="${liked ? "#f43f5e" : "none"}" stroke="${liked ? "#f43f5e" : "currentColor"}" stroke-width="2"><path d="M10 19a3.966 3.966 0 01-3.96-3.962V10.98H2.838a1.731 1.731 0 01-1.605-1.073 1.734 1.734 0 01.377-1.895L9.364.254a.925.925 0 011.272 0l7.754 7.759c.498.499.646 1.242.376 1.894-.27.652-.9 1.073-1.605 1.073h-3.202v4.058A3.965 3.965 0 019.999 19H10z"/></svg> ${likes > 0 ? likes : ""}</button>`;
+        html += `<button class="comment-like-btn${liked ? " liked" : ""}" data-id="${c.id}"><svg width="12" height="12" viewBox="0 0 20 20" fill="${liked ? "#f43f5e" : "none"}" stroke="${liked ? "#f43f5e" : "currentColor"}" stroke-width="2"><path d="M10 19a3.966 3.966 0 01-3.96-3.962V10.98H2.838a1.731 1.731 0 01-1.605-1.073 1.734 1.734 0 01.377-1.895L9.364.254a.925.925 0 011.272 0l7.754 7.759c.498.499.646 1.242.376 1.894-.27.652-.9 1.073-1.605 1.073h-3.202v4.058A3.965 3.965 0 019.999 19H10z"/></svg></button>`;
+        html += `<span class="comment-like-count" data-id="${c.id}"${likes > 0 ? "" : " style='display:none'"}>${likes || ""}</span>`;
+        html += `<div class="comment-likers" data-id="${c.id}" hidden></div>`;
         html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${escText(c.username)}">Responder</button>`;
     }
     html += `</div></div>`;
@@ -818,6 +831,18 @@ document.getElementById("feedView")?.addEventListener("click", e => {
                 const feedCard = feedDeleteBtn.closest(".feed-card");
                 if (feedCard) loadFeedComments(feedCard);
             });
+        return;
+    }
+
+    const revealBtn = e.target.closest(".nsfw-reveal-btn");
+    if (revealBtn) {
+        e.stopPropagation();
+        const container = revealBtn.closest(".feed-img");
+        if (container) {
+            container.querySelector("img")?.classList.remove("nsfw-blur");
+            revealBtn.remove();
+            container.classList.remove("nsfw-container");
+        }
         return;
     }
 

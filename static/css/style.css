@@ -535,6 +535,7 @@ header.hidden {
 
 .comment-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.625rem;
   padding: 0.125rem 0.625rem;
@@ -586,6 +587,41 @@ header.hidden {
 
 .comment-like-btn.liked {
   color: var(--danger);
+}
+
+.comment-like-count {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 0.125rem;
+}
+
+.comment-like-count:hover {
+  color: var(--text-secondary);
+}
+
+.comment-likers {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.2rem 0;
+}
+
+.comment-likers[hidden] {
+  display: none;
+}
+
+.comment-liker-tag {
+  font-size: 0.625rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 0.125rem 0.4rem;
+  white-space: nowrap;
 }
 
 .comment-delete {
@@ -1245,10 +1281,13 @@ header.hidden {
 }
 
 .feed-likers {
-  display: flex;
+  display: none;
   flex-wrap: wrap;
   gap: 0.3rem;
   padding: 0.4rem 0.75rem;
+}
+.feed-likers.open {
+  display: flex;
 }
 
 .feed-comments {
@@ -1621,13 +1660,35 @@ header.hidden {
 
 /* NSFW blur */
 .nsfw-blur {
-  filter: blur(20px);
-  transition: filter 0.3s;
-  cursor: pointer;
+  filter: blur(30px);
+  cursor: default;
 }
 
-.nsfw-blur:hover {
-  filter: blur(8px);
+.nsfw-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nsfw-reveal-btn {
+  position: absolute;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.nsfw-reveal-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
 }
 
 .nsfw-label {

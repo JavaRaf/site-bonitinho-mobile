@@ -884,6 +884,18 @@ def toggle_comment_like(comment_id):
         return jsonify({"liked": True})
 
 
+@app.route("/api/comment-likers/<int:comment_id>", methods=["GET"])
+def get_comment_likers(comment_id):
+    db = get_db()
+    rows = db.execute(
+        """SELECT u.username, u.avatar FROM comment_likes cl
+           JOIN users u ON cl.user_id = u.id WHERE cl.comment_id = ?""",
+        (comment_id,),
+    ).fetchall()
+    db.close()
+    return jsonify([dict(r) for r in rows])
+
+
 @app.route("/api/comment-likes", methods=["GET"])
 def get_my_comment_likes():
     if "user_id" not in session:
