@@ -1103,10 +1103,12 @@ header.hidden {
 }
 
 .feed-sort-wrap {
+  max-width: 640px;
   margin-top: 10px;
+  margin: 0.75rem auto;
   padding: 0 1rem;
+  justify-content: end;
   display: flex;
-  justify-content: flex-end;
 }
 
 .feed-sort-wrap[hidden] {
