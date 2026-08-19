@@ -1409,15 +1409,30 @@ header.hidden {
   cursor: pointer;
 }
 
+.feed-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  margin-left: auto;
+}
+
 .feed-like:hover,
 .feed-comment-toggle:hover,
-.feed-download:hover {
+.feed-download:hover,
+.feed-delete:hover {
   background: var(--surface-2);
 }
 
 .feed-like img,
 .feed-comment-toggle img,
-.feed-download img {
+.feed-download img,
+.feed-delete img {
   width: 20px;
   height: 20px;
 }

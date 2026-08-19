@@ -128,7 +128,7 @@ def list_images():
     img_dir = BASE_DIR / "images"
     allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     db = get_db()
-    rows = db.execute("""SELECT u.image_name, us.username, us.avatar AS owner_avatar, u.caption, u.created_at, u.nsfw,
+    rows = db.execute("""SELECT u.image_name, u.user_id, us.username, us.avatar AS owner_avatar, u.caption, u.created_at, u.nsfw,
                   (SELECT COUNT(*) FROM likes l WHERE l.image_name = u.image_name) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.image_name = u.image_name) AS comments
            FROM uploads u LEFT JOIN users us ON u.user_id = us.id
@@ -145,6 +145,7 @@ def list_images():
                 {
                     "name": r["image_name"],
                     "owner": r["username"],
+                    "owner_id": r["user_id"],
                     "likes": r["likes"],
                     "comments": r["comments"],
                     "created_at": r["created_at"],
@@ -295,6 +296,34 @@ def admin_delete_images():
     db.commit()
     db.close()
     return jsonify({"ok": True, "deleted": len(names)})
+
+
+@app.route("/api/my-images/<path:image_name>", methods=["DELETE"])
+def delete_my_image(image_name):
+    if "user_id" not in session:
+        return jsonify({"error": "login required"}), 401
+
+    db = get_db()
+    upload = db.execute(
+        "SELECT user_id FROM uploads WHERE image_name = ?", (image_name,)
+    ).fetchone()
+    if not upload or upload["user_id"] != session["user_id"]:
+        db.close()
+        return jsonify({"error": "not found or not owner"}), 403
+
+    filepath = BASE_DIR / "images" / image_name
+    if filepath.exists():
+        filepath.unlink()
+    thumb_path = BASE_DIR / "thumbs" / (image_name + ".jpg")
+    if thumb_path.exists():
+        thumb_path.unlink()
+    db.execute("DELETE FROM likes WHERE image_name = ?", (image_name,))
+    db.execute("DELETE FROM comments WHERE image_name = ?", (image_name,))
+    db.execute("DELETE FROM push_notifications WHERE image_name = ?", (image_name,))
+    db.execute("DELETE FROM uploads WHERE image_name = ?", (image_name,))
+    db.commit()
+    db.close()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/admin/likes", methods=["DELETE"])
@@ -783,11 +812,34 @@ def toggle_like(image_name):
             ).fetchone()
             if other:
                 db.execute("DELETE FROM likes WHERE id = ?", (other["id"],))
+
+        liker = db.execute("SELECT username FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+        owner = db.execute(
+            "SELECT user_id FROM uploads WHERE image_name = ?", (image_name,)
+        ).fetchone()
+
         db.execute(
             "INSERT INTO likes (user_id, image_name) VALUES (?, ?)",
             (session["user_id"], image_name),
         )
         db.commit()
+
+        if owner and owner["user_id"] != session["user_id"] and liker:
+            liker_name = liker["username"]
+            owner_id = owner["user_id"]
+            def _notify_like():
+                try:
+                    send_push(
+                        f"@{liker_name} curtiu sua imagem",
+                        f"@{liker_name} curtiu {image_name}",
+                        owner_id,
+                        image_name=image_name,
+                    )
+                except Exception:
+                    pass
+            from threading import Thread
+            Thread(target=_notify_like, daemon=True).start()
+
         db.close()
         return jsonify({"liked": True})
 

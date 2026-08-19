@@ -5,6 +5,7 @@ let feedMode = (localStorage.getItem("viewMode") || "slide") === "feed";
 let sortMode = localStorage.getItem("sortMode") || "likes";
 let singleVoteMode = false;
 let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
+let myUserId = null;
 
 const FEED_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`;
 const SLIDE_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
@@ -33,6 +34,13 @@ async function loadCarousel() {
     const res = await fetch("/api/images");
     const images = await res.json();
     allImages = images;
+
+    try {
+        const me = await fetch("/api/auth/me");
+        const meData = await me.json();
+        if (meData.user) myUserId = meData.user.id;
+    } catch { /* not logged in */ }
+
     renderGrid();
 
     const track = document.getElementById("carouselTrack");
@@ -484,6 +492,7 @@ function renderFeed() {
                 <button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar">
                     <img src="/static/svg/download.svg" alt="download">
                 </button>
+                ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
             <div class="feed-likers"></div>
             <div class="feed-comments" hidden>
@@ -843,6 +852,23 @@ document.getElementById("feedView")?.addEventListener("click", e => {
             revealBtn.remove();
             container.classList.remove("nsfw-container");
         }
+        return;
+    }
+
+    const feedDeleteBtn = e.target.closest(".feed-delete");
+    if (feedDeleteBtn) {
+        e.stopPropagation();
+        const name = feedDeleteBtn.dataset.name;
+        if (!confirm("Apagar este post?")) return;
+        fetch(`/api/my-images/${encodeURIComponent(name)}`, { method: "DELETE", credentials: "include" })
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    allImages = allImages.filter(x => x.name !== name);
+                    renderFeed();
+                    renderGrid();
+                }
+            });
         return;
     }
 
