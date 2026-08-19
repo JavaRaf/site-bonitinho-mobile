@@ -855,10 +855,10 @@ document.getElementById("feedView")?.addEventListener("click", e => {
         return;
     }
 
-    const feedDeleteBtn = e.target.closest(".feed-delete");
-    if (feedDeleteBtn) {
+    const postDeleteBtn = e.target.closest(".feed-delete");
+    if (postDeleteBtn) {
         e.stopPropagation();
-        const name = feedDeleteBtn.dataset.name;
+        const name = postDeleteBtn.dataset.name;
         if (!confirm("Apagar este post?")) return;
         fetch(`/api/my-images/${encodeURIComponent(name)}`, { method: "DELETE", credentials: "include" })
             .then(res => res.json())
