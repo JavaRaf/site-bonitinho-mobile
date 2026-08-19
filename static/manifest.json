@@ -4,13 +4,13 @@
   "description": "Rede social de imagens",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f43f5e",
-  "theme_color": "#f43f5e",
+  "background_color": "#fae884",
+  "theme_color": "#a8a8a8",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/static/png/icon-128x128.png",
-      "sizes": "128x128",
+      "src": "/static/png/icon-192x192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
