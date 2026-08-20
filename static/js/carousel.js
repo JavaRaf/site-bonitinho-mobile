@@ -1152,7 +1152,7 @@ function updateLastTimestamp() {
     }
 }
 
-setInterval(checkNewPosts, 15000);
+setInterval(checkNewPosts, 60000);
 
 /* === Feed create post (compact) === */
 let feedCreateFiles = [];

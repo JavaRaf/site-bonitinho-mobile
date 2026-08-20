@@ -355,7 +355,9 @@ header.hidden {
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-
+}
+.carrossel[hidden] {
+  display: none;
 }
 
 .img-model {

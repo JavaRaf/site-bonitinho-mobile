@@ -145,5 +145,5 @@ notifPushToggle.addEventListener("click", async (e) => {
 })();
 
 refreshNotificationBadge();
-setInterval(refreshNotificationBadge, 30000);
+setInterval(refreshNotificationBadge, 60000);
 })();
