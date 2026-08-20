@@ -1,6 +1,4 @@
 import re
-from threading import Thread
-
 from flask import Blueprint, request, jsonify, session
 from db import db
 from db.models import User, Comment, CommentLike, Upload
@@ -73,47 +71,34 @@ def handle_comments(image_name):
 
     if owner_upload and owner_upload[1].id != session["user_id"]:
         owner_user = owner_upload[1]
-
-        def _notify_comment(owner_id=owner_user.id):
-            try:
-                from flask import current_app
-                with current_app.app_context():
-                    from routes.push import send_push
-                    send_push(
-                        f"Novo comentario de @{commenter_name}",
-                        text[:100],
-                        owner_id,
-                        image_name=image_name,
-                    )
-            except Exception:
-                pass
-
-        Thread(target=_notify_comment, daemon=True).start()
+        try:
+            from routes.push import send_push
+            send_push(
+                f"Novo comentario de @{commenter_name}",
+                text[:100],
+                owner_user.id,
+                image_name=image_name,
+            )
+        except Exception:
+            pass
 
     mentioned_usernames = set(re.findall(r"@(\w+)", text))
     mentioned_usernames.discard(commenter_name)
     if mentioned_usernames:
         session_user_id = session["user_id"]
-        mentioned_list = list(mentioned_usernames)
-
-        def _notify_mentions(uids=None):
-            try:
-                from flask import current_app
-                with current_app.app_context():
-                    from routes.push import send_push
-                    for uname in mentioned_list:
-                        user = User.query.filter_by(username=uname).first()
-                        if user and user.id != session_user_id:
-                            send_push(
-                                f"@{commenter_name} mencionou voce",
-                                text[:100],
-                                user.id,
-                                image_name=image_name,
-                            )
-            except Exception:
-                pass
-
-        Thread(target=_notify_mentions, daemon=True).start()
+        try:
+            from routes.push import send_push
+            for uname in mentioned_usernames:
+                user = User.query.filter_by(username=uname).first()
+                if user and user.id != session_user_id:
+                    send_push(
+                        f"@{commenter_name} mencionou voce",
+                        text[:100],
+                        user.id,
+                        image_name=image_name,
+                    )
+        except Exception:
+            pass
 
     return jsonify({
         "id": comment.id, "text": comment.text, "created_at": comment.created_at,

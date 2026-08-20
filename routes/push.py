@@ -56,54 +56,48 @@ def _get_access_token():
 
 
 def send_push(title, body, user_id, image_name=""):
-    from flask import current_app
+    notif = PushNotification(
+        user_id=user_id, title=title, body=body, image_name=image_name
+    )
+    db.session.add(notif)
+    db.session.commit()
 
-    def _do_push():
-        with current_app.app_context():
-            notif = PushNotification(
-                user_id=user_id, title=title, body=body, image_name=image_name
-            )
-            db.session.add(notif)
-            db.session.commit()
+    tokens = PushToken.query.filter_by(user_id=user_id).all()
+    if not tokens:
+        return
 
-            tokens = PushToken.query.filter_by(user_id=user_id).all()
-            if not tokens:
-                return
+    sa = _load_service_account()
+    access_token = _get_access_token()
+    url = FCM_API_URL.format(project_id=sa["project_id"])
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
 
-            sa = _load_service_account()
-            access_token = _get_access_token()
-            url = FCM_API_URL.format(project_id=sa["project_id"])
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
+    invalid_tokens = []
+    for pt in tokens:
+        payload = {
+            "message": {
+                "token": pt.token,
+                "data": {"title": title, "body": body},
             }
+        }
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=10)
+            if resp.status_code == 404 or (
+                resp.status_code == 200
+                and resp.json().get("results", [{}])[0].get("error")
+                in ("INVALID_ARGUMENT", "UNREGISTERED")
+            ):
+                invalid_tokens.append(pt.token)
+        except requests.RequestException:
+            pass
 
-            invalid_tokens = []
-            for pt in tokens:
-                payload = {
-                    "message": {
-                        "token": pt.token,
-                        "data": {"title": title, "body": body},
-                    }
-                }
-                try:
-                    resp = requests.post(url, headers=headers, json=payload, timeout=10)
-                    if resp.status_code == 404 or (
-                        resp.status_code == 200
-                        and resp.json().get("results", [{}])[0].get("error")
-                        in ("INVALID_ARGUMENT", "UNREGISTERED")
-                    ):
-                        invalid_tokens.append(pt.token)
-                except requests.RequestException:
-                    pass
-
-            if invalid_tokens:
-                PushToken.query.filter(PushToken.token.in_(invalid_tokens)).delete(
-                    synchronize_session=False
-                )
-                db.session.commit()
-
-    _do_push()
+    if invalid_tokens:
+        PushToken.query.filter(PushToken.token.in_(invalid_tokens)).delete(
+            synchronize_session=False
+        )
+        db.session.commit()
 
 
 @push_bp.route("/api/push/subscribe", methods=["POST"])

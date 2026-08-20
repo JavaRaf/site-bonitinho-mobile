@@ -269,23 +269,21 @@ def upload_images():
 
         def _notify_upload():
             try:
-                from flask import current_app
-                with current_app.app_context():
-                    from db.models import PushToken
-                    users_with_tokens = (
-                        db.session.query(User.id)
-                        .join(PushToken, PushToken.user_id == User.id)
-                        .filter(User.id != uploader_id)
-                        .distinct()
-                        .all()
+                from db.models import PushToken
+                users_with_tokens = (
+                    db.session.query(User.id)
+                    .join(PushToken, PushToken.user_id == User.id)
+                    .filter(User.id != uploader_id)
+                    .distinct()
+                    .all()
+                )
+                for u in users_with_tokens:
+                    send_push(
+                        f"Novo post de @{uploader_name}",
+                        f"@{uploader_name} postou {num_saved} arquivo(s)",
+                        u.id,
+                        image_name=link_image,
                     )
-                    for u in users_with_tokens:
-                        send_push(
-                            f"Novo post de @{uploader_name}",
-                            f"@{uploader_name} postou {num_saved} arquivo(s)",
-                            u.id,
-                            image_name=link_image,
-                        )
             except Exception:
                 pass
 
