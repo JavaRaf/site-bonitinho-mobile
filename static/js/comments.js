@@ -2,6 +2,7 @@ let currentUserId = null;
 let isAdmin = false;
 const commentsCache = new Map();
 let myCommentLikes = new Set();
+let replyParentId = null;
 
 const commentColors = ["#f43f5e", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
 
@@ -342,49 +343,15 @@ document.addEventListener("click", async e => {
     const replyBtn = e.target.closest(".comment-reply-btn");
     if (replyBtn) {
         e.stopPropagation();
-        document.querySelectorAll(".comment-reply-form").forEach(f => f.remove());
         hideMentionDropdown();
-        const commentEl = replyBtn.closest(".comment");
-        const commentId = replyBtn.dataset.id;
+        const commentId = parseInt(replyBtn.dataset.id);
         const username = replyBtn.dataset.user;
-
-        const form = document.createElement("div");
-        form.className = "comment-reply-form";
-        form.innerHTML = `
-            <div class="comment-reply-form-avatar"><img src="${avatarUrl()}" alt=""></div>
-            <input type="text" placeholder="Responder @${username}..." autocomplete="off">
-            <button type="button" class="comment-reply-send"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>`;
-        commentEl.appendChild(form);
-
-        const input = form.querySelector("input");
-        mentionInput = input;
-        input.addEventListener("input", handleMentionInput);
-        input.addEventListener("keydown", handleMentionKeydown);
-        input.focus();
-
-        const send = async () => {
-            const text = input.value.trim();
-            if (!text) { form.remove(); hideMentionDropdown(); return; }
-            const imgName = currentImageName();
-            try {
-                const res = await fetch(`/api/comments/${imgName}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text, parent_id: parseInt(commentId) })
-                });
-                if (res.ok) {
-                    commentsCache.delete(imgName);
-                    await loadComments(true);
-                }
-            } catch { /* ignore */ }
-            hideMentionDropdown();
-        };
-
-        form.querySelector(".comment-reply-send").addEventListener("click", send);
-        input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter" && !mentionDropdown) send();
-            if (ev.key === "Escape") { form.remove(); hideMentionDropdown(); }
-        });
+        replyParentId = commentId;
+        const input = document.getElementById("commentInput");
+        if (input) {
+            input.placeholder = `Responder @${username}...`;
+            input.focus();
+        }
         return;
     }
 
@@ -416,14 +383,22 @@ document.getElementById("commentForm").addEventListener("submit", async e => {
     const imgName = slides[idx]?.dataset.image;
     if (!imgName) return;
 
+    const body = { text };
+    if (replyParentId) {
+        body.parent_id = replyParentId;
+        replyParentId = null;
+        input.placeholder = "Adicione um comentario...";
+    }
+
     try {
         const res = await fetch(`/api/comments/${imgName}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text })
+            body: JSON.stringify(body)
         });
         if (res.ok) {
             input.value = "";
+            autoResize(input);
             commentsCache.delete(currentImageName());
             await loadComments(true);
         }
@@ -436,6 +411,19 @@ if (mainCommentInput) {
     mentionInput = mainCommentInput;
     mainCommentInput.addEventListener("input", handleMentionInput);
     mainCommentInput.addEventListener("keydown", handleMentionKeydown);
+    mainCommentInput.addEventListener("input", () => autoResize(mainCommentInput));
+    mainCommentInput.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            if (mentionDropdown && mentionUsers.length) return;
+            e.preventDefault();
+            document.getElementById("commentForm").requestSubmit();
+        }
+    });
+}
+
+function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 150) + "px";
 }
 
 document.addEventListener("mousedown", e => {
