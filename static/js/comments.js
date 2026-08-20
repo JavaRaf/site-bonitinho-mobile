@@ -273,7 +273,6 @@ function handleMentionKeydown(e) {
         renderMentionDropdown();
     } else if (e.key === "Enter" && mentionStart >= 0) {
         e.preventDefault();
-        e.stopImmediatePropagation();
         insertMention(filtered[mentionIndex].username);
     } else if (e.key === "Escape") {
         hideMentionDropdown();
@@ -415,7 +414,7 @@ if (mainCommentInput) {
     mainCommentInput.addEventListener("input", () => autoResize(mainCommentInput));
     mainCommentInput.addEventListener("keydown", e => {
         if (e.key === "Enter" && !e.shiftKey) {
-            if (mentionDropdown && mentionUsers.length) return;
+            if (mentionStart >= 0) return;
             e.preventDefault();
             document.getElementById("commentForm").requestSubmit();
         }

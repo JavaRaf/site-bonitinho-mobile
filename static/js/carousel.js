@@ -1065,7 +1065,9 @@ document.getElementById("feedView")?.addEventListener("input", e => {
 
 document.getElementById("feedView")?.addEventListener("keydown", e => {
     if (e.target.matches(".feed-comment-form textarea") && typeof handleMentionKeydown === "function") {
+        const wasOpen = typeof mentionDropdown !== "undefined" && mentionDropdown !== null;
         handleMentionKeydown(e);
+        if (wasOpen && e.key === "Enter") return;
     }
     if (e.target.matches(".feed-comment-form textarea") && e.key === "Enter" && !e.shiftKey) {
         if (typeof mentionDropdown !== "undefined" && mentionDropdown) return;
