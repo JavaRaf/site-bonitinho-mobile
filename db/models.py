@@ -9,12 +9,58 @@ class User(db.Model):
     password = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Integer, nullable=False, default=0)
     avatar = db.Column(db.Text, nullable=False, default="default-avatar.svg")
+    cover = db.Column(db.Text, nullable=False, default="")
     color = db.Column(db.Text, nullable=False, default="")
+    bio = db.Column(db.Text, nullable=False, default="")
+    birthday = db.Column(db.Text, nullable=False, default="")
+    marital_status = db.Column(db.Text, nullable=False, default="")
+    category = db.Column(db.Text, nullable=False, default="")
+    price = db.Column(db.Text, nullable=False, default="")
+    hours = db.Column(db.Text, nullable=False, default="")
+    location = db.Column(db.Text, nullable=False, default="")
     created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
 
     uploads = db.relationship("Upload", backref="owner", lazy=True, cascade="all, delete-orphan")
     likes = db.relationship("Like", backref="user", lazy=True, cascade="all, delete-orphan")
     comments = db.relationship("Comment", backref="author", lazy=True, cascade="all, delete-orphan")
+
+    following = db.relationship(
+        "User", secondary="follows",
+        primaryjoin="User.id == follows.c.follower_id",
+        secondaryjoin="User.id == follows.c.following_id",
+        backref=db.backref("followers", lazy="dynamic"),
+        lazy="dynamic",
+    )
+
+    @property
+    def followers_count(self):
+        return self.followers.count()
+
+    @property
+    def following_count(self):
+        return self.following.count()
+
+    @property
+    def posts_count(self):
+        return Upload.query.filter_by(user_id=self.id, active=1).count()
+
+
+class Follow(db.Model):
+    __tablename__ = "follows"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    following_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+    __table_args__ = (db.UniqueConstraint("follower_id", "following_id"),)
+
+
+class Block(db.Model):
+    __tablename__ = "blocks"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    blocked_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+    __table_args__ = (db.UniqueConstraint("user_id", "blocked_id"),)
 
 
 class Upload(db.Model):

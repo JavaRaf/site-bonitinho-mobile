@@ -1,253 +1,591 @@
 const AVATAR_DEFAULT = "/static/svg/default-avatar.svg";
-const COLOR_OPTIONS = ["#f43f5e", "#ef4444", "#6366f1", "#3b82f6", "#10b981", "#22c55e", "#f59e0b", "#f97316", "#8b5cf6", "#a855f7", "#0ea5e9", "#06b6d4", "#ec4899", "#d946ef", "#84cc16", "#14b8a6", "#eab308", "#64748b"];
+const COLORS = [
+    "#f43f5e","#ef4444","#6366f1","#3b82f6","#10b981","#22c55e",
+    "#f59e0b","#f97316","#8b5cf6","#a855f7","#0ea5e9","#06b6d4",
+    "#ec4899","#d946ef","#84cc16","#14b8a6","#eab308","#64748b"
+];
+
+let profile = null;
+let postsPage = 1;
+let postsLoading = false;
+let postsHasMore = true;
+let activeTab = "all";
 let selectedColor = "";
 
-async function loadProfile() {
-    try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (!data.user) { window.location.href = "/login"; return; }
-        document.getElementById("perfilUsername").value = data.user.username;
-        setAvatarSrc(data.user.avatar);
-        selectedColor = data.user.color || "";
-        buildColorPicker();
-        const savedNsfw = localStorage.getItem("nsfwFilter") || "blur";
-        const radio = document.querySelector(`input[name="nsfw"][value="${savedNsfw}"]`);
-        if (radio) radio.checked = true;
-    } catch { /* ignore */ }
+/* ── Helpers ──────────────────────────────────────────────── */
+
+function getUsernameFromURL() {
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts.length >= 2 && parts[0] === "perfil") return parts[1];
+    return null;
 }
 
-function setAvatarSrc(avatar) {
-    const img = document.getElementById("perfilAvatarImg");
+function setAvatar(img, avatar) {
     if (!avatar || avatar === "default-avatar.svg") {
         img.src = AVATAR_DEFAULT;
-        return;
+    } else {
+        img.src = "/avatars/" + avatar;
+        img.onerror = () => { img.src = AVATAR_DEFAULT; };
     }
-    img.src = `/avatars/${avatar}`;
-    img.onerror = () => { img.src = AVATAR_DEFAULT; };
 }
 
-const avatarMenu = document.getElementById("perfilAvatarMenu");
-const avatarMenuBtn = document.getElementById("perfilAvatarMenuBtn");
-
-avatarMenuBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    avatarMenu.hidden = !avatarMenu.hidden;
-});
-
-document.addEventListener("click", (e) => {
-    if (!avatarMenu.hidden && !avatarMenu.contains(e.target) && !avatarMenuBtn.contains(e.target)) {
-        avatarMenu.hidden = true;
+function setCover(img, cover) {
+    if (cover) {
+        img.src = "/covers/" + cover;
+        img.style.display = "";
+    } else {
+        img.removeAttribute("src");
+        img.style.display = "none";
     }
-});
-
-document.getElementById("perfilAvatarUpload").addEventListener("click", () => {
-    avatarMenu.hidden = true;
-    document.getElementById("perfilAvatarInput").click();
-});
-
-/* === Avatar Crop === */
-const cropOverlay = document.getElementById("cropOverlay");
-const cropCanvas = document.getElementById("cropCanvas");
-const cropArea = document.getElementById("cropArea");
-const cropCtx = cropCanvas.getContext("2d");
-let cropImg = null;
-let cropOffsetX = 0;
-let cropOffsetY = 0;
-let cropScale = 1;
-let cropDragStart = null;
-let cropImgStartX = 0;
-let cropImgStartY = 0;
-
-function openCrop(file) {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-        cropImg = img;
-        cropOverlay.classList.add("open");
-        resetCrop();
-    };
-    img.src = url;
 }
 
-function resetCrop() {
-    if (!cropImg) return;
-    const areaSize = cropArea.clientWidth;
-    cropCanvas.width = areaSize;
-    cropCanvas.height = areaSize;
-
-    const minDim = Math.min(cropImg.naturalWidth, cropImg.naturalHeight);
-    cropScale = areaSize / minDim;
-    cropOffsetX = (areaSize - cropImg.naturalWidth * cropScale) / 2;
-    cropOffsetY = (areaSize - cropImg.naturalHeight * cropScale) / 2;
-    drawCrop();
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    return months[d.getMonth()] + " " + d.getFullYear();
 }
 
-function drawCrop() {
-    if (!cropImg) return;
-    const w = cropCanvas.width;
-    const h = cropCanvas.height;
-    cropCtx.clearRect(0, 0, w, h);
-    cropCtx.save();
-    cropCtx.beginPath();
-    cropCtx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
-    cropCtx.clip();
-    cropCtx.drawImage(cropImg, cropOffsetX, cropOffsetY, cropImg.naturalWidth * cropScale, cropImg.naturalHeight * cropScale);
-    cropCtx.restore();
+function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
 }
 
-function getCroppedBlob() {
-    return new Promise(resolve => {
-        const size = 256;
-        const c = document.createElement("canvas");
-        c.width = size;
-        c.height = size;
-        const ctx = c.getContext("2d");
-        const imgW = cropImg.naturalWidth * cropScale;
-        const imgH = cropImg.naturalHeight * cropScale;
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.clip();
-        const srcX = (-cropOffsetX / cropScale);
-        const srcY = (-cropOffsetY / cropScale);
-        const srcS = size / cropScale;
-        ctx.drawImage(cropImg, srcX, srcY, srcS, srcS, 0, 0, size, size);
-        c.toBlob(blob => resolve(blob), "image/png");
-    });
-}
+/* ── Load Profile ─────────────────────────────────────────── */
 
-cropArea.addEventListener("pointerdown", e => {
-    cropDragStart = { x: e.clientX, y: e.clientY };
-    cropImgStartX = cropOffsetX;
-    cropImgStartY = cropOffsetY;
-    cropArea.setPointerCapture(e.pointerId);
-    cropArea.style.cursor = "grabbing";
-});
-
-cropArea.addEventListener("pointermove", e => {
-    if (!cropDragStart) return;
-    cropOffsetX = cropImgStartX + (e.clientX - cropDragStart.x);
-    cropOffsetY = cropImgStartY + (e.clientY - cropDragStart.y);
-    drawCrop();
-});
-
-cropArea.addEventListener("pointerup", () => {
-    cropDragStart = null;
-    cropArea.style.cursor = "grab";
-});
-
-document.getElementById("cropClose").addEventListener("click", () => {
-    cropOverlay.classList.remove("open");
-    cropImg = null;
-});
-
-document.getElementById("cropCancel").addEventListener("click", () => {
-    cropOverlay.classList.remove("open");
-    cropImg = null;
-});
-
-document.getElementById("cropConfirm").addEventListener("click", async () => {
-    if (!cropImg) return;
-    const blob = await getCroppedBlob();
-    cropOverlay.classList.remove("open");
-    cropImg = null;
-
-    const errEl = document.getElementById("perfilError");
-    errEl.textContent = "";
-    const form = new FormData();
-    form.append("avatar", blob, "avatar.png");
-    try {
-        const res = await fetch("/api/auth/avatar", { method: "POST", body: form });
-        const data = await res.json();
-        if (data.avatar) {
-            setAvatarSrc(data.avatar);
+async function loadProfile() {
+    const username = getUsernameFromURL();
+    if (!username) {
+        const me = await fetch("/api/auth/me").then(r => r.json()).catch(() => null);
+        if (me?.user) {
+            location.href = "/perfil/" + me.user.username;
         } else {
-            errEl.textContent = data.error || "Erro ao enviar avatar";
+            location.href = "/login";
         }
-    } catch {
-        errEl.textContent = "Erro ao enviar avatar";
-    }
-});
-
-document.getElementById("perfilAvatarInput").addEventListener("change", async () => {
-    const input = document.getElementById("perfilAvatarInput");
-    const file = input.files[0];
-    if (!file) return;
-    openCrop(file);
-    input.value = "";
-});
-
-document.getElementById("perfilAvatarRemove").addEventListener("click", async () => {
-    const errEl = document.getElementById("perfilError");
-    errEl.textContent = "";
-    avatarMenu.hidden = true;
-    try {
-        const res = await fetch("/api/auth/avatar", { method: "DELETE" });
-        const data = await res.json();
-        if (data.avatar) setAvatarSrc(data.avatar);
-    } catch {
-        errEl.textContent = "Erro ao remover avatar";
-    }
-});
-
-function buildColorPicker() {
-    const container = document.getElementById("perfilColorList");
-    if (!container) return;
-    container.innerHTML = COLOR_OPTIONS.map(c =>
-        `<div class="perfil-color-option${c === selectedColor ? " selected" : ""}" data-color="${c}" style="background:${c}"></div>`
-    ).join("");
-    container.querySelectorAll(".perfil-color-option").forEach(opt => {
-        opt.addEventListener("click", () => {
-            selectedColor = opt.dataset.color;
-            container.querySelectorAll(".perfil-color-option").forEach(o => o.classList.remove("selected"));
-            opt.classList.add("selected");
-        });
-    });
-}
-
-const colorToggle = document.getElementById("perfilColorToggle");
-if (colorToggle) {
-    colorToggle.addEventListener("click", () => {
-        colorToggle.closest('.perfil-section').classList.toggle('open');
-    });
-}
-
-const nsfwToggle = document.getElementById("perfilNsfwToggle");
-if (nsfwToggle) {
-    nsfwToggle.addEventListener("click", () => {
-        nsfwToggle.closest('.perfil-section').classList.toggle('open');
-    });
-}
-
-document.getElementById("perfilSave").addEventListener("click", async () => {
-    const username = document.getElementById("perfilUsername").value.trim();
-    const errEl = document.getElementById("perfilError");
-    const okEl = document.getElementById("perfilOk");
-    errEl.textContent = "";
-    okEl.textContent = "";
-
-    if (username.length < 3) {
-        errEl.textContent = "Nome deve ter no mínimo 3 caracteres";
         return;
     }
 
-    const nsfwRadio = document.querySelector('input[name="nsfw"]:checked');
-    if (nsfwRadio) {
-        localStorage.setItem("nsfwFilter", nsfwRadio.value);
+    const data = await fetch("/api/profile/" + encodeURIComponent(username)).then(r => r.json()).catch(() => null);
+    if (!data || data.error) {
+        document.getElementById("profilePage").innerHTML =
+            '<div style="text-align:center;padding:64px 24px;color:var(--text-muted)">Perfil não encontrado</div>';
+        return;
     }
+
+    profile = data;
+    document.title = data.username + " — ArteBonitinha";
+
+    setAvatar(document.getElementById("avatarImg"), data.avatar);
+    setCover(document.getElementById("coverImg"), data.cover);
+
+    document.getElementById("profileName").textContent = data.username;
+
+    document.getElementById("profileStats").innerHTML =
+        "<strong>" + data.followers_count + "</strong> seguidores · " +
+        "<strong>" + data.following_count + "</strong> seguindo · " +
+        "<strong>" + data.posts_count + "</strong> posts";
+
+    renderActions(data);
+    renderDetails(data);
+    loadPosts(data.username);
+
+    if (data.is_me) {
+        document.getElementById("btnCoverEdit").hidden = false;
+        document.getElementById("btnAvatarEdit").hidden = false;
+    }
+}
+
+/* ── Actions ──────────────────────────────────────────────── */
+
+function renderActions(data) {
+    const el = document.getElementById("actionButtons");
+    if (data.is_me) {
+        el.innerHTML = "";
+        document.getElementById("btnEdit").hidden = false;
+        document.getElementById("btnEdit").addEventListener("click", openEditModal);
+        return;
+    }
+
+    el.innerHTML =
+        '<button class="action-btn action-btn-primary' + (data.is_following ? " following" : "") + '" id="btnFollow">' +
+            (data.is_following ?
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Seguindo' :
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Seguir') +
+        '</button>' +
+        '<button class="action-btn action-btn-secondary" id="btnInfo">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Saiba mais' +
+        '</button>';
+
+    document.getElementById("btnFollow").addEventListener("click", toggleFollow);
+    document.getElementById("btnInfo").addEventListener("click", () => {
+        document.getElementById("detailsSection").scrollIntoView({ behavior: "smooth" });
+    });
+}
+
+async function toggleFollow() {
+    const res = await fetch("/api/auth/follow/" + encodeURIComponent(profile.username), { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) return;
+
+    profile.is_following = data.following;
+    profile.followers_count = data.followers_count;
+
+    document.getElementById("profileStats").innerHTML =
+        "<strong>" + data.followers_count + "</strong> seguidores · " +
+        "<strong>" + profile.following_count + "</strong> seguindo · " +
+        "<strong>" + profile.posts_count + "</strong> posts";
+
+    const btn = document.getElementById("btnFollow");
+    btn.classList.toggle("following", data.following);
+    btn.innerHTML = data.following ?
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Seguindo' :
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Seguir';
+}
+
+/* ── Details ──────────────────────────────────────────────── */
+
+function renderDetails(data) {
+    const list = document.getElementById("detailsList");
+    let html = "";
+
+    if (data.price) {
+        html += '<div class="detail-item">' +
+            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
+            '<span class="detail-text">' + esc(data.price) + '</span></div>';
+    }
+
+    if (data.hours) {
+        html += '<div class="detail-item">' +
+            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>' +
+            '<span class="detail-text">' + esc(data.hours) + '</span></div>';
+    }
+
+    if (data.location) {
+        html += '<div class="detail-item">' +
+            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>' +
+            '<span class="detail-text">' + esc(data.location) + '</span></div>';
+    }
+
+    list.innerHTML = html;
+    if (!html) {
+        document.getElementById("detailsSection").style.display = "none";
+    }
+}
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+
+document.getElementById("profileTabs").addEventListener("click", (e) => {
+    const tab = e.target.closest(".tab");
+    if (!tab) return;
+
+    document.querySelectorAll(".tab").forEach(t => {
+        t.classList.remove("active");
+        t.setAttribute("aria-selected", "false");
+    });
+    tab.classList.add("active");
+    tab.setAttribute("aria-selected", "true");
+
+    activeTab = tab.dataset.tab;
+    postsPage = 1;
+    postsHasMore = true;
+    document.getElementById("postsGrid").innerHTML = "";
+    document.getElementById("postsEnd").hidden = true;
+    if (profile) loadPosts(profile.username);
+});
+
+/* ── Posts ────────────────────────────────────────────────── */
+
+async function loadPosts(username) {
+    if (postsLoading || !postsHasMore) return;
+    postsLoading = true;
+    document.getElementById("postsLoading").hidden = false;
+
+    const data = await fetch("/api/profile/" + encodeURIComponent(username) + "/posts?page=" + postsPage)
+        .then(r => r.json()).catch(() => null);
+    postsLoading = false;
+    document.getElementById("postsLoading").hidden = true;
+    if (!data || !data.posts) return;
+
+    const grid = document.getElementById("postsGrid");
+    for (const post of data.posts) {
+        if (activeTab === "photos" && post.media_type !== "image") continue;
+
+        const div = document.createElement("div");
+        div.className = "post-item";
+        div.tabIndex = 0;
+        div.setAttribute("role", "link");
+        div.setAttribute("aria-label", post.caption || "Post");
+
+        const isVideo = post.media_type === "video";
+
+        if (isVideo) {
+            const vid = document.createElement("video");
+            vid.src = "/images/" + post.image_name;
+            vid.preload = "metadata";
+            vid.muted = true;
+            vid.playsInline = true;
+            vid.setAttribute("playsinline", "");
+            div.appendChild(vid);
+
+            const playIcon = document.createElement("div");
+            playIcon.className = "post-play";
+            playIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+            div.appendChild(playIcon);
+        } else {
+            const img = document.createElement("img");
+            img.src = "/thumbs/" + post.image_name;
+            img.loading = "lazy";
+            img.alt = post.caption || "";
+            div.appendChild(img);
+        }
+
+        if (post.nsfw) {
+            const filter = localStorage.getItem("nsfwFilter") || "blur";
+            if (filter === "hide") {
+                div.style.display = "none";
+            } else if (filter === "blur") {
+                const ov = document.createElement("div");
+                ov.className = "post-nsfw";
+                ov.textContent = "+18";
+                div.appendChild(ov);
+                if (!isVideo) div.querySelector("img").style.filter = "blur(12px)";
+                else div.querySelector("video").style.filter = "blur(12px)";
+            }
+        }
+
+        const open = () => { location.href = "/?img=" + encodeURIComponent(post.image_name); };
+        div.addEventListener("click", open);
+        div.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+
+        grid.appendChild(div);
+    }
+
+    postsHasMore = data.has_more;
+    postsPage++;
+
+    if (!data.has_more && grid.children.length === 0) {
+        document.getElementById("postsEnd").hidden = false;
+    }
+}
+
+const postsObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && profile) loadPosts(profile.username);
+}, { rootMargin: "300px" });
+postsObserver.observe(document.getElementById("postsLoading"));
+
+/* ── Back ─────────────────────────────────────────────────── */
+
+document.getElementById("btnBack").addEventListener("click", () => {
+    location.href = "/";
+});
+
+/* ── Edit Modal ───────────────────────────────────────────── */
+
+function openEditModal() {
+    if (!profile) return;
+    document.getElementById("editUsername").value = profile.username;
+    document.getElementById("editBio").value = profile.bio || "";
+    document.getElementById("editCategory").value = profile.category || "";
+    document.getElementById("editPrice").value = profile.price || "";
+    document.getElementById("editHours").value = profile.hours || "";
+    document.getElementById("editLocation").value = profile.location || "";
+    document.getElementById("editBirthday").value = profile.birthday || "";
+    document.getElementById("editMarital").value = profile.marital_status || "";
+    document.getElementById("bioCounter").textContent = (profile.bio || "").length + "/110";
+    selectedColor = profile.color || "";
+    buildEditColors();
+    document.getElementById("editOverlay").classList.add("open");
+}
+
+function closeEditModal() {
+    document.getElementById("editOverlay").classList.remove("open");
+}
+
+function buildEditColors() {
+    const el = document.getElementById("editColors");
+    el.innerHTML = "";
+    for (const c of COLORS) {
+        const swatch = document.createElement("div");
+        swatch.className = "edit-color" + (c === selectedColor ? " selected" : "");
+        swatch.style.background = c;
+        swatch.tabIndex = 0;
+        swatch.setAttribute("role", "radio");
+        swatch.setAttribute("aria-checked", String(c === selectedColor));
+        swatch.setAttribute("aria-label", c);
+        swatch.addEventListener("click", () => pickColor(c));
+        el.appendChild(swatch);
+    }
+}
+
+function pickColor(c) {
+    selectedColor = c;
+    document.querySelectorAll(".edit-color").forEach(s => {
+        const match = s.style.backgroundColor === c || rgbToHex(s.style.backgroundColor) === c;
+        s.classList.toggle("selected", match);
+        s.setAttribute("aria-selected", String(match));
+    });
+}
+
+function rgbToHex(rgb) {
+    if (!rgb || rgb.startsWith("#")) return rgb;
+    const m = rgb.match(/\d+/g);
+    if (!m || m.length < 3) return rgb;
+    return "#" + m.slice(0, 3).map(x => (+x).toString(16).padStart(2, "0")).join("");
+}
+
+document.getElementById("editClose").addEventListener("click", closeEditModal);
+document.getElementById("editCancel").addEventListener("click", closeEditModal);
+document.getElementById("editOverlay").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeEditModal();
+});
+
+document.getElementById("editBio").addEventListener("input", (e) => {
+    document.getElementById("bioCounter").textContent = e.target.value.length + "/110";
+});
+
+document.getElementById("editSave").addEventListener("click", async () => {
+    const username = document.getElementById("editUsername").value.trim();
+    if (username.length < 3) return alert("Nome de usuário mínimo 3 caracteres");
+
+    const body = {
+        username,
+        bio: document.getElementById("editBio").value.trim(),
+        category: document.getElementById("editCategory").value.trim(),
+        price: document.getElementById("editPrice").value.trim(),
+        hours: document.getElementById("editHours").value.trim(),
+        location: document.getElementById("editLocation").value.trim(),
+        birthday: document.getElementById("editBirthday").value,
+        marital_status: document.getElementById("editMarital").value,
+        color: selectedColor,
+    };
 
     const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, color: selectedColor })
+        body: JSON.stringify(body),
     });
     const data = await res.json();
+    if (data.error) return alert(data.error);
 
-    if (data.username) {
-        window.location.href = "/";
+    closeEditModal();
+    if (username !== profile.username) {
+        location.href = "/perfil/" + username;
     } else {
-        errEl.textContent = data.error || "Erro ao salvar";
+        location.reload();
     }
 });
+
+/* ── Cover Upload ─────────────────────────────────────────── */
+
+document.getElementById("btnCoverEdit").addEventListener("click", () => {
+    document.getElementById("coverFileInput").click();
+});
+
+document.getElementById("coverFileInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    openCoverCrop(file);
+});
+
+/* ── Cover Crop ───────────────────────────────────────────── */
+
+const coverCropOverlay = document.getElementById("coverCropOverlay");
+const coverCropCanvas = document.getElementById("coverCropCanvas");
+const coverCropArea = document.getElementById("coverCropArea");
+const coverCropCtx = coverCropCanvas.getContext("2d");
+let ccImg = null, ccScale = 1, ccImgX = 0, ccImgY = 0, ccDrag = null;
+
+function openCoverCrop(file) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+        ccImg = img;
+        coverCropOverlay.classList.add("open");
+        requestAnimationFrame(() => requestAnimationFrame(() => resetCoverCrop()));
+    };
+    img.src = url;
+}
+
+function resetCoverCrop() {
+    const w = coverCropArea.clientWidth;
+    const h = coverCropArea.clientHeight;
+    if (!w || !h) return;
+    ccScale = Math.max(w / ccImg.naturalWidth, h / ccImg.naturalHeight);
+    ccImgX = (w - ccImg.naturalWidth * ccScale) / 2;
+    ccImgY = (h - ccImg.naturalHeight * ccScale) / 2;
+    drawCoverCrop();
+}
+
+function drawCoverCrop() {
+    const w = coverCropArea.clientWidth;
+    const h = coverCropArea.clientHeight;
+    if (!w || !h) return;
+    coverCropCanvas.width = w;
+    coverCropCanvas.height = h;
+    coverCropCtx.clearRect(0, 0, w, h);
+    const dw = ccImg.naturalWidth * ccScale;
+    const dh = ccImg.naturalHeight * ccScale;
+    coverCropCtx.drawImage(ccImg, ccImgX, ccImgY, dw, dh);
+}
+
+coverCropArea.addEventListener("pointerdown", (e) => {
+    ccDrag = { x: e.clientX, y: e.clientY, sx: ccImgX, sy: ccImgY };
+    coverCropArea.setPointerCapture(e.pointerId);
+});
+coverCropArea.addEventListener("pointermove", (e) => {
+    if (!ccDrag) return;
+    ccImgX = ccDrag.sx + (e.clientX - ccDrag.x);
+    ccImgY = ccDrag.sy + (e.clientY - ccDrag.y);
+    drawCoverCrop();
+});
+coverCropArea.addEventListener("pointerup", () => ccDrag = null);
+coverCropArea.addEventListener("pointercancel", () => ccDrag = null);
+
+function getCoverBlob() {
+    return new Promise(resolve => {
+        const c = document.createElement("canvas");
+        c.width = 1200; c.height = 400;
+        const ctx = c.getContext("2d");
+        const aw = coverCropArea.clientWidth;
+        const ah = coverCropArea.clientHeight;
+        const sx = -ccImgX / ccScale;
+        const sy = -ccImgY / ccScale;
+        const sw = aw / ccScale;
+        const sh = ah / ccScale;
+        ctx.drawImage(ccImg, sx, sy, sw, sh, 0, 0, 1200, 400);
+        c.toBlob(b => resolve(b), "image/jpeg", 0.88);
+    });
+}
+
+document.getElementById("coverCropClose").addEventListener("click", () => { coverCropOverlay.classList.remove("open"); ccImg = null; });
+document.getElementById("coverCropCancel").addEventListener("click", () => { coverCropOverlay.classList.remove("open"); ccImg = null; });
+
+document.getElementById("coverCropConfirm").addEventListener("click", async () => {
+    if (!ccImg) return;
+    const blob = await getCoverBlob();
+    coverCropOverlay.classList.remove("open");
+    ccImg = null;
+    const form = new FormData();
+    form.append("cover", blob, "cover.jpg");
+    const res = await fetch("/api/auth/cover", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.cover) {
+        profile.cover = data.cover;
+        setCover(document.getElementById("coverImg"), data.cover);
+    } else {
+        alert(data.error || "Erro ao enviar capa");
+    }
+});
+
+/* ── Avatar Upload ────────────────────────────────────────── */
+
+document.getElementById("btnAvatarEdit").addEventListener("click", () => {
+    document.getElementById("avatarFileInput").click();
+});
+
+document.getElementById("avatarFileInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    openAvatarCrop(file);
+});
+
+/* ── Avatar Crop ──────────────────────────────────────────── */
+
+const cropOverlay = document.getElementById("cropOverlay");
+const cropCanvas = document.getElementById("cropCanvas");
+const cropArea = document.getElementById("cropArea");
+const cropCtx = cropCanvas.getContext("2d");
+let acImg = null, acScale = 1, acImgX = 0, acImgY = 0, acDrag = null;
+
+function openAvatarCrop(file) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+        acImg = img;
+        cropOverlay.classList.add("open");
+        requestAnimationFrame(() => requestAnimationFrame(() => resetAvatarCrop()));
+    };
+    img.src = url;
+}
+
+function resetAvatarCrop() {
+    const s = cropArea.clientWidth;
+    if (!s) return;
+    acScale = Math.max(s / acImg.naturalWidth, s / acImg.naturalHeight);
+    acImgX = (s - acImg.naturalWidth * acScale) / 2;
+    acImgY = (s - acImg.naturalHeight * acScale) / 2;
+    drawAvatarCrop();
+}
+
+function drawAvatarCrop() {
+    const s = cropArea.clientWidth;
+    if (!s) return;
+    cropCanvas.width = s;
+    cropCanvas.height = s;
+    cropCtx.clearRect(0, 0, s, s);
+    cropCtx.save();
+    cropCtx.beginPath();
+    cropCtx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+    cropCtx.clip();
+    const dw = acImg.naturalWidth * acScale;
+    const dh = acImg.naturalHeight * acScale;
+    cropCtx.drawImage(acImg, acImgX, acImgY, dw, dh);
+    cropCtx.restore();
+}
+
+cropArea.addEventListener("pointerdown", (e) => {
+    acDrag = { x: e.clientX, y: e.clientY, sx: acImgX, sy: acImgY };
+    cropArea.setPointerCapture(e.pointerId);
+});
+cropArea.addEventListener("pointermove", (e) => {
+    if (!acDrag) return;
+    acImgX = acDrag.sx + (e.clientX - acDrag.x);
+    acImgY = acDrag.sy + (e.clientY - acDrag.y);
+    drawAvatarCrop();
+});
+cropArea.addEventListener("pointerup", () => acDrag = null);
+cropArea.addEventListener("pointercancel", () => acDrag = null);
+
+function getAvatarBlob() {
+    return new Promise(resolve => {
+        const c = document.createElement("canvas");
+        c.width = 256; c.height = 256;
+        const ctx = c.getContext("2d");
+        const s = cropArea.clientWidth;
+        ctx.beginPath();
+        ctx.arc(128, 128, 128, 0, Math.PI * 2);
+        ctx.clip();
+        const sx = -acImgX / acScale;
+        const sy = -acImgY / acScale;
+        const sw = s / acScale;
+        ctx.drawImage(acImg, sx, sy, sw, sw, 0, 0, 256, 256);
+        c.toBlob(b => resolve(b), "image/png");
+    });
+}
+
+document.getElementById("cropClose").addEventListener("click", () => { cropOverlay.classList.remove("open"); acImg = null; });
+document.getElementById("cropCancel").addEventListener("click", () => { cropOverlay.classList.remove("open"); acImg = null; });
+
+document.getElementById("cropConfirm").addEventListener("click", async () => {
+    if (!acImg) return;
+    const blob = await getAvatarBlob();
+    cropOverlay.classList.remove("open");
+    acImg = null;
+    const form = new FormData();
+    form.append("avatar", blob, "avatar.png");
+    const res = await fetch("/api/auth/avatar", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.avatar) {
+        profile.avatar = data.avatar;
+        setAvatar(document.getElementById("avatarImg"), data.avatar);
+    } else {
+        alert(data.error || "Erro ao enviar avatar");
+    }
+});
+
+/* ── Init ─────────────────────────────────────────────────── */
 
 loadProfile();

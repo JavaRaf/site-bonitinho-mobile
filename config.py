@@ -32,3 +32,4 @@ class Config:
 (Config.IMAGES_DIR).mkdir(parents=True, exist_ok=True)
 (Config.THUMB_DIR).mkdir(parents=True, exist_ok=True)
 (Config.BASE_DIR / "static" / "avatars").mkdir(parents=True, exist_ok=True)
+(Config.BASE_DIR / "static" / "covers").mkdir(parents=True, exist_ok=True)

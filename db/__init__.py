@@ -26,6 +26,14 @@ def _run_migrations():
         ("uploads", "post_type", "TEXT NOT NULL DEFAULT 'image'"),
         ("uploads", "post_id", "TEXT NOT NULL DEFAULT ''"),
         ("uploads", "media_type", "TEXT NOT NULL DEFAULT 'image'"),
+        ("users", "birthday", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "cover", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "bio", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "marital_status", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "category", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "price", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "hours", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "location", "TEXT NOT NULL DEFAULT ''"),
     ]
     for table, column, definition in migrations:
         try:

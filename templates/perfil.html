@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,98 +9,171 @@
   <link rel="stylesheet" href="/static/css/perfil.css">
   <script src="/static/js/theme.js"></script>
 </head>
-<body class="perfil-page">
 
-  <div class="perfil-card">
-    <div class="perfil-header">
-      <a href="/" class="perfil-back"><img src="/static/svg/back.svg" alt="voltar" class="back-icon"></a>
-      <h2>Meu Perfil</h2>
-      <div class="perfil-header-spacer"></div>
-    </div>
+<body>
 
-    <div class="perfil-avatar-section">
-      <div class="perfil-avatar-wrap">
-        <div class="perfil-avatar" id="perfilAvatar">
-          <img src="/static/svg/default-avatar.svg" alt="avatar" id="perfilAvatarImg">
-        </div>
-        <button type="button" class="perfil-avatar-edit" id="perfilAvatarMenuBtn" aria-label="Alterar avatar">
-          <img src="/static/svg/camera-svgrepo-com.svg" alt="câmera">
+  <main class="profile-page" id="profilePage">
+
+    <!-- Cover -->
+    <section class="cover" id="coverSection">
+      <img class="cover-img" id="coverImg" src="" alt="Capa">
+      <div class="cover-fallback" id="coverFallback"></div>
+
+      <nav class="cover-controls" aria-label="Controles da capa">
+        <button class="cover-btn" id="btnBack" aria-label="Voltar">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
-        <div class="perfil-avatar-menu" id="perfilAvatarMenu" hidden>
-          <button type="button" id="perfilAvatarUpload" class="perfil-avatar-menu-item">Escolher imagem</button>
-          <button type="button" id="perfilAvatarRemove" class="perfil-avatar-menu-item danger">Remover</button>
+        <button class="cover-btn cover-edit" id="btnCoverEdit" hidden aria-label="Editar capa">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+      </nav>
+
+      <input type="file" id="coverFileInput" accept="image/*" hidden>
+    </section>
+
+    <!-- Profile Card -->
+    <section class="profile-card" id="profileCard">
+
+      <div class="profile-header-row">
+        <div class="avatar-area">
+          <div class="avatar" id="avatarEl">
+            <img id="avatarImg" src="/static/svg/default-avatar.svg" alt="Avatar">
+          </div>
+        <button class="avatar-edit" id="btnAvatarEdit" hidden aria-label="Editar avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+          <input type="file" id="avatarFileInput" accept="image/*" hidden>
+        </div>
+
+        <div class="identity">
+          <h1 class="profile-name" id="profileName"></h1>
+          <p class="profile-stats" id="profileStats"></p>
         </div>
       </div>
-      <p class="perfil-label">Envie sua foto de perfil</p>
-      <input type="file" id="perfilAvatarInput" accept="image/*" hidden>
-    </div>
 
-    <div class="perfil-field">
-      <label for="perfilUsername">Nome de usuário</label>
-      <input type="text" id="perfilUsername" minlength="3" autocomplete="off" placeholder="Seu nome de exibição">
-    </div>
+      <div class="action-buttons" id="actionButtons"></div>
 
-    <div class="perfil-section">
-      <button type="button" class="perfil-section-toggle" id="perfilColorToggle">
-        <p class="perfil-section-title">Cor do seu nome</p>
-        <img src="/static/svg/arrow-down.svg" alt="" class="perfil-section-arrow">
-      </button>
-      <div class="perfil-color-list" id="perfilColorList"></div>
-    </div>
+      <nav class="profile-tabs" id="profileTabs" role="tablist">
+        <button class="tab active" role="tab" data-tab="all" aria-selected="true">Tudo</button>
+        <button class="tab" role="tab" data-tab="photos" aria-selected="false">Fotos</button>
+        <button class="tab tab-edit" id="btnEdit" hidden role="tab">Editar</button>
+      </nav>
 
-    <div class="perfil-section">
-      <button type="button" class="perfil-section-toggle" id="perfilNsfwToggle">
-        <p class="perfil-section-title">Filtro +18</p>
-        <img src="/static/svg/arrow-down.svg" alt="" class="perfil-section-arrow">
-      </button>
-      <div class="nsfw-options" id="nsfwOptions">
-        <label class="nsfw-option">
-          <input type="radio" name="nsfw" value="all">
-          <div class="nsfw-option-body">
-            <span class="nsfw-option-label">Ver tudo</span>
-            <span class="nsfw-option-desc">Mostrar todas as imagens sem filtro</span>
+    </section>
+
+    <!-- Details Section -->
+    <section class="details-section" id="detailsSection">
+      <h2 class="details-title">Detalhes</h2>
+      <div class="details-list" id="detailsList"></div>
+    </section>
+
+    <!-- Posts Grid -->
+    <section class="posts-section" id="postsSection">
+      <div class="posts-grid" id="postsGrid"></div>
+      <div class="posts-loading" id="postsLoading" hidden>Carregando...</div>
+      <div class="posts-end" id="postsEnd" hidden>Nenhum post encontrado</div>
+    </section>
+
+    <!-- Edit Profile Modal -->
+    <div class="edit-overlay" id="editOverlay">
+      <div class="edit-card">
+        <div class="edit-header">
+          <h3>Editar perfil</h3>
+          <button class="edit-close" id="editClose" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="edit-body">
+          <div class="edit-field">
+            <label for="editUsername">Nome de usuário</label>
+            <input type="text" id="editUsername" minlength="3" autocomplete="off">
           </div>
-        </label>
-        <label class="nsfw-option">
-          <input type="radio" name="nsfw" value="blur">
-          <div class="nsfw-option-body">
-            <span class="nsfw-option-label">Borrar +18</span>
-            <span class="nsfw-option-desc">Imagens impróprias aparecem borradas</span>
+          <div class="edit-field">
+            <label for="editBio">Bio <span id="bioCounter">0/110</span></label>
+            <textarea id="editBio" maxlength="110" rows="3"></textarea>
           </div>
-        </label>
-        <label class="nsfw-option">
-          <input type="radio" name="nsfw" value="hide">
-          <div class="nsfw-option-body">
-            <span class="nsfw-option-label">Ocultar +18</span>
-            <span class="nsfw-option-desc">Imagens impróprias não aparecem</span>
+          <div class="edit-field">
+            <label for="editCategory">Categoria</label>
+            <input type="text" id="editCategory" placeholder="Ex: Beleza, cosméticos..." autocomplete="off">
           </div>
-        </label>
+          <div class="edit-field">
+            <label for="editPrice">Preço</label>
+            <input type="text" id="editPrice" placeholder="Ex: $$" autocomplete="off">
+          </div>
+          <div class="edit-field">
+            <label for="editHours">Horário</label>
+            <input type="text" id="editHours" placeholder="Ex: Sempre aberto" autocomplete="off">
+          </div>
+          <div class="edit-field">
+            <label for="editLocation">Localização</label>
+            <input type="text" id="editLocation" placeholder="Ex: São Paulo, SP" autocomplete="off">
+          </div>
+          <div class="edit-field">
+            <label for="editBirthday">Data de nascimento</label>
+            <input type="date" id="editBirthday">
+          </div>
+          <div class="edit-field">
+            <label for="editMarital">Estado civil</label>
+            <select id="editMarital">
+              <option value="">Não informado</option>
+              <option value="Solteiro(a)">Solteiro(a)</option>
+              <option value="Namorando">Namorando</option>
+              <option value="Noivo(a)">Noivo(a)</option>
+              <option value="Casado(a)">Casado(a)</option>
+              <option value="Divorciado(a)">Divorciado(a)</option>
+              <option value="Viúvo(a)">Viúvo(a)</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>Cor do nome</label>
+            <div class="edit-colors" id="editColors"></div>
+          </div>
+        </div>
+        <div class="edit-footer">
+          <button class="edit-cancel" id="editCancel">Cancelar</button>
+          <button class="edit-save" id="editSave">Salvar</button>
+        </div>
       </div>
     </div>
 
-    <button id="perfilSave" class="perfil-btn">Salvar alterações</button>
-    <p class="perfil-error" id="perfilError"></p>
-    <p class="perfil-ok" id="perfilOk"></p>
-  </div>
-
-  <div class="crop-overlay" id="cropOverlay">
-    <div class="crop-card">
-      <div class="crop-header">
-        <h3>Ajustar avatar</h3>
-        <button class="crop-close" id="cropClose" type="button">&times;</button>
-      </div>
-      <div class="crop-area" id="cropArea">
-        <canvas id="cropCanvas"></canvas>
-        <div class="crop-circle" id="cropCircle"></div>
-      </div>
-      <p class="crop-hint">Arraste para posicionar</p>
-      <div class="crop-actions">
-        <button class="crop-cancel" id="cropCancel" type="button">Cancelar</button>
-        <button class="crop-confirm" id="cropConfirm" type="button">Confirmar</button>
+    <!-- Avatar Crop -->
+    <div class="crop-overlay" id="cropOverlay">
+      <div class="crop-card">
+        <div class="crop-header">
+          <h3>Ajustar avatar</h3>
+          <button class="crop-close" id="cropClose" type="button" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="crop-area" id="cropArea">
+          <canvas id="cropCanvas"></canvas>
+        </div>
+        <p class="crop-hint">Arraste para posicionar</p>
+        <div class="crop-actions">
+          <button class="crop-cancel" id="cropCancel" type="button">Cancelar</button>
+          <button class="crop-confirm" id="cropConfirm" type="button">Confirmar</button>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Cover Crop -->
+    <div class="crop-overlay" id="coverCropOverlay">
+      <div class="crop-card">
+        <div class="crop-header">
+          <h3>Ajustar capa</h3>
+          <button class="crop-close" id="coverCropClose" type="button" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="crop-area crop-area-cover" id="coverCropArea">
+          <canvas id="coverCropCanvas"></canvas>
+        </div>
+        <p class="crop-hint">Arraste para posicionar</p>
+        <div class="crop-actions">
+          <button class="crop-cancel" id="coverCropCancel" type="button">Cancelar</button>
+          <button class="crop-confirm" id="coverCropConfirm" type="button">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
 
   <script src="/static/js/perfil.js"></script>
 </body>
+
 </html>
