@@ -1340,6 +1340,22 @@ header.hidden {
   margin-left: 0;
 }
 
+.slide-sort-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.slide-sort-wrap .img-owner-singlevote {
+  margin-left: 0;
+}
+
+.slide-sort-wrap .sort-select {
+  margin-left: 0;
+}
+
 .feed-card {
   background: var(--surface);
   border: 1px solid var(--border);
