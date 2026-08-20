@@ -1142,21 +1142,31 @@ header.hidden {
 .feed-create-input {
   flex: 1;
   min-width: 0;
-  height: 34px;
-  padding: 0 0.75rem;
+  min-height: 34px;
+  max-height: 150px;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 17px;
   background: var(--surface-2);
   color: var(--text);
   font-size: 0.8125rem;
   font-family: inherit;
+  line-height: 1.4;
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
   transition: border-color 0.15s;
 }
 
 .feed-create-input:focus {
   border-color: var(--text-secondary);
 }
+
+.feed-create-input::-webkit-scrollbar { width: 4px; }
+.feed-create-input::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.feed-create-input::-webkit-scrollbar-track { background: transparent; }
 
 .feed-create-input::placeholder {
   color: var(--text-muted);

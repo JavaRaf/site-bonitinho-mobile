@@ -1235,7 +1235,10 @@ function renderFeedCreatePreviews() {
     }
 }
 
-document.getElementById("feedCreateText")?.addEventListener("input", updateFeedCreateBtn);
+document.getElementById("feedCreateText")?.addEventListener("input", (e) => {
+    autoResizeFeedCreate(e.target);
+    updateFeedCreateBtn();
+});
 
 document.getElementById("feedCreateText")?.addEventListener("paste", (e) => {
     const items = Array.from(e.clipboardData?.items || []);
@@ -1249,6 +1252,11 @@ document.getElementById("feedCreateText")?.addEventListener("paste", (e) => {
     renderFeedCreatePreviews();
     updateFeedCreateBtn();
 });
+
+function autoResizeFeedCreate(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 150) + "px";
+}
 
 function updateFeedCreateBtn() {
     const btn = document.getElementById("feedCreateSend");
@@ -1289,7 +1297,9 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
         if (res.ok) {
             feedCreateFiles = [];
             feedCreateNsfw = false;
-            document.getElementById("feedCreateText").value = "";
+            const feedInput = document.getElementById("feedCreateText");
+            feedInput.value = "";
+            autoResizeFeedCreate(feedInput);
             document.getElementById("feedCreatePreviews").innerHTML = "";
             await loadCarousel();
         } else if (res.status === 401) {

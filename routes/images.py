@@ -201,7 +201,7 @@ def upload_images():
     zip_file = request.files.get("zip")
     has_files = any(f and f.filename for f in files)
     has_zip = bool(zip_file and zip_file.filename)
-    caption = (request.form.get("caption") or "").strip()[:250]
+    caption = (request.form.get("caption") or "").strip()[:400]
     nsfw = 1 if request.form.get("nsfw") == "1" else 0
 
     if not has_files and not has_zip and not caption:
