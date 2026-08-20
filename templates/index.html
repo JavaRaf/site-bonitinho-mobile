@@ -55,20 +55,16 @@
   <div class="feed-create" id="feedCreate" hidden>
     <div class="feed-create-inner">
       <img class="feed-create-avatar" id="feedCreateAvatar" src="/static/svg/default-avatar.svg" alt="">
-      <input type="text" class="feed-create-input" id="feedCreateText" placeholder="No que você está pensando?" autocomplete="off">
-      <input type="file" id="feedCreateFile" accept="image/*" hidden>
-      <button class="feed-create-icon" id="feedCreateImg" type="button" title="Imagem">
+      <input type="text" class="feed-create-input" id="feedCreateText" placeholder="No que voce esta pensando?" autocomplete="off">
+      <input type="file" id="feedCreateFile" accept="image/*,video/mp4,video/webm,video/quicktime" multiple hidden>
+      <button class="feed-create-icon" id="feedCreateImg" type="button" title="Midia">
         <img src="/static/svg/image.svg" alt="">
       </button>
       <button class="feed-create-send" id="feedCreateSend" type="button" title="Publicar" disabled>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
-    <div class="feed-create-preview" id="feedCreatePreview" hidden>
-      <img id="feedCreatePreviewImg" src="" alt="">
-      <button type="button" class="feed-create-nsfw" id="feedCreateNsfw" title="Conteúdo +18">18+</button>
-      <button type="button" class="feed-create-preview-remove" id="feedCreatePreviewRemove">&times;</button>
-    </div>
+    <div class="feed-create-previews" id="feedCreatePreviews"></div>
   </div>
 
   <div class="composer-overlay" id="composerModal">
@@ -82,22 +78,18 @@
         <button class="composer-remove" id="composerZipRemove" type="button"
           aria-label="Remover arquivo">&times;</button>
       </div>
-      <div class="composer-preview" id="composerPreview" hidden>
-        <img id="composerPreviewImg" alt="">
-        <button type="button" class="feed-create-nsfw" id="composerNsfw" title="Conteúdo +18">18+</button>
-        <button class="composer-remove" id="composerRemove" type="button" aria-label="Remover imagem">&times;</button>
-      </div>
-      <textarea class="composer-text" id="composerText" placeholder="No que você está pensando?" rows="3"
+      <div class="composer-media-previews" id="composerMediaPreviews"></div>
+      <textarea class="composer-text" id="composerText" placeholder="No que voce esta pensando?" rows="3"
         maxlength="250"></textarea>
       <div class="composer-actions">
-        <input type="file" id="composerImageInput" accept="image/*" hidden>
+        <input type="file" id="composerImageInput" accept="image/*,video/mp4,video/webm,video/quicktime" multiple hidden>
         <input type="file" id="composerZipInput" accept=".zip,application/zip" hidden>
         <button class="composer-add" id="composerAddZip" type="button" title="Enviar ZIP" aria-label="Enviar ZIP">
           <img src="/static/svg/zip.svg" alt="" width="18" height="18">
         </button>
 
-        <button class="composer-add" id="composerAddImage" type="button" title="Adicionar imagem"
-          aria-label="Adicionar imagem">
+        <button class="composer-add" id="composerAddImage" type="button" title="Adicionar mídia"
+          aria-label="Adicionar midia">
           <img src="/static/svg/image.svg" alt="" width="18" height="18">
         </button>
         <button class="composer-post" id="composerPost" type="button" disabled title="Publicar" aria-label="Publicar">
@@ -162,7 +154,7 @@
       <div class="comments-section" id="commentsSection">
         <div class="comments-list" id="commentsList"></div>
         <form class="comment-form" id="commentForm">
-          <input type="text" placeholder="Adicione um comentário..." id="commentInput" autocomplete="off">
+          <textarea class="comment-textarea" id="commentInput" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
           <button type="submit"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
         </form>
       </div>
@@ -220,12 +212,23 @@
     <div class="lightbox-caption" id="lightboxCaption"></div>
   </div>
 
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-card">
+      <p id="confirmMsg"></p>
+      <div class="confirm-actions">
+        <button id="confirmNo" class="admin-btn">Nao</button>
+        <button id="confirmYes" class="admin-btn danger">Sim</button>
+      </div>
+    </div>
+  </div>
+
 <script src="/static/js/carousel.js"></script>
 <script src="/static/js/download.js"></script>
 <script src="/static/js/comments.js"></script>
 <script src="/static/js/user-menu.js"></script>
 <script src="/static/js/composer.js"></script>
 <script src="/static/js/lightbox.js"></script>
+<script src="/static/js/video-player.js"></script>
 <script src="/static/js/notifications.js"></script>
 
 <script>

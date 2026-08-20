@@ -12,7 +12,11 @@ bellBtn.addEventListener("click", (e) => {
     const opening = notifPanel.hidden;
     notifPanel.hidden = !opening;
     document.getElementById("userMenu").classList.remove("open");
-    if (opening) loadNotifications();
+    if (opening) {
+        loadNotifications();
+    } else {
+        updateBadge(0);
+    }
 });
 
 document.addEventListener("click", (e) => {
@@ -141,4 +145,5 @@ notifPushToggle.addEventListener("click", async (e) => {
 })();
 
 refreshNotificationBadge();
+setInterval(refreshNotificationBadge, 30000);
 })();
