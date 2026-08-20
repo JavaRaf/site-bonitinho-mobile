@@ -478,6 +478,7 @@ function renderFeed() {
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
                 <span class="feed-owner-name">@${escText(img.owner || "—")}</span>
                 ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
+                ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
             <div class="feed-caption">${escText(img.caption || "")}</div>
             <div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>
@@ -493,7 +494,6 @@ function renderFeed() {
                 <button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar">
                     <img src="/static/svg/download.svg" alt="download">
                 </button>
-                ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
             <div class="feed-likers"></div>
             <div class="feed-comments" hidden>
