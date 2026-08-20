@@ -81,9 +81,8 @@ def list_images():
                 }
             else:
                 post_map[pid]["media"].append(media)
-                if likes > post_map[pid]["likes"]:
-                    post_map[pid]["likes"] = likes
-                    post_map[pid]["name"] = upload.image_name
+                post_map[pid]["likes"] += likes
+                post_map[pid]["comments"] += comments
 
     result = list(post_map.values())
 
@@ -155,6 +154,8 @@ def list_images_since():
                 }
             else:
                 post_map[pid]["media"].append(media)
+                post_map[pid]["likes"] += likes
+                post_map[pid]["comments"] += comments
 
     return jsonify(list(post_map.values()))
 
