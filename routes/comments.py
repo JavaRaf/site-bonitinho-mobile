@@ -74,15 +74,17 @@ def handle_comments(image_name):
     if owner_upload and owner_upload[1].id != session["user_id"]:
         owner_user = owner_upload[1]
 
-        def _notify_comment():
+        def _notify_comment(owner_id=owner_user.id):
             try:
-                from routes.push import send_push
-                send_push(
-                    f"Novo comentario de @{commenter_name}",
-                    text[:100],
-                    owner_user.id,
-                    image_name=image_name,
-                )
+                from flask import current_app
+                with current_app.app_context():
+                    from routes.push import send_push
+                    send_push(
+                        f"Novo comentario de @{commenter_name}",
+                        text[:100],
+                        owner_id,
+                        image_name=image_name,
+                    )
             except Exception:
                 pass
 
@@ -94,18 +96,20 @@ def handle_comments(image_name):
         session_user_id = session["user_id"]
         mentioned_list = list(mentioned_usernames)
 
-        def _notify_mentions():
+        def _notify_mentions(uids=None):
             try:
-                from routes.push import send_push
-                for uname in mentioned_list:
-                    user = User.query.filter_by(username=uname).first()
-                    if user and user.id != session_user_id:
-                        send_push(
-                            f"@{commenter_name} mencionou voce",
-                            text[:100],
-                            user.id,
-                            image_name=image_name,
-                        )
+                from flask import current_app
+                with current_app.app_context():
+                    from routes.push import send_push
+                    for uname in mentioned_list:
+                        user = User.query.filter_by(username=uname).first()
+                        if user and user.id != session_user_id:
+                            send_push(
+                                f"@{commenter_name} mencionou voce",
+                                text[:100],
+                                user.id,
+                                image_name=image_name,
+                            )
             except Exception:
                 pass
 
@@ -113,8 +117,8 @@ def handle_comments(image_name):
 
     return jsonify({
         "id": comment.id, "text": comment.text, "created_at": comment.created_at,
-        "parent_id": comment.parent_id, "username": commenter.username,
-        "color": commenter.color,
+        "parent_id": comment.parent_id, "username": commenter.username if commenter else "",
+        "color": commenter.color if commenter else "",
     }), 201
 
 
