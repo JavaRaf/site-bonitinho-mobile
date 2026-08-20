@@ -33,20 +33,31 @@ def _get_video_duration_seconds(filepath):
 @images_bp.route("/api/images", methods=["GET"])
 def list_images():
     img_dir = Config.BASE_DIR / "images"
+
+    like_count = (
+        db.session.query(db.func.count(Like.id))
+        .filter(Like.image_name == Upload.image_name)
+        .correlate(Upload)
+        .scalar_subquery()
+    )
+    comment_count = (
+        db.session.query(db.func.count(Comment.id))
+        .filter(Comment.image_name == Upload.image_name)
+        .correlate(Upload)
+        .scalar_subquery()
+    )
+
     uploads = (
         db.session.query(
             Upload,
             User.username,
             User.avatar.label("owner_avatar"),
-            db.func.count(Like.id).label("likes"),
-            db.func.count(Comment.id).label("comments"),
+            like_count.label("likes"),
+            comment_count.label("comments"),
         )
         .outerjoin(User, Upload.user_id == User.id)
-        .outerjoin(Like, Like.image_name == Upload.image_name)
-        .outerjoin(Comment, Comment.image_name == Upload.image_name)
         .filter(Upload.active == 1)
-        .group_by(Upload.id)
-        .order_by(db.desc("likes"), db.desc(Upload.created_at))
+        .order_by(db.desc(like_count), db.desc(Upload.created_at))
         .all()
     )
 
@@ -106,19 +117,30 @@ def list_images_since():
         return jsonify([])
 
     img_dir = Config.BASE_DIR / "images"
+
+    like_count = (
+        db.session.query(db.func.count(Like.id))
+        .filter(Like.image_name == Upload.image_name)
+        .correlate(Upload)
+        .scalar_subquery()
+    )
+    comment_count = (
+        db.session.query(db.func.count(Comment.id))
+        .filter(Comment.image_name == Upload.image_name)
+        .correlate(Upload)
+        .scalar_subquery()
+    )
+
     uploads = (
         db.session.query(
             Upload,
             User.username,
             User.avatar.label("owner_avatar"),
-            db.func.count(Like.id).label("likes"),
-            db.func.count(Comment.id).label("comments"),
+            like_count.label("likes"),
+            comment_count.label("comments"),
         )
         .outerjoin(User, Upload.user_id == User.id)
-        .outerjoin(Like, Like.image_name == Upload.image_name)
-        .outerjoin(Comment, Comment.image_name == Upload.image_name)
         .filter(Upload.active == 1, Upload.created_at > after)
-        .group_by(Upload.id)
         .order_by(db.desc(Upload.created_at))
         .all()
     )
