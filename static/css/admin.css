@@ -1,7 +1,7 @@
 .admin-page {
   background: var(--bg);
   min-height: 100dvh;
-  padding: 1.25rem;
+  padding: 0.1rem;
   max-width: 800px;
   margin: 0 auto;
 }
@@ -717,11 +717,11 @@
 }
 
 .turnos-stat-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
+  width: auto;
+  font-size: 0.6rem;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .turnos-stat strong {
@@ -791,8 +791,8 @@
 /* Posts tab */
 .admin-type-badge {
   position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
+  left: 0.3rem;
+  bottom: 2rem;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   font-size: 0.625rem;
@@ -806,11 +806,12 @@
 }
 
 .admin-card-thumb {
-  width: 100%;
+  width: 60%;
   aspect-ratio: 1;
   object-fit: cover;
   display: block;
   background: #000;
+  align-self: center;
 }
 
 .admin-card-caption {
