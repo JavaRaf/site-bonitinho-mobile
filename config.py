@@ -25,3 +25,10 @@ class Config:
     VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov"}
     ALL_MEDIA_EXTENSIONS = ALLOWED_EXTENSIONS | VIDEO_EXTENSIONS
     MAX_VIDEO_SECONDS = 60
+    IMAGES_DIR = BASE_DIR / "images"
+
+
+(Config.BASE_DIR / "db").mkdir(parents=True, exist_ok=True)
+(Config.IMAGES_DIR).mkdir(parents=True, exist_ok=True)
+(Config.THUMB_DIR).mkdir(parents=True, exist_ok=True)
+(Config.BASE_DIR / "static" / "avatars").mkdir(parents=True, exist_ok=True)
