@@ -69,25 +69,12 @@ async function loadNotifications() {
 function goToNotification(imageName) {
     if (!imageName) return;
     notifPanel.hidden = true;
-    const isFeedMode = typeof feedMode !== "undefined" && feedMode;
-    if (isFeedMode) {
-        const card = document.querySelector(`.feed-card[data-name="${CSS.escape(imageName)}"]`);
-        if (card) {
-            card.scrollIntoView({ behavior: "smooth", block: "center" });
-            card.style.boxShadow = "0 0 0 2px #6366f1";
-            setTimeout(() => { card.style.boxShadow = ""; }, 2000);
-        } else {
-            window.location.href = `/?image=${encodeURIComponent(imageName)}`;
-        }
+    const card = document.querySelector(`.feed-card[data-name="${CSS.escape(imageName)}"]`);
+    if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.style.boxShadow = "0 0 0 2px #6366f1";
+        setTimeout(() => { card.style.boxShadow = ""; }, 2000);
     } else {
-        if (typeof sortedImages === "function" && typeof openLightbox === "function") {
-            const sorted = sortedImages();
-            const idx = sorted.findIndex(x => x.name === imageName);
-            if (idx >= 0) {
-                openLightbox(idx, sorted);
-                return;
-            }
-        }
         window.location.href = `/?image=${encodeURIComponent(imageName)}`;
     }
 }

@@ -1,7 +1,6 @@
 let current = 0;
 let likedImages = new Set();
 let allImages = [];
-let feedMode = (localStorage.getItem("viewMode") || "slide") === "feed";
 let sortMode = localStorage.getItem("sortMode") || "likes";
 let singleVoteMode = false;
 let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
@@ -25,16 +24,12 @@ function askConfirm(msg) {
     });
 }
 
-const FEED_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`;
-const SLIDE_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
-
 async function loadLikes() {
     try {
         const res = await fetch("/api/likes");
         const data = await res.json();
         likedImages = new Set(data.likes || []);
     } catch { /* not logged in */ }
-    updateLikeIcon();
 }
 
 async function loadSingleVoteFlag() {
@@ -42,9 +37,7 @@ async function loadSingleVoteFlag() {
         const res = await fetch("/api/singlevote");
         const data = await res.json();
         singleVoteMode = data.enabled || false;
-        const slideEl = document.getElementById("imgOwnerSingleVote");
         const feedEl = document.getElementById("feedSingleVote");
-        if (slideEl) slideEl.style.display = singleVoteMode ? "" : "none";
         if (feedEl) feedEl.style.display = singleVoteMode ? "" : "none";
         renderFeed();
     } catch { /* ignore */ }
@@ -64,335 +57,33 @@ async function loadCarousel() {
 
     renderGrid();
 
-    const track = document.getElementById("carouselTrack");
-    const dots = document.getElementById("carouselDots");
-
     if (!images.length) return;
 
-    track.innerHTML = "";
-    dots.innerHTML = "";
-
-    const imagePosts = images.filter(img => img.post_type !== "text" && img.post_type !== "video");
-    const expandedSlides = [];
-    imagePosts.forEach(img => {
-        if (img.media && img.media.length > 1) {
-            img.media.forEach(m => {
-                if (m.media_type !== "video") {
-                    expandedSlides.push({
-                        name: m.name,
-                        owner: img.owner,
-                        owner_id: img.owner_id,
-                        owner_avatar: img.owner_avatar,
-                        likes: img.likes,
-                        caption: img.caption,
-                        nsfw: img.nsfw,
-                        post_id: img.post_id,
-                    });
-                }
-            });
-        } else {
-            expandedSlides.push(img);
-        }
-    });
-    expandedSlides.forEach((img, i) => {
-        const div = document.createElement("div");
-        div.className = "carousel-slide";
-        div.dataset.image = img.name;
-        div.dataset.postId = img.post_id || img.name;
-        div.dataset.owner = img.owner || "";
-        div.dataset.avatar = img.owner_avatar || "";
-        div.dataset.likes = img.likes || 0;
-        div.dataset.caption = img.caption || "";
-        if (img.nsfw) div.dataset.nsfw = "1";
-        const loadNow = i <= 1;
-        const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
-        const nsfwBtn = (img.nsfw && nsfwFilter === "blur") ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : "";
-        div.innerHTML = `<img ${loadNow ? `src="/images/${img.name}"` : `data-src="/images/${img.name}"`} alt="slide ${i}" draggable="false" class="${nsfwClass.trim()}">${nsfwBtn}`;
-        track.appendChild(div);
-
-        const dot = document.createElement("span");
-        dot.className = "carousel-dot" + (i === 0 ? " active" : "");
-        dot.onclick = () => goTo(i);
-        dots.appendChild(dot);
-    });
-
-    updateOwnerOverlay();
-    updateLikeCount();
     await loadLikes();
     loadSingleVoteFlag();
     renderFeed();
-    applyViewMode();
     syncSortSelects();
-    rebuildCarousel();
 }
 
-function updateLikeCount() {
-    const slides = document.querySelectorAll(".carousel-slide");
-    const el = document.getElementById("likes-count");
-    if (el && slides[current]) {
-        const n = parseInt(slides[current].dataset.likes) || 0;
-        el.textContent = n > 0 ? n : "";
-    }
-}
-
-function lazyLoadAround(index) {
-    const slides = document.querySelectorAll(".carousel-slide");
-    [index - 1, index, index + 1].forEach(i => {
-        if (i < 0 || i >= slides.length) return;
-        const img = slides[i].querySelector("img");
-        if (img && img.dataset.src) {
-            img.src = img.dataset.src;
-            img.removeAttribute("data-src");
-        }
-    });
-}
-
-function updateOwnerOverlay() {
-    const slides = document.querySelectorAll(".carousel-slide");
-    const owner = slides[current]?.dataset.owner;
-    const avatar = slides[current]?.dataset.avatar;
-    const caption = slides[current]?.dataset.caption || "";
-    const nameEl = document.getElementById("imgOwnerName");
-    const avatarEl = document.getElementById("imgOwnerAvatar");
-    const captionEl = document.getElementById("imgCaption");
-    const imgDeleteBtn = document.getElementById("imgDelete");
-    if (nameEl) nameEl.textContent = owner ? "@" + owner : "";
-    if (captionEl) captionEl.textContent = caption;
-    if (imgDeleteBtn) {
-        const imgData = allImages[current];
-        const isOwner = myUserId && imgData && imgData.owner_id === myUserId;
-        imgDeleteBtn.style.display = isOwner ? "" : "none";
-    }
-    if (avatarEl) {
-        const target = (!avatar || avatar === "default-avatar.svg")
-            ? "/static/svg/default-avatar.svg"
-            : `/avatars/${avatar}`;
-        if (avatarEl.getAttribute("src") !== target) {
-            avatarEl.src = target;
-            if (!avatar || avatar === "default-avatar.svg") {
-                avatarEl.onerror = null;
-            } else {
-                avatarEl.onerror = () => { avatarEl.src = "/static/svg/default-avatar.svg"; };
-            }
-        }
-    }
-}
-
-function goTo(index) {
-    const slides = document.querySelectorAll(".carousel-slide");
-    if (!slides.length) return;
-    current = ((index % slides.length) + slides.length) % slides.length;
-    document.getElementById("carouselTrack").style.transform = `translateX(-${current * 100}%)`;
-    document.querySelectorAll(".carousel-dot").forEach((d, i) => d.classList.toggle("active", i === current));
-    updateGridActive();
-    updateLikeIcon();
-    updateOwnerOverlay();
-    updateLikeCount();
-    lazyLoadAround(current);
-    const likersSection = document.getElementById("likersSection");
-    if (likersSection) likersSection.hidden = true;
-    window.dispatchEvent(new CustomEvent("slideChange", { detail: { index: current } }));
-}
-
-function currentImageName() {
-    const slides = document.querySelectorAll(".carousel-slide");
-    return slides[current]?.dataset.image || "";
-}
-
-function updateLikeIcon() {
-    const btn = document.getElementById("likes-btn");
-    const icon = btn.querySelector("img");
-    const liked = likedImages.has(currentImageName());
-    if (liked) {
-        icon.src = "/static/svg/upvote-filled.svg";
-        btn.style.color = "#f43f5e";
-    } else {
-        icon.src = "/static/svg/upvote.svg";
-        btn.style.color = "";
-    }
-}
-
-let lastTapTime = 0;
-
-/* === Swipe === */
-let swipeStartX = 0;
-let swipeStartY = 0;
-
-const track = document.getElementById("carouselTrack");
-
-track.addEventListener("touchstart", e => {
-    if (e.touches.length === 1) {
-        swipeStartX = e.touches[0].clientX;
-        swipeStartY = e.touches[0].clientY;
-    }
-});
-
-track.addEventListener("touchend", e => {
-    if (!e.changedTouches.length) return;
-    const dx = swipeStartX - e.changedTouches[0].clientX;
-    const dy = swipeStartY - e.changedTouches[0].clientY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
-        goTo(current + (dx > 0 ? 1 : -1));
-    }
-});
-
-/* === Arrow buttons (desktop) === */
-document.getElementById("carouselPrev")?.addEventListener("click", () => goTo(current - 1));
-document.getElementById("carouselNext")?.addEventListener("click", () => goTo(current + 1));
-
-/* === Keyboard navigation (A/D, arrows) === */
-document.addEventListener("keydown", e => {
-    const tag = (e.target.tagName || "").toLowerCase();
-    if (tag === "input" || tag === "textarea") return;
-    if (["a", "arrowleft", "w"].includes(e.key.toLowerCase())) {
-        goTo(current - 1);
-    } else if (["d", "arrowright", "s"].includes(e.key.toLowerCase())) {
-        goTo(current + 1);
-    }
-});
-
-/* === Double-tap → toggle like, single-tap → open lightbox === */
-let tapTimeout = null;
-
-track.addEventListener("click", e => {
-    const revealBtn = e.target.closest(".nsfw-reveal-btn");
-    if (revealBtn) {
-        e.stopPropagation();
-        const slide = revealBtn.closest(".carousel-slide");
-        if (slide) {
-            slide.querySelector("img")?.classList.remove("nsfw-blur");
-            revealBtn.remove();
-        }
-        return;
-    }
-    const img = e.target.closest(".carousel-slide img");
-    if (!img) return;
-    const now = Date.now();
-    if (now - lastTapTime < 350) {
-        clearTimeout(tapTimeout);
-        tapTimeout = null;
-        toggleLike();
-        lastTapTime = 0;
-    } else {
-        lastTapTime = now;
-        tapTimeout = setTimeout(() => {
-            if (lastTapTime === now && typeof openLightbox === "function") {
-                openLightbox(current, sortedImages());
-            }
-        }, 360);
-    }
-});
-
-async function refreshLikeCounts() {
-    try {
-        const res = await fetch("/api/images");
-        const images = await res.json();
-        const map = {};
-        images.forEach(img => { map[img.name] = img.likes || 0; });
-        document.querySelectorAll(".carousel-slide").forEach(slide => {
-            if (map[slide.dataset.image] !== undefined) {
-                slide.dataset.likes = map[slide.dataset.image];
-            }
-        });
-        allImages.forEach(img => {
-            if (map[img.name] !== undefined) img.likes = map[img.name];
-        });
-        renderFeed();
-    } catch { /* ignore */ }
-}
-
-async function toggleLike() {
-    const imgName = currentImageName();
-    if (!imgName) return;
-
-    const slides = document.querySelectorAll(".carousel-slide");
-    const slide = slides[current];
-    if (!slide) return;
-
-    // Optimistic update: flip instantly so feedback doesn't wait on the server
-    const wasLiked = likedImages.has(imgName);
-    const delta = wasLiked ? -1 : 1;
-    if (wasLiked) likedImages.delete(imgName);
-    else likedImages.add(imgName);
-    slide.dataset.likes = Math.max(0, (parseInt(slide.dataset.likes) || 0) + delta);
-    updateLikeIcon();
-    updateLikeCount();
-
-    try {
-        const res = await fetch(`/api/likes/${imgName}`, { method: "POST" });
-        if (!res.ok) throw new Error("request failed");
-        const data = await res.json();
-        if (data.liked !== !wasLiked) {
-            // server disagreed (e.g. changed elsewhere) — resync
-            await loadLikes();
-            await refreshLikeCounts();
-        } else {
-            // background resync keeps counts accurate without blocking UI
-            loadLikes();
-            refreshLikeCounts();
-        }
-    } catch {
-        // revert optimistic change on failure
-        if (wasLiked) likedImages.add(imgName);
-        else likedImages.delete(imgName);
-        slide.dataset.likes = Math.max(0, (parseInt(slide.dataset.likes) || 0) - delta);
-        updateLikeIcon();
-        updateLikeCount();
-    }
-
-    const likersSection = document.getElementById("likersSection");
-    if (likersSection && !likersSection.hidden) loadLikers();
-}
-
-/* === Prevent text selection on double-tap === */
-track.addEventListener("mousedown", e => {
-    if (e.detail > 1) e.preventDefault();
-});
-
-/* === Likes button click === */
-document.getElementById("likes-btn").addEventListener("click", e => {
-    e.stopPropagation();
-    toggleLike();
-});
-
-/* === Likers (who liked) === */
 function escText(str) {
     const div = document.createElement("div");
     div.textContent = str || "";
     return div.innerHTML;
 }
 
-async function loadLikers() {
-    const imgName = currentImageName();
-    const list = document.getElementById("likersList");
-    const section = document.getElementById("likersSection");
-    if (!imgName || !list || !section) return;
-    try {
-        const res = await fetch(`/api/likers/${imgName}`);
-        const likers = await res.json();
-        list.innerHTML = likers.length
-            ? likers.map(u => `<span class="liker-tag">@${escText(u.username)}</span>`).join("")
-            : `<span class="liker-tag" style="color:#a1a1aa">Ninguém ainda</span>`;
-        section.hidden = false;
-    } catch { /* ignore */ }
+function sortedImages() {
+    let imgs = [...allImages];
+    if (nsfwFilter === "hide") {
+        imgs = imgs.filter(i => !i.nsfw);
+    }
+    return imgs.sort((a, b) => {
+        if (sortMode === "recent") {
+            return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        }
+        return (b.likes || 0) - (a.likes || 0);
+    });
 }
 
-document.getElementById("likes-count")?.addEventListener("click", e => {
-    e.stopPropagation();
-    const section = document.getElementById("likersSection");
-    if (section && !section.hidden) {
-        section.hidden = true;
-    } else {
-        loadLikers();
-    }
-});
-
-document.getElementById("likersClose")?.addEventListener("click", () => {
-    const section = document.getElementById("likersSection");
-    if (section) section.hidden = true;
-});
-
-/* === Grid gallery === */
 function getExpandedSlides() {
     const images = sortedImages().filter(img => img.post_type !== "text" && img.post_type !== "video");
     const result = [];
@@ -413,47 +104,24 @@ function getExpandedSlides() {
 function renderGrid() {
     const thumbs = document.getElementById("gridThumbs");
     if (!thumbs) return;
-    const activeName = currentImageName();
-    thumbs.innerHTML = getExpandedSlides().map(img => `
-        <button class="grid-thumb ${img.name === activeName ? "active" : ""}" data-name="${escText(img.name)}">
+    const slides = getExpandedSlides();
+    thumbs.innerHTML = slides.map(img => `
+        <button class="grid-thumb" data-name="${escText(img.name)}">
             <img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">
         </button>
     `).join("");
 
     thumbs.querySelectorAll(".grid-thumb").forEach(btn => {
         btn.addEventListener("click", () => {
-            goTo(carouselIndexByName(btn.dataset.name));
+            const card = document.querySelector(`.feed-card[data-name="${CSS.escape(btn.dataset.name)}"]`);
+            if (card) {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                card.style.boxShadow = "0 0 0 2px #6366f1";
+                setTimeout(() => { card.style.boxShadow = ""; }, 2000);
+            }
             closeGrid();
         });
     });
-}
-
-function updateGridActive() {
-    const name = currentImageName();
-    document.querySelectorAll(".grid-thumb").forEach(t => {
-        t.classList.toggle("active", t.dataset.name === name);
-    });
-}
-
-function sortedImages() {
-    let imgs = [...allImages];
-    if (nsfwFilter === "hide") {
-        imgs = imgs.filter(i => !i.nsfw);
-    }
-    return imgs.sort((a, b) => {
-        if (sortMode === "recent") {
-            return String(b.created_at || "").localeCompare(String(a.created_at || ""));
-        }
-        return (b.likes || 0) - (a.likes || 0);
-    });
-}
-
-function carouselIndexByName(name) {
-    const slides = document.querySelectorAll(".carousel-slide");
-    for (let i = 0; i < slides.length; i++) {
-        if (slides[i].dataset.image === name) return i;
-    }
-    return 0;
 }
 
 function setSortMode(mode) {
@@ -463,41 +131,6 @@ function setSortMode(mode) {
     syncSortSelects();
     renderGrid();
     renderFeed();
-    rebuildCarousel();
-}
-
-function rebuildCarousel() {
-    const track = document.getElementById("carouselTrack");
-    const dots = document.getElementById("carouselDots");
-    const slides = document.querySelectorAll(".carousel-slide");
-    if (!track || !dots || !slides.length) return;
-
-    const byName = new Map();
-    slides.forEach(s => byName.set(s.dataset.image, s));
-
-    const sorted = getExpandedSlides();
-    track.innerHTML = "";
-    dots.innerHTML = "";
-    sorted.forEach((img, i) => {
-        const slide = byName.get(img.name);
-        if (!slide) return;
-        track.appendChild(slide);
-        const dot = document.createElement("span");
-        dot.className = "carousel-dot";
-        dot.onclick = () => goTo(i);
-        dots.appendChild(dot);
-    });
-
-    current = 0;
-    track.style.transform = "translateX(0%)";
-    document.querySelectorAll(".carousel-dot").forEach((d, i) => d.classList.toggle("active", i === current));
-    lazyLoadAround(0);
-    updateLikeIcon();
-    updateOwnerOverlay();
-    updateLikeCount();
-    updateGridActive();
-    // Reload comments for the new first image after reordering.
-    if (typeof loadComments === "function") loadComments();
 }
 
 function syncSortSelects() {
@@ -513,25 +146,8 @@ function closeGrid() {
 }
 
 document.getElementById("grid-btn")?.addEventListener("click", openGrid);
-document.getElementById("imgDelete")?.addEventListener("click", () => {
-    const imgData = allImages[current];
-    if (!imgData) return;
-    if (!confirm("Apagar este post?")) return;
-    fetch(`/api/my-images/${encodeURIComponent(imgData.name)}`, { method: "DELETE", credentials: "include" })
-        .then(res => res.json())
-        .then(data => {
-            if (data.ok) {
-                allImages = allImages.filter(x => x.name !== imgData.name);
-                renderFeed();
-                renderGrid();
-                loadCarousel();
-            }
-        });
-});
 
 document.getElementById("gridClose")?.addEventListener("click", closeGrid);
-
-document.getElementById("sortSelect")?.addEventListener("change", e => setSortMode(e.target.value));
 
 document.getElementById("feedSortSelect")?.addEventListener("change", e => setSortMode(e.target.value));
 
@@ -642,36 +258,6 @@ function renderFeed() {
     feed.querySelectorAll(".video-player").forEach(initVideoPlayer);
 }
 
-function applyViewMode() {
-    const carrossel = document.querySelector(".carrossel");
-    const feedView = document.getElementById("feedView");
-    const feedSortWrap = document.getElementById("feedSortWrap");
-    const feedCreate = document.getElementById("feedCreate");
-    const toggle = document.getElementById("viewToggle");
-    if (!carrossel || !feedView) return;
-    if (feedMode) {
-        carrossel.style.display = "none";
-        feedView.hidden = false;
-        if (feedSortWrap) feedSortWrap.hidden = false;
-        if (feedCreate) feedCreate.hidden = false;
-        if (toggle) {
-            toggle.innerHTML = SLIDE_ICON;
-            toggle.title = "Alternar para slide";
-            toggle.setAttribute("aria-label", "Alternar para slide");
-        }
-    } else {
-        carrossel.style.display = "";
-        feedView.hidden = true;
-        if (feedSortWrap) feedSortWrap.hidden = true;
-        if (feedCreate) feedCreate.hidden = true;
-        if (toggle) {
-            toggle.innerHTML = FEED_ICON;
-            toggle.title = "Alternar para feed";
-            toggle.setAttribute("aria-label", "Alternar para feed");
-        }
-    }
-}
-
 async function toggleFeedLike(btn) {
     const name = btn.dataset.name;
     if (!name) return;
@@ -692,9 +278,6 @@ async function toggleFeedLike(btn) {
 
     const img = allImages.find(x => x.name === name);
     if (img) img.likes = Math.max(0, (img.likes || 0) + delta);
-    document.querySelectorAll(".carousel-slide").forEach(s => {
-        if (s.dataset.image === name) s.dataset.likes = Math.max(0, (parseInt(s.dataset.likes) || 0) + delta);
-    });
 
     let prevUnlikedName = null;
     let prevUnlikedImg = null;
@@ -705,9 +288,6 @@ async function toggleFeedLike(btn) {
                 likedImages.delete(n);
                 prevUnlikedImg = allImages.find(x => x.name === n);
                 if (prevUnlikedImg) prevUnlikedImg.likes = Math.max(0, (prevUnlikedImg.likes || 0) - 1);
-                document.querySelectorAll(".carousel-slide").forEach(s => {
-                    if (s.dataset.image === n) s.dataset.likes = Math.max(0, (parseInt(s.dataset.likes) || 0) - 1);
-                });
                 const prevBtn = document.querySelector(`.feed-like[data-name="${CSS.escape(n)}"]`);
                 if (prevBtn) {
                     prevBtn.classList.remove("liked");
@@ -722,9 +302,6 @@ async function toggleFeedLike(btn) {
             }
         }
     }
-
-    updateLikeIcon();
-    updateLikeCount();
 
     try {
         const res = await fetch(`/api/likes/${encodeURIComponent(name)}`, { method: "POST" });
@@ -741,15 +318,9 @@ async function toggleFeedLike(btn) {
         btn.querySelector("img").src = wasLiked ? "/static/svg/upvote-filled.svg" : "/static/svg/upvote.svg";
         countEl.textContent = before > 0 ? before : "";
         if (img) img.likes = Math.max(0, (img.likes || 0) - delta);
-        document.querySelectorAll(".carousel-slide").forEach(s => {
-            if (s.dataset.image === name) s.dataset.likes = Math.max(0, (parseInt(s.dataset.likes) || 0) - delta);
-        });
         if (prevUnlikedName) {
             likedImages.add(prevUnlikedName);
             if (prevUnlikedImg) prevUnlikedImg.likes = (prevUnlikedImg.likes || 0) + 1;
-            document.querySelectorAll(".carousel-slide").forEach(s => {
-                if (s.dataset.image === prevUnlikedName) s.dataset.likes = (parseInt(s.dataset.likes) || 0) + 1;
-            });
             const prevBtn = document.querySelector(`.feed-like[data-name="${CSS.escape(prevUnlikedName)}"]`);
             if (prevBtn) {
                 prevBtn.classList.add("liked");
@@ -761,8 +332,6 @@ async function toggleFeedLike(btn) {
                 prevCountEl.textContent = pv + 1 > 0 ? pv + 1 : "";
             }
         }
-        updateLikeIcon();
-        updateLikeCount();
     }
 }
 
@@ -1087,23 +656,6 @@ function autoResizeFeed(el) {
     el.style.height = Math.min(el.scrollHeight, 120) + "px";
 }
 
-document.getElementById("viewToggle")?.addEventListener("click", () => {
-    feedMode = !feedMode;
-    localStorage.setItem("viewMode", feedMode ? "feed" : "slide");
-    applyViewMode();
-});
-
-/* === Refresh on tab focus (economical) === */
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        const imgName = currentImageName();
-        if (imgName && typeof commentsCache !== "undefined") {
-            commentsCache.delete(imgName);
-            if (typeof loadComments === "function") loadComments();
-        }
-    }
-});
-
 loadCarousel();
 
 /* === Real-time new posts polling === */
@@ -1132,7 +684,7 @@ function showNewPostsBanner(count) {
         banner.innerHTML = `<div class="new-posts-inner"><span class="new-posts-text"></span></div>`;
         banner.addEventListener("click", loadPendingPosts);
         const feed = document.getElementById("feedView");
-        if (feed && feedMode) {
+        if (feed) {
             feed.parentNode.insertBefore(banner, feed);
         }
     }

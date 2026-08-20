@@ -34,11 +34,7 @@ async function fetchMyCommentLikes() {
 }
 
 function currentImageName() {
-    const slides = document.querySelectorAll(".carousel-slide");
-    const dots = document.querySelectorAll(".carousel-dot");
-    let idx = 0;
-    dots.forEach((d, i) => { if (d.classList.contains("active")) idx = i; });
-    return slides[idx]?.dataset.image || "";
+    return "";
 }
 
 function avatarUrl(avatar) {
@@ -368,8 +364,8 @@ document.addEventListener("click", async e => {
     }
 });
 
-/* === Main form === */
-document.getElementById("commentForm").addEventListener("submit", async e => {
+/* === Main form (carousel comment — removed, kept as no-op guard) === */
+document.getElementById("commentForm")?.addEventListener("submit", async e => {
     e.preventDefault();
     if (mentionDropdown && mentionUsers.length) return;
     const input = document.getElementById("commentInput");
@@ -435,7 +431,5 @@ document.addEventListener("mousedown", e => {
 window.addEventListener("scroll", () => {
     if (mentionDropdown && mentionInput) renderMentionDropdown();
 }, true);
-
-window.addEventListener("slideChange", () => { loadComments(); hideMentionDropdown(); });
 
 fetchCurrentUser().then(() => fetchMyCommentLikes().then(() => loadComments()));

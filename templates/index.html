@@ -24,7 +24,7 @@
     </div>
 
     <div class="user">
-      <button class="view-toggle" id="viewToggle" type="button" title="Alternar visualização" aria-label="Alternar visualização"></button>
+      <button class="header-grid-btn" id="grid-btn" type="button" title="Galeria" aria-label="Galeria"><img src="/static/svg/grid.svg" alt="grid"></button>
       <button class="header-bell" id="headerBell" type="button" title="Notificações" aria-label="Notificações">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="header-bell-badge" id="bellBadge" hidden>0</span>
@@ -52,7 +52,7 @@
     </div>
   </header>
 
-  <div class="feed-create" id="feedCreate" hidden>
+  <div class="feed-create" id="feedCreate">
     <div class="feed-create-inner">
       <img class="feed-create-avatar" id="feedCreateAvatar" src="/static/svg/default-avatar.svg" alt="">
       <textarea class="feed-create-input" id="feedCreateText" placeholder="No que voce esta pensando?" rows="1" autocomplete="off"></textarea>
@@ -99,76 +99,6 @@
     </div>
   </div>
 
-  <div class="carrossel">
-    <button class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="Anterior">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6" />
-      </svg>
-    </button>
-    <div class="img-model">
-
-      <div class="slide-sort-wrap" id="slideSortWrap">
-        <span class="img-owner-singlevote" id="imgOwnerSingleVote" style="display:none">Voto único</span>
-        <select class="sort-select" id="sortSelect" title="Ordenar" aria-label="Ordenar">
-          <option value="likes">Mais votadas</option>
-          <option value="recent">Mais recentes</option>
-        </select>
-      </div>
-
-      <div class="img-owner" id="imgOwner"><img id="imgOwnerAvatar" class="img-owner-avatar"
-          src="/static/svg/default-avatar.svg" alt=""><span id="imgOwnerName"></span>
-        <button class="img-delete" id="imgDelete" type="button" title="Apagar post" style="display:none"><img src="/static/svg/trash.svg" alt="delete"></button>
-      </div>
-
-      <div class="img-caption" id="imgCaption"></div>
-
-      <div id="img-view">
-        <div class="carousel-track" id="carouselTrack">
-          <img src="/static/svg/image-placeholder.svg" alt="" class="img-placeholder">
-        </div>
-        <div class="carousel-dots" id="carouselDots"></div>
-      </div>
-
-      <div class="buttons">
-        <div class="btn-group">
-          <div id="likes-btn"><img src="/static/svg/upvote.svg" alt="like"></div>
-          <span class="likes-count" id="likes-count"></span>
-        </div>
-        <div class="btn-group">
-          <div id="comment-btn"><img src="/static/svg/comments.svg" alt="comment"></div>
-          <span class="likes-count" id="comment-count"></span>
-        </div>
-        <div id="download-btn"><img src="/static/svg/download.svg" alt="download"></div>
-        <div id="grid-btn"><img src="/static/svg/grid.svg" alt="grid"></div>
-      </div>
-
-      <div class="likers-section" id="likersSection" hidden>
-        <div class="likers-header">
-          <span class="likers-title">Curtido por</span>
-          <button class="likers-close" id="likersClose" type="button" aria-label="Fechar">&times;</button>
-        </div>
-        <div class="likers-list" id="likersList"></div>
-      </div>
-
-      <div class="comments-section" id="commentsSection">
-        <div class="comments-list" id="commentsList"></div>
-        <form class="comment-form" id="commentForm">
-          <textarea class="comment-textarea" id="commentInput" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
-          <button type="submit"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-        </form>
-      </div>
-
-
-    </div>
-    <button class="carousel-arrow carousel-next" id="carouselNext" aria-label="Próximo">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-    </button>
-  </div>
-
   <div class="grid-overlay" id="gridOverlay">
     <div class="grid-panel">
       <div class="grid-header">
@@ -179,7 +109,7 @@
     </div>
   </div>
 
-  <div class="feed-sort-wrap" id="feedSortWrap" hidden>
+  <div class="feed-sort-wrap" id="feedSortWrap">
     <span class="feed-singlevote" id="feedSingleVote" style="display:none">Voto único</span>
     <select class="sort-select" id="feedSortSelect" title="Ordenar" aria-label="Ordenar">
       <option value="likes">Mais votadas</option>
@@ -187,7 +117,7 @@
     </select>
   </div>
 
-  <div class="feed-view" id="feedView" hidden></div>
+  <div class="feed-view" id="feedView"></div>
 
   <div class="lightbox-overlay" id="lightboxOverlay">
     <div class="lightbox-header">
