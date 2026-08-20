@@ -24,8 +24,10 @@ async function loadSingleVoteFlag() {
         const res = await fetch("/api/singlevote");
         const data = await res.json();
         singleVoteMode = data.enabled || false;
-        const el = document.getElementById("imgOwnerSingleVote");
-        if (el) el.style.display = singleVoteMode ? "" : "none";
+        const slideEl = document.getElementById("imgOwnerSingleVote");
+        const feedEl = document.getElementById("feedSingleVote");
+        if (slideEl) slideEl.style.display = singleVoteMode ? "" : "none";
+        if (feedEl) feedEl.style.display = singleVoteMode ? "" : "none";
         renderFeed();
     } catch { /* ignore */ }
 }
@@ -475,7 +477,6 @@ function renderFeed() {
             <div class="feed-owner">
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
                 <span class="feed-owner-name">@${escText(img.owner || "—")}</span>
-                ${singleVoteMode ? '<span class="feed-singlevote">Voto único</span>' : ''}
                 ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
             </div>
             <div class="feed-caption">${escText(img.caption || "")}</div>
