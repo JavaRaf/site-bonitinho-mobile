@@ -396,6 +396,7 @@ const coverCropCanvas = document.getElementById("coverCropCanvas");
 const coverCropArea = document.getElementById("coverCropArea");
 const coverCropCtx = coverCropCanvas.getContext("2d");
 let ccImg = null, ccScale = 1, ccImgX = 0, ccImgY = 0, ccDrag = null;
+let ccPinchDist = 0, ccPinchScale = 1;
 
 function openCoverCrop(file) {
     const url = URL.createObjectURL(file);
@@ -431,17 +432,68 @@ function drawCoverCrop() {
 }
 
 coverCropArea.addEventListener("pointerdown", (e) => {
-    ccDrag = { x: e.clientX, y: e.clientY, sx: ccImgX, sy: ccImgY };
+    if (e.isPrimary && coverCropArea.hasPointerCapture(e.pointerId) === false) {
+        ccDrag = { x: e.clientX, y: e.clientY, sx: ccImgX, sy: ccImgY };
+    }
+    const pointers = coverCropArea.querySelectorAll(":hover") || [];
     coverCropArea.setPointerCapture(e.pointerId);
+    const active = coverCropArea._activePointers || (coverCropArea._activePointers = new Map());
+    active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (active.size === 2) {
+        const pts = [...active.values()];
+        ccPinchDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        ccPinchScale = ccScale;
+        ccDrag = null;
+    }
 });
 coverCropArea.addEventListener("pointermove", (e) => {
-    if (!ccDrag) return;
-    ccImgX = ccDrag.sx + (e.clientX - ccDrag.x);
-    ccImgY = ccDrag.sy + (e.clientY - ccDrag.y);
-    drawCoverCrop();
+    const active = coverCropArea._activePointers;
+    if (active && active.has(e.pointerId)) {
+        active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    if (active && active.size === 2) {
+        const pts = [...active.values()];
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const newScale = Math.min(Math.max(ccPinchScale * (dist / ccPinchDist), 0.3), 5);
+        const cx = (pts[0].x + pts[1].x) / 2;
+        const cy = (pts[0].y + pts[1].y) / 2;
+        const rect = coverCropArea.getBoundingClientRect();
+        const mx = cx - rect.left;
+        const my = cy - rect.top;
+        ccImgX = mx - (mx - ccImgX) * (newScale / ccScale);
+        ccImgY = my - (my - ccImgY) * (newScale / ccScale);
+        ccScale = newScale;
+        drawCoverCrop();
+        return;
+    }
+    if (ccDrag) {
+        ccImgX = ccDrag.sx + (e.clientX - ccDrag.x);
+        ccImgY = ccDrag.sy + (e.clientY - ccDrag.y);
+        drawCoverCrop();
+    }
 });
-coverCropArea.addEventListener("pointerup", () => ccDrag = null);
-coverCropArea.addEventListener("pointercancel", () => ccDrag = null);
+coverCropArea.addEventListener("pointerup", (e) => {
+    const active = coverCropArea._activePointers;
+    if (active) active.delete(e.pointerId);
+    if (active && active.size < 2) ccDrag = null;
+});
+coverCropArea.addEventListener("pointercancel", (e) => {
+    const active = coverCropArea._activePointers;
+    if (active) active.delete(e.pointerId);
+    ccDrag = null;
+});
+coverCropArea.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const rect = coverCropArea.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.min(Math.max(ccScale * factor, 0.3), 5);
+    ccImgX = mx - (mx - ccImgX) * (newScale / ccScale);
+    ccImgY = my - (my - ccImgY) * (newScale / ccScale);
+    ccScale = newScale;
+    drawCoverCrop();
+}, { passive: false });
 
 function getCoverBlob() {
     return new Promise(resolve => {
@@ -499,6 +551,7 @@ const cropCanvas = document.getElementById("cropCanvas");
 const cropArea = document.getElementById("cropArea");
 const cropCtx = cropCanvas.getContext("2d");
 let acImg = null, acScale = 1, acImgX = 0, acImgY = 0, acDrag = null;
+let acPinchDist = 0, acPinchScale = 1;
 
 function openAvatarCrop(file) {
     const url = URL.createObjectURL(file);
@@ -537,17 +590,66 @@ function drawAvatarCrop() {
 }
 
 cropArea.addEventListener("pointerdown", (e) => {
-    acDrag = { x: e.clientX, y: e.clientY, sx: acImgX, sy: acImgY };
     cropArea.setPointerCapture(e.pointerId);
+    const active = cropArea._activePointers || (cropArea._activePointers = new Map());
+    active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (active.size === 2) {
+        const pts = [...active.values()];
+        acPinchDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        acPinchScale = acScale;
+        acDrag = null;
+    } else if (active.size === 1) {
+        acDrag = { x: e.clientX, y: e.clientY, sx: acImgX, sy: acImgY };
+    }
 });
 cropArea.addEventListener("pointermove", (e) => {
-    if (!acDrag) return;
-    acImgX = acDrag.sx + (e.clientX - acDrag.x);
-    acImgY = acDrag.sy + (e.clientY - acDrag.y);
-    drawAvatarCrop();
+    const active = cropArea._activePointers;
+    if (active && active.has(e.pointerId)) {
+        active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    if (active && active.size === 2) {
+        const pts = [...active.values()];
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const newScale = Math.min(Math.max(acPinchScale * (dist / acPinchDist), 0.3), 5);
+        const cx = (pts[0].x + pts[1].x) / 2;
+        const cy = (pts[0].y + pts[1].y) / 2;
+        const rect = cropArea.getBoundingClientRect();
+        const mx = cx - rect.left;
+        const my = cy - rect.top;
+        acImgX = mx - (mx - acImgX) * (newScale / acScale);
+        acImgY = my - (my - acImgY) * (newScale / acScale);
+        acScale = newScale;
+        drawAvatarCrop();
+        return;
+    }
+    if (acDrag) {
+        acImgX = acDrag.sx + (e.clientX - acDrag.x);
+        acImgY = acDrag.sy + (e.clientY - acDrag.y);
+        drawAvatarCrop();
+    }
 });
-cropArea.addEventListener("pointerup", () => acDrag = null);
-cropArea.addEventListener("pointercancel", () => acDrag = null);
+cropArea.addEventListener("pointerup", (e) => {
+    const active = cropArea._activePointers;
+    if (active) active.delete(e.pointerId);
+    if (active && active.size < 2) acDrag = null;
+});
+cropArea.addEventListener("pointercancel", (e) => {
+    const active = cropArea._activePointers;
+    if (active) active.delete(e.pointerId);
+    acDrag = null;
+});
+cropArea.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const rect = cropArea.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.min(Math.max(acScale * factor, 0.3), 5);
+    acImgX = mx - (mx - acImgX) * (newScale / acScale);
+    acImgY = my - (my - acImgY) * (newScale / acScale);
+    acScale = newScale;
+    drawAvatarCrop();
+}, { passive: false });
 
 function getAvatarBlob() {
     return new Promise(resolve => {

@@ -5,6 +5,7 @@ let sortMode = localStorage.getItem("sortMode") || "likes";
 let singleVoteMode = false;
 let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
 let myUserId = null;
+let followingIds = [];
 
 function askConfirm(msg) {
     return new Promise(resolve => {
@@ -55,6 +56,8 @@ async function loadCarousel() {
         if (meData.user) myUserId = meData.user.id;
     } catch { /* not logged in */ }
 
+    await fetchFollowingIds();
+
     renderGrid();
 
     if (!images.length) return;
@@ -76,8 +79,13 @@ function sortedImages() {
     if (nsfwFilter === "hide") {
         imgs = imgs.filter(i => !i.nsfw);
     }
+    if (sortMode.startsWith("following_") && Array.isArray(followingIds) && followingIds.length) {
+        const followSet = new Set(followingIds.map(Number));
+        imgs = imgs.filter(i => followSet.has(Number(i.owner_id)));
+    }
+    const byLikes = sortMode === "likes" || sortMode === "following_likes";
     return imgs.sort((a, b) => {
-        if (sortMode === "recent") {
+        if (!byLikes) {
             return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         }
         return (b.likes || 0) - (a.likes || 0);
@@ -85,14 +93,12 @@ function sortedImages() {
 }
 
 function getExpandedSlides() {
-    const images = sortedImages().filter(img => img.post_type !== "text" && img.post_type !== "video");
+    const images = sortedImages();
     const result = [];
     images.forEach(img => {
         if (img.media && img.media.length > 1) {
             img.media.forEach(m => {
-                if (m.media_type !== "video") {
-                    result.push({ name: m.name, nsfw: img.nsfw });
-                }
+                result.push({ name: m.name, nsfw: img.nsfw });
             });
         } else {
             result.push({ name: img.name, nsfw: img.nsfw });
@@ -105,11 +111,16 @@ function renderGrid() {
     const thumbs = document.getElementById("gridThumbs");
     if (!thumbs) return;
     const slides = getExpandedSlides();
-    thumbs.innerHTML = slides.map(img => `
+    thumbs.innerHTML = slides.map(img => {
+        const isVideo = /\.(mp4|webm|mov)$/i.test(img.name);
+        const media = isVideo
+            ? `<video src="/images/${escText(img.name)}" muted preload="metadata" playsinline></video>`
+            : `<img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">`;
+        return `
         <button class="grid-thumb" data-name="${escText(img.name)}">
-            <img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">
-        </button>
-    `).join("");
+            ${media}
+        </button>`;
+    }).join("");
 
     thumbs.querySelectorAll(".grid-thumb").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -125,12 +136,27 @@ function renderGrid() {
 }
 
 function setSortMode(mode) {
-    if (mode !== "likes" && mode !== "recent") return;
+    const valid = ["likes", "recent", "following_likes", "following_recent"];
+    if (!valid.includes(mode)) return;
     sortMode = mode;
     localStorage.setItem("sortMode", mode);
     syncSortSelects();
-    renderGrid();
-    renderFeed();
+    if (sortMode.startsWith("following_") && !followingIds.length) {
+        fetchFollowingIds().then(() => { renderGrid(); renderFeed(); });
+    } else {
+        renderGrid();
+        renderFeed();
+    }
+}
+
+async function fetchFollowingIds() {
+    try {
+        const res = await fetch("/api/auth/following");
+        if (res.ok) {
+            const data = await res.json();
+            followingIds = Array.isArray(data) ? data : [];
+        }
+    } catch { /* ignore */ }
 }
 
 function syncSortSelects() {

@@ -814,7 +814,8 @@ header.hidden {
   padding: 0;
 }
 
-.grid-thumb img {
+.grid-thumb img,
+.grid-thumb video {
   position: absolute;
   inset: 0;
   width: 100%;

@@ -281,3 +281,12 @@ def list_blocked():
         if u:
             blocked_users.append({"id": u.id, "username": u.username, "avatar": u.avatar})
     return jsonify(blocked_users)
+
+
+@profile_bp.route("/api/auth/following", methods=["GET"])
+@login_required
+def list_following():
+    user_id = session["user_id"]
+    rows = Follow.query.filter_by(follower_id=user_id).all()
+    ids = [r.following_id for r in rows]
+    return jsonify(ids)
