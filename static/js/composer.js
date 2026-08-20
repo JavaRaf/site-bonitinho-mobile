@@ -9,12 +9,10 @@ const composerZipLabel = document.getElementById("composerZipLabel");
 const composerZipRemove = document.getElementById("composerZipRemove");
 const composerPost = document.getElementById("composerPost");
 const composerText = document.getElementById("composerText");
-const composerPreview = document.getElementById("composerPreview");
-const composerPreviewImg = document.getElementById("composerPreviewImg");
-const composerRemove = document.getElementById("composerRemove");
-const composerNsfwBtn = document.getElementById("composerNsfw");
+const composerMediaPreviews = document.getElementById("composerMediaPreviews");
+const composerNsfwBtn = null;
 
-let selectedFile = null;
+let selectedFiles = [];
 let selectedZip = null;
 let composerNsfwActive = false;
 
@@ -31,13 +29,11 @@ composerModal.addEventListener("click", e => {
 composerAdd.addEventListener("click", () => composerImageInput.click());
 composerAddZip.addEventListener("click", () => composerZipInput.click());
 
-function clearImage() {
-    selectedFile = null;
+function clearAllMedia() {
+    selectedFiles = [];
     composerImageInput.value = "";
-    composerPreviewImg.removeAttribute("src");
-    composerPreview.hidden = true;
+    composerMediaPreviews.innerHTML = "";
     composerNsfwActive = false;
-    if (composerNsfwBtn) composerNsfwBtn.classList.remove("visible", "active");
 }
 
 function clearZip() {
@@ -47,63 +43,110 @@ function clearZip() {
     composerZipLabel.textContent = "Arquivo ZIP selecionado";
 }
 
+function renderMediaPreview() {
+    composerMediaPreviews.innerHTML = "";
+    selectedFiles.forEach((file, idx) => {
+        const div = document.createElement("div");
+        div.className = "composer-preview-item";
+        const isVideo = file.type.startsWith("video/");
+        if (isVideo) {
+            const vid = document.createElement("video");
+            vid.src = URL.createObjectURL(file);
+            vid.muted = true;
+            vid.loop = true;
+            vid.playsInline = true;
+            div.appendChild(vid);
+        } else {
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            div.appendChild(img);
+        }
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "composer-remove";
+        removeBtn.type = "button";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.addEventListener("click", () => {
+            selectedFiles.splice(idx, 1);
+            renderMediaPreview();
+            updateComposerPostBtn();
+        });
+        div.appendChild(removeBtn);
+        composerMediaPreviews.appendChild(div);
+    });
+    if (selectedFiles.length > 0) {
+        const nsfwBtn = document.createElement("button");
+        nsfwBtn.type = "button";
+        nsfwBtn.className = "feed-create-nsfw" + (composerNsfwActive ? " active visible" : " visible");
+        nsfwBtn.textContent = "18+";
+        nsfwBtn.addEventListener("click", () => {
+            composerNsfwActive = !composerNsfwActive;
+            nsfwBtn.classList.toggle("active", composerNsfwActive);
+        });
+        composerMediaPreviews.appendChild(nsfwBtn);
+    }
+}
+
 composerImageInput.addEventListener("change", () => {
-    const file = composerImageInput.files[0];
-    if (!file) return;
+    const files = Array.from(composerImageInput.files);
+    if (!files.length) return;
     clearZip();
-    selectedFile = file;
-    composerPreviewImg.src = URL.createObjectURL(file);
-    composerPreview.hidden = false;
-    if (composerNsfwBtn) composerNsfwBtn.classList.add("visible");
-    composerPost.disabled = false;
+    for (const file of files) {
+        if (file.type.startsWith("video/")) {
+            const vid = document.createElement("video");
+            vid.preload = "metadata";
+            vid.src = URL.createObjectURL(file);
+            vid.onloadedmetadata = () => {
+                if (vid.duration > 60) {
+                    alert("Video muito longo (maximo 1 minuto).");
+                    URL.revokeObjectURL(vid.src);
+                    return;
+                }
+                selectedFiles.push(file);
+                renderMediaPreview();
+                updateComposerPostBtn();
+            };
+        } else {
+            selectedFiles.push(file);
+        }
+    }
+    renderMediaPreview();
+    updateComposerPostBtn();
+    composerImageInput.value = "";
 });
 
 composerZipInput.addEventListener("change", () => {
     const file = composerZipInput.files[0];
     if (!file) return;
-    clearImage();
+    clearAllMedia();
     selectedZip = file;
     composerZipLabel.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
     composerZipPreview.hidden = false;
-    composerPost.disabled = false;
-});
-
-composerRemove.addEventListener("click", () => {
-    clearImage();
-    composerPost.disabled = true;
+    updateComposerPostBtn();
 });
 
 composerZipRemove.addEventListener("click", () => {
     clearZip();
-    composerPost.disabled = true;
+    updateComposerPostBtn();
 });
 
-if (composerNsfwBtn) {
-    composerNsfwBtn.addEventListener("click", () => {
-        composerNsfwActive = !composerNsfwActive;
-        composerNsfwBtn.classList.toggle("active", composerNsfwActive);
-    });
+function updateComposerPostBtn() {
+    composerPost.disabled = !selectedFiles.length && !selectedZip && !composerText.value.trim();
 }
 
-function loadImageFallback(file) {
-    return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image load failed")); };
-        img.src = url;
-    });
-}
+composerText.addEventListener("input", updateComposerPostBtn);
 
-function loadImageBitmap(file) {
-    if (typeof createImageBitmap !== "function") return loadImageFallback(file);
-    try {
-        return createImageBitmap(file, { imageOrientation: "from-image" })
-            .catch(() => loadImageFallback(file));
-    } catch {
-        return loadImageFallback(file);
+composerText.addEventListener("paste", (e) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItems = items.filter(i => i.type.startsWith("image/"));
+    if (!imageItems.length) return;
+    e.preventDefault();
+    for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (file) selectedFiles.push(file);
     }
-}
+    renderMediaPreview();
+    updateComposerPostBtn();
+});
 
 async function compressImage(file) {
     const MAX_DIM = 1920;
@@ -135,31 +178,55 @@ async function compressImage(file) {
     return blob || file;
 }
 
+function loadImageFallback(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image load failed")); };
+        img.src = url;
+    });
+}
+
+function loadImageBitmap(file) {
+    if (typeof createImageBitmap !== "function") return loadImageFallback(file);
+    try {
+        return createImageBitmap(file, { imageOrientation: "from-image" })
+            .catch(() => loadImageFallback(file));
+    } catch {
+        return loadImageFallback(file);
+    }
+}
+
 composerPost.addEventListener("click", async () => {
-    if (!selectedFile && !selectedZip) return;
+    if (!selectedFiles.length && !selectedZip && !composerText.value.trim()) return;
     composerPost.disabled = true;
 
-    let imageToUpload = selectedFile;
-    let imageName = selectedFile ? selectedFile.name : "";
-    if (selectedFile) {
-        try {
-            imageToUpload = await compressImage(selectedFile);
-            if (imageToUpload !== selectedFile) {
-                const ext = selectedFile.type === "image/png" ? ".png" : ".jpg";
-                imageName = selectedFile.name.replace(/\.[^.]+$/, "") + ext;
-            }
-        } catch { /* keep original on failure */ }
-    }
-
     const form = new FormData();
-    if (selectedFile) form.append("images", imageToUpload, imageName);
+    for (const file of selectedFiles) {
+        if (file.type.startsWith("video/")) {
+            form.append("images", file, file.name);
+        } else {
+            try {
+                const compressed = await compressImage(file);
+                let name = file.name;
+                if (compressed !== file) {
+                    const ext = file.type === "image/png" ? ".png" : ".jpg";
+                    name = file.name.replace(/\.[^.]+$/, "") + ext;
+                }
+                form.append("images", compressed, name);
+            } catch {
+                form.append("images", file, file.name);
+            }
+        }
+    }
     if (selectedZip) form.append("zip", selectedZip);
     form.append("caption", composerText.value.trim());
     if (composerNsfwActive) form.append("nsfw", "1");
     try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
-            clearImage();
+            clearAllMedia();
             clearZip();
             composerText.value = "";
             closeComposer();
@@ -171,7 +238,7 @@ composerPost.addEventListener("click", async () => {
         } else if (res.status === 401) {
             location.href = "/login";
         } else if (res.status === 413) {
-            alert("Arquivo muito grande (máximo 10 MB).");
+            alert("Arquivo muito grande (maximo 10 MB).");
         }
     } catch { /* ignore */ }
     composerPost.disabled = true;

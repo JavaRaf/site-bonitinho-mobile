@@ -7,6 +7,24 @@ let singleVoteMode = false;
 let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
 let myUserId = null;
 
+function askConfirm(msg) {
+    return new Promise(resolve => {
+        const el = document.getElementById("confirmMsg");
+        const modal = document.getElementById("confirmModal");
+        if (!el || !modal) { resolve(false); return; }
+        el.textContent = msg;
+        modal.classList.add("open");
+        const cleanup = (val) => {
+            modal.classList.remove("open");
+            document.getElementById("confirmYes").onclick = null;
+            document.getElementById("confirmNo").onclick = null;
+            resolve(val);
+        };
+        document.getElementById("confirmYes").onclick = () => cleanup(true);
+        document.getElementById("confirmNo").onclick = () => cleanup(false);
+    });
+}
+
 const FEED_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`;
 const SLIDE_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
 
@@ -36,6 +54,7 @@ async function loadCarousel() {
     const res = await fetch("/api/images");
     const images = await res.json();
     allImages = images;
+    updateLastTimestamp();
 
     try {
         const me = await fetch("/api/auth/me");
@@ -53,10 +72,33 @@ async function loadCarousel() {
     track.innerHTML = "";
     dots.innerHTML = "";
 
-    images.forEach((img, i) => {
+    const imagePosts = images.filter(img => img.post_type !== "text" && img.post_type !== "video");
+    const expandedSlides = [];
+    imagePosts.forEach(img => {
+        if (img.media && img.media.length > 1) {
+            img.media.forEach(m => {
+                if (m.media_type !== "video") {
+                    expandedSlides.push({
+                        name: m.name,
+                        owner: img.owner,
+                        owner_id: img.owner_id,
+                        owner_avatar: img.owner_avatar,
+                        likes: img.likes,
+                        caption: img.caption,
+                        nsfw: img.nsfw,
+                        post_id: img.post_id,
+                    });
+                }
+            });
+        } else {
+            expandedSlides.push(img);
+        }
+    });
+    expandedSlides.forEach((img, i) => {
         const div = document.createElement("div");
         div.className = "carousel-slide";
         div.dataset.image = img.name;
+        div.dataset.postId = img.post_id || img.name;
         div.dataset.owner = img.owner || "";
         div.dataset.avatar = img.owner_avatar || "";
         div.dataset.likes = img.likes || 0;
@@ -351,11 +393,28 @@ document.getElementById("likersClose")?.addEventListener("click", () => {
 });
 
 /* === Grid gallery === */
+function getExpandedSlides() {
+    const images = sortedImages().filter(img => img.post_type !== "text" && img.post_type !== "video");
+    const result = [];
+    images.forEach(img => {
+        if (img.media && img.media.length > 1) {
+            img.media.forEach(m => {
+                if (m.media_type !== "video") {
+                    result.push({ name: m.name, nsfw: img.nsfw });
+                }
+            });
+        } else {
+            result.push({ name: img.name, nsfw: img.nsfw });
+        }
+    });
+    return result;
+}
+
 function renderGrid() {
     const thumbs = document.getElementById("gridThumbs");
     if (!thumbs) return;
     const activeName = currentImageName();
-    thumbs.innerHTML = sortedImages().map(img => `
+    thumbs.innerHTML = getExpandedSlides().map(img => `
         <button class="grid-thumb ${img.name === activeName ? "active" : ""}" data-name="${escText(img.name)}">
             <img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">
         </button>
@@ -416,7 +475,7 @@ function rebuildCarousel() {
     const byName = new Map();
     slides.forEach(s => byName.set(s.dataset.image, s));
 
-    const sorted = sortedImages();
+    const sorted = getExpandedSlides();
     track.innerHTML = "";
     dots.innerHTML = "";
     sorted.forEach((img, i) => {
@@ -485,6 +544,35 @@ function avatarUrl(a) {
     return (!a || a === "default-avatar.svg") ? "/static/svg/default-avatar.svg" : `/avatars/${a}`;
 }
 
+function initFeedCarousel(el) {
+    const slides = el.querySelectorAll(".feed-carousel-slide");
+    const dots = el.querySelectorAll(".feed-carousel-dot");
+    let idx = 0;
+
+    function goTo(i) {
+        if (i < 0 || i >= slides.length) return;
+        slides[idx].classList.remove("active");
+        dots[idx].classList.remove("active");
+        idx = i;
+        slides[idx].classList.add("active");
+        dots[idx].classList.add("active");
+    }
+
+    slides[0]?.classList.add("active");
+
+    dots.forEach((d, i) => d.addEventListener("click", () => goTo(i)));
+
+    let startX = 0;
+    el.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener("touchend", e => {
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 40) {
+            if (dx < 0 && idx < slides.length - 1) goTo(idx + 1);
+            else if (dx > 0 && idx > 0) goTo(idx - 1);
+        }
+    }, { passive: true });
+}
+
 function renderFeed() {
     const feed = document.getElementById("feedView");
     if (!feed) return;
@@ -492,17 +580,41 @@ function renderFeed() {
         const liked = likedImages.has(img.name);
         const likes = img.likes || 0;
         const comments = img.comments || 0;
+        const isText = img.post_type === "text";
+        const isVideo = img.post_type === "video";
+        const isMulti = img.media && img.media.length > 1;
         const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
+
+        let mediaSection = "";
+        if (!isText) {
+            if (isMulti) {
+                const slides = img.media.map((m, i) => {
+                    if (m.media_type === "video") {
+                        return `<div class="feed-carousel-slide">${createVideoPlayerHTML("/images/" + escText(m.name))}</div>`;
+                    }
+                    const loadLazy = i > 0 ? ' loading="lazy"' : '';
+                    return `<div class="feed-carousel-slide"><img src="/images/${escText(m.name)}" alt=""${loadLazy} decoding="async" class="${nsfwClass.trim()}"></div>`;
+                }).join("");
+                const dots = img.media.map((_, i) => `<span class="feed-carousel-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`).join("");
+                mediaSection = `<div class="feed-carousel" data-post="${escText(img.post_id)}">${slides}<div class="feed-carousel-dots">${dots}</div></div>`;
+            } else if (isVideo) {
+                mediaSection = `<div class="feed-img">${createVideoPlayerHTML("/images/" + escText(img.name))}</div>`;
+            } else {
+                mediaSection = `<div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>`;
+            }
+        }
+
+        const downloadBtn = isText ? "" : `<button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar"><img src="/static/svg/download.svg" alt="download"></button>`;
         return `
-        <article class="feed-card" data-name="${escText(img.name)}">
+        <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
             <div class="feed-owner">
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
-                <span class="feed-owner-name">@${escText(img.owner || "—")}</span>
+                <span class="feed-owner-name">@${escText(img.owner || "\u2014")}</span>
                 ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
                 ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
-            <div class="feed-caption">${escText(img.caption || "")}</div>
-            <div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>
+            <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
+            ${mediaSection}
             <div class="feed-actions">
                 <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
                     <img src="${liked ? "/static/svg/upvote-filled.svg" : "/static/svg/upvote.svg"}" alt="like">
@@ -512,20 +624,22 @@ function renderFeed() {
                     <img src="/static/svg/comments.svg" alt="comment">
                 </button>
                 <span class="feed-comment-count">${comments > 0 ? comments : ""}</span>
-                <button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar">
-                    <img src="/static/svg/download.svg" alt="download">
-                </button>
+                ${downloadBtn}
             </div>
             <div class="feed-likers"></div>
             <div class="feed-comments" hidden>
                 <div class="feed-comments-list"></div>
+                <div class="feed-reply-indicator"><span class="feed-reply-text"></span><button type="button" class="feed-reply-cancel">&times;</button></div>
                 <form class="comment-form feed-comment-form">
-                    <input type="text" placeholder="Adicione um comentário..." autocomplete="off">
+                    <textarea class="comment-textarea" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
                     <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
                 </form>
             </div>
         </article>`;
     }).join("");
+
+    feed.querySelectorAll(".feed-carousel").forEach(initFeedCarousel);
+    feed.querySelectorAll(".video-player").forEach(initVideoPlayer);
 }
 
 function applyViewMode() {
@@ -792,6 +906,8 @@ function toggleFeedComments(btn) {
 }
 
 document.getElementById("feedView")?.addEventListener("click", e => {
+    if (e.target.closest(".video-player")) return;
+
     const feedImg = e.target.closest(".feed-img img");
     if (feedImg) {
         const card = feedImg.closest(".feed-card");
@@ -807,50 +923,33 @@ document.getElementById("feedView")?.addEventListener("click", e => {
     const feedReplyBtn = e.target.closest(".comment-reply-btn");
     if (feedReplyBtn) {
         e.stopPropagation();
-        document.querySelectorAll(".comment-reply-form").forEach(f => f.remove());
-        const commentEl = feedReplyBtn.closest(".comment");
-        const commentId = feedReplyBtn.dataset.id;
+        const commentId = parseInt(feedReplyBtn.dataset.id);
         const username = feedReplyBtn.dataset.user;
-
-        const form = document.createElement("div");
-        form.className = "comment-reply-form";
-        form.innerHTML = `
-            <div class="comment-reply-form-avatar"><img src="/static/svg/default-avatar.svg" alt=""></div>
-            <input type="text" placeholder="Responder @${username}..." autocomplete="off">
-            <button type="button" class="comment-reply-send"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>`;
-        commentEl.appendChild(form);
-
-        const input = form.querySelector("input");
-        if (typeof handleMentionInput === "function") {
-            mentionInput = input;
-            input.addEventListener("input", handleMentionInput);
-            input.addEventListener("keydown", handleMentionKeydown);
+        const card = feedReplyBtn.closest(".feed-card");
+        feedReplyParentId = commentId;
+        const indicator = card.querySelector(".feed-reply-indicator");
+        const indicatorText = card.querySelector(".feed-reply-text");
+        if (indicator && indicatorText) {
+            indicatorText.textContent = `Respondendo a @${username}`;
+            indicator.classList.add("visible");
         }
-        input.focus();
+        const textarea = card.querySelector(".feed-comment-form textarea");
+        if (textarea) {
+            textarea.placeholder = `Responder @${username}...`;
+            textarea.focus();
+        }
+        return;
+    }
 
-        const send = async () => {
-            const text = input.value.trim();
-            if (!text) { form.remove(); if (typeof hideMentionDropdown === "function") hideMentionDropdown(); return; }
-            const feedCard = commentEl.closest(".feed-card");
-            const imgName = feedCard.dataset.name;
-            try {
-                const res = await fetch(`/api/comments/${imgName}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text, parent_id: parseInt(commentId) })
-                });
-                if (res.ok) {
-                    loadFeedComments(feedCard);
-                }
-            } catch { /* ignore */ }
-            if (typeof hideMentionDropdown === "function") hideMentionDropdown();
-        };
-
-        form.querySelector(".comment-reply-send").addEventListener("click", send);
-        input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter" && !(typeof mentionDropdown !== "undefined" && mentionDropdown)) send();
-            if (ev.key === "Escape") { form.remove(); if (typeof hideMentionDropdown === "function") hideMentionDropdown(); }
-        });
+    const feedReplyCancel = e.target.closest(".feed-reply-cancel");
+    if (feedReplyCancel) {
+        e.stopPropagation();
+        const card = feedReplyCancel.closest(".feed-card");
+        feedReplyParentId = null;
+        const indicator = card.querySelector(".feed-reply-indicator");
+        if (indicator) indicator.classList.remove("visible");
+        const textarea = card.querySelector(".feed-comment-form textarea");
+        if (textarea) textarea.placeholder = "Adicione um comentario...";
         return;
     }
 
@@ -881,16 +980,18 @@ document.getElementById("feedView")?.addEventListener("click", e => {
     if (postDeleteBtn) {
         e.stopPropagation();
         const name = postDeleteBtn.dataset.name;
-        if (!confirm("Apagar este post?")) return;
-        fetch(`/api/my-images/${encodeURIComponent(name)}`, { method: "DELETE", credentials: "include" })
-            .then(res => res.json())
-            .then(data => {
-                if (data.ok) {
-                    allImages = allImages.filter(x => x.name !== name);
-                    renderFeed();
-                    renderGrid();
-                }
-            });
+        askConfirm("Apagar este post?").then(ok => {
+            if (!ok) return;
+            fetch(`/api/my-images/${encodeURIComponent(name)}`, { method: "DELETE", credentials: "include" })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        allImages = allImages.filter(x => x.name !== name);
+                        renderFeed();
+                        renderGrid();
+                    }
+                });
+        });
         return;
     }
 
@@ -914,24 +1015,35 @@ function downloadFeedImage(name) {
     document.body.removeChild(a);
 }
 
+let feedReplyParentId = null;
+
 document.getElementById("feedView")?.addEventListener("submit", async e => {
     if (!e.target.matches(".feed-comment-form")) return;
     e.preventDefault();
     if (typeof mentionDropdown !== "undefined" && mentionDropdown && typeof mentionUsers !== "undefined" && mentionUsers.length) return;
     const form = e.target;
-    const input = form.querySelector("input");
-    const text = input.value.trim();
+    const textarea = form.querySelector("textarea");
+    const text = textarea.value.trim();
     if (!text) return;
     const card = form.closest(".feed-card");
     const name = card.dataset.name;
+    const body = { text };
+    if (feedReplyParentId) {
+        body.parent_id = feedReplyParentId;
+        feedReplyParentId = null;
+        const indicator = card.querySelector(".feed-reply-indicator");
+        if (indicator) indicator.classList.remove("visible");
+        textarea.placeholder = "Adicione um comentario...";
+    }
     try {
         const res = await fetch(`/api/comments/${encodeURIComponent(name)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text })
+            body: JSON.stringify(body)
         });
         if (res.ok) {
-            input.value = "";
+            textarea.value = "";
+            autoResizeFeed(textarea);
             await loadFeedComments(card);
             const img = allImages.find(x => x.name === name);
             if (img) img.comments = (img.comments || 0) + 1;
@@ -943,16 +1055,29 @@ document.getElementById("feedView")?.addEventListener("submit", async e => {
 });
 
 document.getElementById("feedView")?.addEventListener("input", e => {
-    if (e.target.matches(".feed-comment-form input") && typeof handleMentionInput === "function") {
+    if (e.target.matches(".feed-comment-form textarea") && typeof handleMentionInput === "function") {
         handleMentionInput(e);
+    }
+    if (e.target.matches(".feed-comment-form textarea")) {
+        autoResizeFeed(e.target);
     }
 });
 
 document.getElementById("feedView")?.addEventListener("keydown", e => {
-    if (e.target.matches(".feed-comment-form input") && typeof handleMentionKeydown === "function") {
+    if (e.target.matches(".feed-comment-form textarea") && typeof handleMentionKeydown === "function") {
         handleMentionKeydown(e);
     }
+    if (e.target.matches(".feed-comment-form textarea") && e.key === "Enter" && !e.shiftKey) {
+        if (typeof mentionDropdown !== "undefined" && mentionDropdown) return;
+        e.preventDefault();
+        e.target.closest("form").requestSubmit();
+    }
 });
+
+function autoResizeFeed(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
 
 document.getElementById("viewToggle")?.addEventListener("click", () => {
     feedMode = !feedMode;
@@ -973,71 +1098,186 @@ document.addEventListener("visibilitychange", () => {
 
 loadCarousel();
 
+/* === Real-time new posts polling === */
+let lastPostTimestamp = "";
+let pendingNewPosts = [];
+
+function checkNewPosts() {
+    if (!lastPostTimestamp) return;
+    fetch(`/api/images/since?after=${encodeURIComponent(lastPostTimestamp)}`, { credentials: "include" })
+        .then(r => r.json())
+        .then(newPosts => {
+            if (newPosts.length > 0) {
+                pendingNewPosts = newPosts;
+                showNewPostsBanner(newPosts.length);
+            }
+        })
+        .catch(() => {});
+}
+
+function showNewPostsBanner(count) {
+    let banner = document.getElementById("newPostsBanner");
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "newPostsBanner";
+        banner.className = "new-posts-banner";
+        banner.innerHTML = `<span class="new-posts-text"></span>`;
+        banner.addEventListener("click", loadPendingPosts);
+        const feed = document.getElementById("feedView");
+        if (feed && feedMode) {
+            feed.parentNode.insertBefore(banner, feed);
+        }
+    }
+    banner.querySelector(".new-posts-text").textContent = `${count} novo${count > 1 ? "s" : ""} post${count > 1 ? "s" : ""} \u2022 toque para ver`;
+    banner.hidden = false;
+}
+
+function loadPendingPosts() {
+    if (pendingNewPosts.length === 0) return;
+    allImages = [...pendingNewPosts.filter(p => !allImages.some(x => x.post_id === p.post_id)), ...allImages];
+    pendingNewPosts = [];
+    updateLastTimestamp();
+    renderFeed();
+    renderGrid();
+    const banner = document.getElementById("newPostsBanner");
+    if (banner) banner.hidden = true;
+}
+
+function updateLastTimestamp() {
+    if (allImages.length > 0) {
+        const latest = allImages.reduce((a, b) => (a.created_at || "") > (b.created_at || "") ? a : b);
+        lastPostTimestamp = latest.created_at || "";
+    }
+}
+
+setInterval(checkNewPosts, 15000);
+
 /* === Feed create post (compact) === */
-let feedCreateFile = null;
+let feedCreateFiles = [];
 let feedCreateNsfw = false;
 
 document.getElementById("feedCreateImg")?.addEventListener("click", () => {
     document.getElementById("feedCreateFile")?.click();
 });
 
-document.getElementById("feedCreateNsfw")?.addEventListener("click", () => {
-    feedCreateNsfw = !feedCreateNsfw;
-    document.getElementById("feedCreateNsfw").classList.toggle("active", feedCreateNsfw);
-});
-
 document.getElementById("feedCreateFile")?.addEventListener("change", () => {
     const fileInput = document.getElementById("feedCreateFile");
-    const file = fileInput.files[0];
-    if (!file) return;
-    feedCreateFile = file;
-    const preview = document.getElementById("feedCreatePreview");
-    const previewImg = document.getElementById("feedCreatePreviewImg");
-    previewImg.src = URL.createObjectURL(file);
-    preview.hidden = false;
-    document.getElementById("feedCreateNsfw")?.classList.add("visible");
+    const files = Array.from(fileInput.files);
+    if (!files.length) return;
+    for (const file of files) {
+        if (file.type.startsWith("video/")) {
+            const vid = document.createElement("video");
+            vid.preload = "metadata";
+            vid.src = URL.createObjectURL(file);
+            vid.onloadedmetadata = () => {
+                if (vid.duration > 60) {
+                    alert("Video muito longo (maximo 1 minuto).");
+                    URL.revokeObjectURL(vid.src);
+                    return;
+                }
+                feedCreateFiles.push(file);
+                renderFeedCreatePreviews();
+                updateFeedCreateBtn();
+            };
+        } else {
+            feedCreateFiles.push(file);
+        }
+    }
+    renderFeedCreatePreviews();
     updateFeedCreateBtn();
     fileInput.value = "";
 });
 
-document.getElementById("feedCreatePreviewRemove")?.addEventListener("click", () => {
-    feedCreateFile = null;
-    feedCreateNsfw = false;
-    document.getElementById("feedCreatePreview").hidden = true;
-    document.getElementById("feedCreatePreviewImg").src = "";
-    const nsfw = document.getElementById("feedCreateNsfw");
-    if (nsfw) { nsfw.classList.remove("visible", "active"); }
-    updateFeedCreateBtn();
-});
+function renderFeedCreatePreviews() {
+    const container = document.getElementById("feedCreatePreviews");
+    if (!container) return;
+    container.innerHTML = "";
+    feedCreateFiles.forEach((file, idx) => {
+        const div = document.createElement("div");
+        div.className = "composer-preview-item";
+        const isVideo = file.type.startsWith("video/");
+        if (isVideo) {
+            const vid = document.createElement("video");
+            vid.src = URL.createObjectURL(file);
+            vid.muted = true;
+            vid.loop = true;
+            vid.playsInline = true;
+            div.appendChild(vid);
+        } else {
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            div.appendChild(img);
+        }
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "composer-remove";
+        removeBtn.type = "button";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.addEventListener("click", () => {
+            feedCreateFiles.splice(idx, 1);
+            renderFeedCreatePreviews();
+            updateFeedCreateBtn();
+        });
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+    });
+    if (feedCreateFiles.length > 0) {
+        const nsfwBtn = document.createElement("button");
+        nsfwBtn.type = "button";
+        nsfwBtn.className = "feed-create-nsfw" + (feedCreateNsfw ? " active visible" : " visible");
+        nsfwBtn.textContent = "18+";
+        nsfwBtn.addEventListener("click", () => {
+            feedCreateNsfw = !feedCreateNsfw;
+            nsfwBtn.classList.toggle("active", feedCreateNsfw);
+        });
+        container.appendChild(nsfwBtn);
+    }
+}
 
 document.getElementById("feedCreateText")?.addEventListener("input", updateFeedCreateBtn);
+
+document.getElementById("feedCreateText")?.addEventListener("paste", (e) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItems = items.filter(i => i.type.startsWith("image/"));
+    if (!imageItems.length) return;
+    e.preventDefault();
+    for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (file) feedCreateFiles.push(file);
+    }
+    renderFeedCreatePreviews();
+    updateFeedCreateBtn();
+});
 
 function updateFeedCreateBtn() {
     const btn = document.getElementById("feedCreateSend");
     const text = document.getElementById("feedCreateText")?.value.trim();
-    btn.disabled = !feedCreateFile && !text;
+    btn.disabled = !feedCreateFiles.length && !text;
 }
 
 document.getElementById("feedCreateSend")?.addEventListener("click", async () => {
     const btn = document.getElementById("feedCreateSend");
     const text = document.getElementById("feedCreateText")?.value.trim();
-    if (!feedCreateFile && !text) return;
+    if (!feedCreateFiles.length && !text) return;
     btn.disabled = true;
 
     const form = new FormData();
-    if (feedCreateFile) {
-        let imageToUpload = feedCreateFile;
-        let imageName = feedCreateFile.name;
-        if (typeof compressImage === "function") {
-            try {
-                imageToUpload = await compressImage(feedCreateFile);
-                if (imageToUpload !== feedCreateFile) {
-                    const ext = feedCreateFile.type === "image/png" ? ".png" : ".jpg";
-                    imageName = feedCreateFile.name.replace(/\.[^.]+$/, "") + ext;
-                }
-            } catch { /* keep original */ }
+    for (const file of feedCreateFiles) {
+        if (file.type.startsWith("video/")) {
+            form.append("images", file, file.name);
+        } else {
+            let imageToUpload = file;
+            let imageName = file.name;
+            if (typeof compressImage === "function") {
+                try {
+                    imageToUpload = await compressImage(file);
+                    if (imageToUpload !== file) {
+                        const ext = file.type === "image/png" ? ".png" : ".jpg";
+                        imageName = file.name.replace(/\.[^.]+$/, "") + ext;
+                    }
+                } catch { /* keep original */ }
+            }
+            form.append("images", imageToUpload, imageName);
         }
-        form.append("images", imageToUpload, imageName);
     }
     form.append("caption", text);
     if (feedCreateNsfw) form.append("nsfw", "1");
@@ -1045,13 +1285,10 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
     try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
-            feedCreateFile = null;
+            feedCreateFiles = [];
             feedCreateNsfw = false;
             document.getElementById("feedCreateText").value = "";
-            document.getElementById("feedCreatePreview").hidden = true;
-            document.getElementById("feedCreatePreviewImg").src = "";
-            const nsfw = document.getElementById("feedCreateNsfw");
-            if (nsfw) nsfw.classList.remove("visible", "active");
+            document.getElementById("feedCreatePreviews").innerHTML = "";
             await loadCarousel();
         } else if (res.status === 401) {
             location.href = "/login";
@@ -1075,4 +1312,6 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
         }
     } catch { /* ignore */ }
 })();
+
+
 
