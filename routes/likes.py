@@ -1,5 +1,3 @@
-from threading import Thread
-
 from flask import Blueprint, request, jsonify, session
 from db import db
 from db.models import User, Upload, Like, Setting
@@ -63,20 +61,16 @@ def toggle_like(image_name):
     if owner and owner.user_id != session["user_id"] and liker:
         liker_name = liker.username
         owner_id = owner.user_id
-
-        def _notify_like():
-            try:
-                from routes.push import send_push
-                send_push(
-                    f"@{liker_name} curtiu sua imagem",
-                    f"@{liker_name} curtiu {image_name}",
-                    owner_id,
-                    image_name=image_name,
-                )
-            except Exception:
-                pass
-
-        Thread(target=_notify_like, daemon=True).start()
+        try:
+            from routes.push import send_push
+            send_push(
+                f"@{liker_name} curtiu sua imagem",
+                f"@{liker_name} curtiu {image_name}",
+                owner_id,
+                image_name=image_name,
+            )
+        except Exception:
+            pass
 
     return jsonify({"liked": True})
 

@@ -3,7 +3,6 @@ import uuid
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from threading import Thread
 
 from flask import Blueprint, request, jsonify, session, send_from_directory, send_file
 from PIL import Image, ImageOps
@@ -267,27 +266,24 @@ def upload_images():
         uploader_id = user.id
         num_saved = len(saved)
 
-        def _notify_upload():
-            try:
-                from db.models import PushToken
-                users_with_tokens = (
-                    db.session.query(User.id)
-                    .join(PushToken, PushToken.user_id == User.id)
-                    .filter(User.id != uploader_id)
-                    .distinct()
-                    .all()
+        try:
+            from db.models import PushToken
+            users_with_tokens = (
+                db.session.query(User.id)
+                .join(PushToken, PushToken.user_id == User.id)
+                .filter(User.id != uploader_id)
+                .distinct()
+                .all()
+            )
+            for u in users_with_tokens:
+                send_push(
+                    f"Novo post de @{uploader_name}",
+                    f"@{uploader_name} postou {num_saved} arquivo(s)",
+                    u.id,
+                    image_name=link_image,
                 )
-                for u in users_with_tokens:
-                    send_push(
-                        f"Novo post de @{uploader_name}",
-                        f"@{uploader_name} postou {num_saved} arquivo(s)",
-                        u.id,
-                        image_name=link_image,
-                    )
-            except Exception:
-                pass
-
-        Thread(target=_notify_upload, daemon=True).start()
+        except Exception:
+            pass
 
     return jsonify({"saved": saved, "post_id": post_id}), 201
 
