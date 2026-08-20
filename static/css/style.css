@@ -1076,7 +1076,6 @@ header.hidden {
 }
 
 .sort-select {
-  margin-left: auto;
   height: 26px;
   padding: 0 0.4rem;
   border: 1px solid var(--border-strong);
@@ -1325,9 +1324,11 @@ header.hidden {
 
 .feed-sort-wrap {
   max-width: 640px;
-  margin-top: 10px;
+  margin: 0rem auto;
   padding: 0 1rem;
-  justify-content: end;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
   display: flex;
 }
 
@@ -1341,7 +1342,7 @@ header.hidden {
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0rem;
 }
 
 .slide-sort-wrap .img-owner-singlevote {
@@ -1389,7 +1390,8 @@ header.hidden {
 }
 
 .feed-singlevote {
-  padding: 0.1rem 0.4rem;
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.5rem;
   border-radius: 4px;
   font-size: 0.6875rem;
   font-weight: 500;

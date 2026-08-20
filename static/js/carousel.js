@@ -113,8 +113,14 @@ function updateOwnerOverlay() {
     const nameEl = document.getElementById("imgOwnerName");
     const avatarEl = document.getElementById("imgOwnerAvatar");
     const captionEl = document.getElementById("imgCaption");
+    const imgDeleteBtn = document.getElementById("imgDelete");
     if (nameEl) nameEl.textContent = owner ? "@" + owner : "";
     if (captionEl) captionEl.textContent = caption;
+    if (imgDeleteBtn) {
+        const imgData = allImages[current];
+        const isOwner = myUserId && imgData && imgData.owner_id === myUserId;
+        imgDeleteBtn.style.display = isOwner ? "" : "none";
+    }
     if (avatarEl) {
         const target = (!avatar || avatar === "default-avatar.svg")
             ? "/static/svg/default-avatar.svg"
@@ -448,6 +454,21 @@ function closeGrid() {
 }
 
 document.getElementById("grid-btn")?.addEventListener("click", openGrid);
+document.getElementById("imgDelete")?.addEventListener("click", () => {
+    const imgData = allImages[current];
+    if (!imgData) return;
+    if (!confirm("Apagar este post?")) return;
+    fetch(`/api/my-images/${encodeURIComponent(imgData.name)}`, { method: "DELETE", credentials: "include" })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                allImages = allImages.filter(x => x.name !== imgData.name);
+                renderFeed();
+                renderGrid();
+                loadCarousel();
+            }
+        });
+});
 
 document.getElementById("gridClose")?.addEventListener("click", closeGrid);
 
