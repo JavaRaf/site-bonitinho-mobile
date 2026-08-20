@@ -1,8 +1,11 @@
+(function() {
 const bellBtn = document.getElementById("headerBell");
 const bellBadge = document.getElementById("bellBadge");
 const notifPanel = document.getElementById("notifPanel");
 const notifList = document.getElementById("notifList");
 const notifPushToggle = document.getElementById("notifPushToggle");
+
+if (!bellBtn || !notifPanel) return;
 
 bellBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -138,3 +141,4 @@ notifPushToggle.addEventListener("click", async (e) => {
 })();
 
 refreshNotificationBadge();
+})();
