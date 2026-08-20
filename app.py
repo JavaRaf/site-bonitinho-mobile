@@ -7,6 +7,7 @@ import uuid
 import zipfile
 from datetime import timedelta
 from io import BytesIO
+from threading import Thread
 from flask import (
     Flask,
     jsonify,
@@ -263,7 +264,6 @@ def upload_images():
                     )
             except Exception:
                 pass
-        from threading import Thread
         Thread(target=_notify_upload, daemon=True).start()
 
     return jsonify({"saved": saved}), 201
@@ -838,7 +838,6 @@ def toggle_like(image_name):
                     )
                 except Exception:
                     pass
-            from threading import Thread
             Thread(target=_notify_like, daemon=True).start()
 
         db.close()
@@ -916,7 +915,6 @@ def handle_comments(image_name):
                 )
             except Exception:
                 pass
-        from threading import Thread
         Thread(target=_notify_comment, daemon=True).start()
 
     mentioned_usernames = set(re.findall(r"@(\w+)", text))
