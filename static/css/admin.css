@@ -537,6 +537,8 @@
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .admin-filter:hover { background: var(--surface-3); border-color: var(--border-strong); }
 .admin-filter.active {
@@ -609,6 +611,8 @@
   font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: var(--surface);
   color: var(--text-soft);
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
