@@ -418,8 +418,8 @@ header.hidden {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 20px;
   border: none;
   border-radius: 50%;
   background: transparent;
@@ -433,8 +433,8 @@ header.hidden {
 }
 
 .img-delete img {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .carousel-track {
@@ -1342,7 +1342,7 @@ header.hidden {
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
-  padding: 0.25rem 0rem;
+  padding: 0.25rem 0.25rem 0rem 0.5rem;
 }
 
 .slide-sort-wrap .img-owner-singlevote {
@@ -1467,10 +1467,14 @@ header.hidden {
 
 .feed-like img,
 .feed-comment-toggle img,
-.feed-download img,
-.feed-delete img {
+.feed-download img {
   width: 20px;
   height: 20px;
+}
+
+.feed-owner .feed-delete img {
+  width: 14px;
+  height: 14px;
 }
 
 .feed-likes,
