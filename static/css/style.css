@@ -34,6 +34,9 @@ html::-webkit-scrollbar {
   --btn-hover: #2a7ad4;
   --danger: #ef4444;
   --danger-soft: #fef2f2;
+  --accent: #1877f2;
+  --accent-soft: #e4f0ff;
+  --button-secondary: #e5e7eb;
 }
 
 [data-theme="dark"] {
@@ -53,6 +56,9 @@ html::-webkit-scrollbar {
   --btn-hover: #2a7ad4;
   --danger: #ed4956;
   --danger-soft: #2a1a1a;
+  --accent: #4599ff;
+  --accent-soft: #1a2a3a;
+  --button-secondary: #2a2a2a;
 }
 
 [data-theme="dark"] .rank-gold { background: #3a2f14; color: #fcd34d; }
@@ -1367,6 +1373,7 @@ header.hidden {
   border-radius: 50%;
   object-fit: cover;
   background: var(--surface-2);
+  cursor: pointer;
 }
 
 .feed-owner-name {
@@ -1377,6 +1384,7 @@ header.hidden {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .feed-singlevote {

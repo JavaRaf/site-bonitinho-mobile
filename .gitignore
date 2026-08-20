@@ -3,6 +3,7 @@ db/app.db*
 images/
 thumbs/
 static/avatars/
+static/covers/
 __pycache__
 */__pycache__
 .env

@@ -608,8 +608,8 @@ function renderFeed() {
         return `
         <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
             <div class="feed-owner">
-                <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'">
-                <span class="feed-owner-name">@${escText(img.owner || "\u2014")}</span>
+                <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
+                <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>
                 ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
                 ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
@@ -907,6 +907,12 @@ function toggleFeedComments(btn) {
 
 document.getElementById("feedView")?.addEventListener("click", e => {
     if (e.target.closest(".video-player")) return;
+
+    const ownerEl = e.target.closest("[data-owner]");
+    if (ownerEl && ownerEl.dataset.owner) {
+        location.href = "/perfil/" + encodeURIComponent(ownerEl.dataset.owner);
+        return;
+    }
 
     const feedImg = e.target.closest(".feed-img img");
     if (feedImg) {
