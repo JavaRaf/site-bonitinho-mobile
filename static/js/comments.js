@@ -273,6 +273,7 @@ function handleMentionKeydown(e) {
         renderMentionDropdown();
     } else if (e.key === "Enter" && mentionStart >= 0) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         insertMention(filtered[mentionIndex].username);
     } else if (e.key === "Escape") {
         hideMentionDropdown();
