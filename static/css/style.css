@@ -24,9 +24,9 @@ html {
   --text-soft: #374151;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
-  --btn-bg: #111827;
+  --btn-bg: #378ee9;
   --btn-text: #ffffff;
-  --btn-hover: #1f2937;
+  --btn-hover: #2a7ad4;
   --danger: #ef4444;
   --danger-soft: #fef2f2;
 }
@@ -43,9 +43,9 @@ html {
   --text-soft: #e0e0e0;
   --text-secondary: #a8a8a8;
   --text-muted: #8e8e8e;
-  --btn-bg: #f5f5f5;
-  --btn-text: #111827;
-  --btn-hover: #e5e5e5;
+  --btn-bg: #378ee9;
+  --btn-text: #ffffff;
+  --btn-hover: #2a7ad4;
   --danger: #ed4956;
   --danger-soft: #2a1a1a;
 }
@@ -1570,17 +1570,24 @@ header.hidden {
 .new-posts-banner {
   max-width: 640px;
   margin: 0 auto;
-  padding: 0.4rem 0.75rem;
-  background: #6366f1;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.new-posts-inner {
+  background: #378ee9;
   color: #fff;
   text-align: center;
+  padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 10px;
-  cursor: pointer;
   transition: background 0.2s;
 }
-.new-posts-banner:hover {
+.new-posts-banner:hover .new-posts-inner {
+  background: #2a7ad4;
+}
+.new-posts-banner:hover .new-posts-inner {
   background: #4f46e5;
 }
 

@@ -1121,7 +1121,7 @@ function showNewPostsBanner(count) {
         banner = document.createElement("div");
         banner.id = "newPostsBanner";
         banner.className = "new-posts-banner";
-        banner.innerHTML = `<span class="new-posts-text"></span>`;
+        banner.innerHTML = `<div class="new-posts-inner"><span class="new-posts-text"></span></div>`;
         banner.addEventListener("click", loadPendingPosts);
         const feed = document.getElementById("feedView");
         if (feed && feedMode) {
