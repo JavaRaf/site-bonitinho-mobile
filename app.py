@@ -918,6 +918,29 @@ def handle_comments(image_name):
         from threading import Thread
         Thread(target=_notify_comment, daemon=True).start()
 
+    import re
+    mentioned_usernames = set(re.findall(r"@(\w+)", text))
+    mentioned_usernames.discard(commenter_name)
+    if mentioned_usernames:
+        def _notify_mentions():
+            try:
+                db3 = get_db()
+                for uname in mentioned_usernames:
+                    user = db3.execute(
+                        "SELECT id FROM users WHERE username = ?", (uname,)
+                    ).fetchone()
+                    if user and user["id"] != session["user_id"]:
+                        send_push(
+                            f"@{commenter_name} mencionou você",
+                            text[:100],
+                            user["id"],
+                            image_name=image_name,
+                        )
+                db3.close()
+            except Exception:
+                pass
+        Thread(target=_notify_mentions, daemon=True).start()
+
     return jsonify(dict(row)), 201
 
 
