@@ -504,13 +504,16 @@
   z-index: 50;
 }
 
-/* Images actions bar */
-#actionsImages {
+/* Posts actions bar */
+#actionsPosts {
   position: static;
   transform: none;
   margin-bottom: 1rem;
   max-width: 100%;
   border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 @media (max-width: 30rem) {
@@ -732,4 +735,158 @@
   border-radius: 6px;
   background: var(--surface-2);
   font-weight: 500;
+}
+
+/* Texts tab */
+.admin-post-filters {
+  display: flex;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.admin-filter {
+  padding: 0.35rem 0.65rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.admin-filter:hover { background: var(--surface-3); border-color: var(--border-strong); }
+.admin-filter.active {
+  background: var(--btn-bg);
+  border-color: var(--text);
+  color: var(--btn-text);
+}
+
+.admin-post-actions-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.admin-type-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  z-index: 2;
+  pointer-events: none;
+}
+.admin-type-video {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.admin-card-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+.admin-card-caption {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  max-height: 2.6em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-text-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 5rem;
+}
+
+.admin-text-card {
+  position: relative;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.admin-text-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.admin-text-card.selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--text);
+}
+
+.admin-text-card .admin-select {
+  position: static;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.admin-text-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-text-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.admin-text-owner {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.admin-text-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  flex-shrink: 0;
+}
+
+.admin-text-body {
+  font-size: 0.8125rem;
+  color: var(--text);
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-height: 4.5em;
+  overflow: hidden;
+}
+
+.admin-text-likers {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-text-card.expanded .admin-text-likers {
+  display: flex;
 }

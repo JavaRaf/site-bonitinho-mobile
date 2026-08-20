@@ -17,21 +17,30 @@
   </div>
 
   <div class="admin-tabs">
-    <button class="admin-tab active" data-tab="images">Imagens</button>
+    <button class="admin-tab active" data-tab="posts">Posts</button>
     <button class="admin-tab" data-tab="users">Usuários</button>
     <button class="admin-tab" data-tab="turnos">Turnos</button>
   </div>
 
-  <div class="admin-actions" id="actionsImages">
-    <button class="admin-btn outline" id="adminSelectAll">Selecionar todas</button>
-    <button class="admin-btn danger" id="adminDeleteSelected">Excluir</button>
-    <button class="admin-btn outline" id="adminRemoveLikes">Remover likes</button>
-    <button class="admin-btn outline" id="adminExportCollage">Exportar collage</button>
+  <div class="admin-actions" id="actionsPosts">
+    <div class="admin-post-filters">
+      <button class="admin-filter active" data-filter="all">Todos</button>
+      <button class="admin-filter" data-filter="image">Imagens</button>
+      <button class="admin-filter" data-filter="video">Videos</button>
+      <button class="admin-filter" data-filter="text">Textos</button>
+    </div>
+    <div class="admin-post-actions-row">
+      <button class="admin-btn outline" id="adminSelectAll">Selecionar todas</button>
+      <button class="admin-btn danger" id="adminDeleteSelected">Excluir</button>
+      <button class="admin-btn outline" id="adminRemoveLikes">Remover likes</button>
+      <button class="admin-btn outline" id="adminExportCollage">Exportar collage</button>
+    </div>
     <span id="adminStatus"></span>
   </div>
 
-  <div id="tabImages">
+  <div id="tabPosts">
     <div class="admin-grid" id="adminGrid"></div>
+    <div class="admin-text-list" id="adminTextList"></div>
   </div>
 
   <div id="tabUsers" style="display:none">

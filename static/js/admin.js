@@ -1,4 +1,6 @@
 let selected = new Set();
+let allPosts = [];
+let postFilter = "all";
 const status = document.getElementById("adminStatus");
 
 function showStatus(msg) {
@@ -22,30 +24,56 @@ function askConfirm(msg) {
     });
 }
 
-/* === Images tab === */
-async function loadImages() {
-    const res = await fetch("/api/votos");
-    const images = await res.json();
-    const grid = document.getElementById("adminGrid");
+/* === Posts tab === */
+function getPostType(post) {
+    if (!post.media || !post.media.length) return "text";
+    const hasImage = post.media.some(m => m.media_type === "image");
+    const hasVideo = post.media.some(m => m.media_type === "video");
+    if (hasVideo) return "video";
+    if (hasImage) return "image";
+    return "text";
+}
 
-    if (!images.length) {
-        grid.innerHTML = `
-            <div class="admin-empty">
-                <img src="/static/svg/image-placeholder.svg" alt="" class="img-placeholder">
-                <p>Nenhuma imagem ainda.</p>
-            </div>
-        `;
+function getFilteredPosts() {
+    if (postFilter === "all") return allPosts;
+    return allPosts.filter(p => getPostType(p) === postFilter);
+}
+
+async function loadPosts() {
+    const res = await fetch("/api/votos");
+    allPosts = await res.json();
+    renderPosts();
+}
+
+function renderPosts() {
+    const grid = document.getElementById("adminGrid");
+    const list = document.getElementById("adminTextList");
+    const posts = getFilteredPosts();
+    const textPosts = posts.filter(p => getPostType(p) === "text");
+    const mediaPosts = posts.filter(p => getPostType(p) !== "text");
+
+    if (!posts.length) {
+        grid.innerHTML = "";
+        list.innerHTML = `<div class="admin-empty"><p>Nenhum post encontrado.</p></div>`;
         return;
     }
 
-    grid.innerHTML = images.map(img => `
+    grid.innerHTML = mediaPosts.map(img => {
+        const type = getPostType(img);
+        const typeBadge = type === "video" ? '<span class="admin-type-badge admin-type-video">Video</span>' : "";
+        const captionPreview = img.caption ? `<div class="admin-card-caption">${esc(img.caption)}</div>` : "";
+        return `
         <div class="admin-card" data-name="${esc(img.name)}">
-            <img src="/images/${img.name}" alt="${img.name}" loading="lazy">
+            ${type === "video"
+                ? `<video src="/images/${esc(img.name)}" muted playsinline preload="metadata" class="admin-card-thumb"></video>`
+                : `<img src="/images/${esc(img.name)}" alt="${esc(img.name)}" loading="lazy">`}
             <input type="checkbox" class="admin-select">
+            ${typeBadge}
             ${img.nsfw ? '<span class="admin-nsfw-badge">18+</span>' : ''}
             <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar +18">18+</button>
+            ${captionPreview}
             <div class="admin-card-info">
-                <span>${esc(img.owner || "—")}</span>
+                <span>${esc(img.owner || "\u2014")}</span>
                 <span class="admin-card-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
             </div>
             <div class="admin-likers">
@@ -53,40 +81,32 @@ async function loadImages() {
                     ? img.likers.map(u => `<span class="admin-liker-tag" data-user-id="${u.id}" data-image="${esc(img.name)}"><span class="admin-liker-name">@${esc(u.username)}</span><img src="/static/svg/trash.svg" alt="del" class="admin-liker-icon"></span>`).join("")
                     : `<span style="font-size:0.6875rem;color:#9ca3af">Nenhum like</span>`}
             </div>
+        </div>`;
+    }).join("");
+
+    list.innerHTML = textPosts.map(t => `
+        <div class="admin-text-card" data-name="${esc(t.name)}">
+            <input type="checkbox" class="admin-select">
+            <div class="admin-text-content">
+                <div class="admin-text-header">
+                    <span class="admin-text-owner">@${esc(t.owner || "\u2014")}</span>
+                    <span class="admin-text-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${t.likes || 0}</span>
+                </div>
+                <div class="admin-text-body">${esc(t.caption || "")}</div>
+                <div class="admin-text-likers">
+                    ${t.likers && t.likers.length
+                        ? t.likers.map(u => `<span class="admin-liker-tag" data-user-id="${u.id}" data-image="${esc(t.name)}"><span class="admin-liker-name">@${esc(u.username)}</span><img src="/static/svg/trash.svg" alt="del" class="admin-liker-icon"></span>`).join("")
+                        : `<span style="font-size:0.6875rem;color:#9ca3af">Nenhum like</span>`}
+                </div>
+            </div>
         </div>
     `).join("");
 
-    document.querySelectorAll(".admin-card").forEach(card => {
+    document.querySelectorAll(".admin-card, .admin-text-card").forEach(card => {
         card.addEventListener("click", e => {
             if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select") || e.target.closest(".admin-nsfw-btn")) return;
-            const likers = card.querySelector(".admin-likers");
-            if (likers) card.classList.toggle("expanded");
+            card.classList.toggle("expanded");
         });
-
-        const nsfwBtn = card.querySelector(".admin-nsfw-btn");
-        if (nsfwBtn) {
-            nsfwBtn.addEventListener("click", async e => {
-                e.stopPropagation();
-                const name = nsfwBtn.dataset.name;
-                const isActive = nsfwBtn.classList.contains("active");
-                nsfwBtn.classList.toggle("active");
-                let badge = card.querySelector(".admin-nsfw-badge");
-                if (!isActive) {
-                    if (!badge) {
-                        badge = document.createElement("span");
-                        badge.className = "admin-nsfw-badge";
-                        badge.textContent = "18+";
-                        card.querySelector("img").insertAdjacentElement("afterend", badge);
-                    }
-                } else {
-                    if (badge) badge.remove();
-                }
-                try {
-                    await api("POST", "/api/admin/nsfw", { name, nsfw: !isActive });
-                    showStatus(isActive ? "NSFW removido" : "Marcado como +18");
-                } catch { /* revert */ nsfwBtn.classList.toggle("active"); }
-            });
-        }
 
         const selectBtn = card.querySelector(".admin-select");
         if (selectBtn) {
@@ -104,19 +124,55 @@ async function loadImages() {
         }
     });
 
+    document.querySelectorAll(".admin-nsfw-btn").forEach(nsfwBtn => {
+        nsfwBtn.addEventListener("click", async e => {
+            e.stopPropagation();
+            const name = nsfwBtn.dataset.name;
+            const isActive = nsfwBtn.classList.contains("active");
+            nsfwBtn.classList.toggle("active");
+            let badge = nsfwBtn.closest(".admin-card")?.querySelector(".admin-nsfw-badge");
+            if (!isActive) {
+                if (!badge) {
+                    badge = document.createElement("span");
+                    badge.className = "admin-nsfw-badge";
+                    badge.textContent = "18+";
+                    nsfwBtn.closest(".admin-card")?.querySelector("img, video")?.insertAdjacentElement("afterend", badge);
+                }
+            } else {
+                if (badge) badge.remove();
+            }
+            try {
+                await api("POST", "/api/admin/nsfw", { name, nsfw: !isActive });
+                showStatus(isActive ? "NSFW removido" : "Marcado como +18");
+            } catch { nsfwBtn.classList.toggle("active"); }
+        });
+    });
+
     document.querySelectorAll(".admin-liker-tag").forEach(tag => {
         tag.addEventListener("click", async e => {
             e.stopPropagation();
             if (!await askConfirm("Remover este like?")) return;
             await api("DELETE", `/api/admin/likes/${encodeURIComponent(tag.dataset.image)}/${tag.dataset.userId}`);
             showStatus("Like removido");
-            loadImages();
+            loadPosts();
         });
     });
 }
 
+/* Filters */
+document.querySelectorAll(".admin-filter").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".admin-filter").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        postFilter = btn.dataset.filter;
+        selected.clear();
+        renderPosts();
+    });
+});
+
+/* Select all */
 document.getElementById("adminSelectAll").addEventListener("click", () => {
-    const cards = document.querySelectorAll(".admin-card");
+    const cards = document.querySelectorAll("#tabPosts .admin-card, #tabPosts .admin-text-card");
     const names = [...cards].map(c => c.dataset.name);
     const allSelected = names.length > 0 && names.every(n => selected.has(n));
     cards.forEach(c => {
@@ -131,28 +187,31 @@ document.getElementById("adminSelectAll").addEventListener("click", () => {
             if (cb) cb.checked = true;
         }
     });
-    document.getElementById("adminSelectAll").textContent = allSelected ? "Selecionar todas" : "Limpar seleção";
+    document.getElementById("adminSelectAll").textContent = allSelected ? "Selecionar todas" : "Limpar selecao";
 });
 
+/* Delete selected */
 document.getElementById("adminDeleteSelected").addEventListener("click", async () => {
     if (!selected.size) return;
-    if (!await askConfirm(`Excluir ${selected.size} imagem(ns)?`)) return;
+    if (!await askConfirm(`Excluir ${selected.size} post(s)?`)) return;
     const res = await api("DELETE", "/api/admin/images", { images: [...selected] });
     if (res.ok) {
-        showStatus(`${selected.size} excluída(s)`);
+        showStatus(`${selected.size} excluido(s)`);
         selected.clear();
-        loadImages();
+        loadPosts();
     }
 });
 
+/* Remove likes */
 document.getElementById("adminRemoveLikes").addEventListener("click", async () => {
     if (!selected.size) return;
-    if (!await askConfirm(`Remover likes de ${selected.size} imagem(ns)?`)) return;
+    if (!await askConfirm(`Remover likes de ${selected.size} post(s)?`)) return;
     const res = await api("DELETE", "/api/admin/likes", { images: [...selected] });
     if (res.ok) showStatus("Likes removidos");
-    loadImages();
+    loadPosts();
 });
 
+/* Export collage */
 document.getElementById("adminExportCollage").addEventListener("click", async () => {
     const btn = document.getElementById("adminExportCollage");
     const original = btn.textContent;
@@ -376,12 +435,13 @@ document.querySelectorAll(".admin-tab").forEach(tab => {
         document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         const tabName = tab.dataset.tab;
-        document.getElementById("tabImages").style.display = tabName === "images" ? "" : "none";
+        document.getElementById("tabPosts").style.display = tabName === "posts" ? "" : "none";
         document.getElementById("tabUsers").style.display = tabName === "users" ? "" : "none";
         document.getElementById("tabTurnos").style.display = tabName === "turnos" ? "" : "none";
-        document.getElementById("actionsImages").style.display = tabName === "images" ? "" : "none";
+        document.getElementById("actionsPosts").style.display = tabName === "posts" ? "" : "none";
         document.getElementById("actionsUsers").style.display = "none";
         document.getElementById("actionsTurnos").style.display = "none";
+        if (tabName === "posts") loadPosts();
         if (tabName === "users") loadUsers();
         if (tabName === "turnos") loadTurnos();
     });
@@ -402,4 +462,4 @@ function esc(str) {
     return div.innerHTML;
 }
 
-loadImages();
+loadPosts();
