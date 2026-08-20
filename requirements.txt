@@ -1,4 +1,5 @@
 Flask
+Flask-SQLAlchemy
 Pillow
 python-dotenv
 PyJWT

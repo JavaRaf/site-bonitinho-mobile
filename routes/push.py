@@ -2,10 +2,11 @@ import json
 import time
 import jwt
 import requests
-from flask import Blueprint, request, jsonify, session
 from pathlib import Path
-
-from db.schema import get_db
+from flask import Blueprint, request, jsonify, session
+from db import db
+from db.models import PushToken, PushNotification, User
+from utils.security import login_required
 
 push_bp = Blueprint("push", __name__)
 
@@ -55,20 +56,14 @@ def _get_access_token():
 
 
 def send_push(title, body, user_id, image_name=""):
-    db = get_db()
-
-    db.execute(
-        "INSERT INTO push_notifications (user_id, title, body, image_name) VALUES (?, ?, ?, ?)",
-        (user_id, title, body, image_name),
+    notif = PushNotification(
+        user_id=user_id, title=title, body=body, image_name=image_name
     )
-    db.commit()
+    db.session.add(notif)
+    db.session.commit()
 
-    rows = db.execute(
-        "SELECT token FROM push_tokens WHERE user_id = ?", (user_id,)
-    ).fetchall()
-    db.close()
-
-    if not rows:
+    tokens = PushToken.query.filter_by(user_id=user_id).all()
+    if not tokens:
         return
 
     sa = _load_service_account()
@@ -80,15 +75,11 @@ def send_push(title, body, user_id, image_name=""):
     }
 
     invalid_tokens = []
-    for row in rows:
-        token = row["token"]
+    for pt in tokens:
         payload = {
             "message": {
-                "token": token,
-                "data": {
-                    "title": title,
-                    "body": body,
-                },
+                "token": pt.token,
+                "data": {"title": title, "body": body},
             }
         }
         try:
@@ -98,113 +89,88 @@ def send_push(title, body, user_id, image_name=""):
                 and resp.json().get("results", [{}])[0].get("error")
                 in ("INVALID_ARGUMENT", "UNREGISTERED")
             ):
-                invalid_tokens.append(token)
+                invalid_tokens.append(pt.token)
         except requests.RequestException:
             pass
 
     if invalid_tokens:
-        db = get_db()
-        placeholders = ",".join("?" for _ in invalid_tokens)
-        db.execute(f"DELETE FROM push_tokens WHERE token IN ({placeholders})", invalid_tokens)
-        db.commit()
-        db.close()
+        PushToken.query.filter(PushToken.token.in_(invalid_tokens)).delete(
+            synchronize_session=False
+        )
+        db.session.commit()
 
 
 @push_bp.route("/api/push/subscribe", methods=["POST"])
+@login_required
 def subscribe():
-    if "user_id" not in session:
-        return jsonify({"error": "login required"}), 401
-
     data = request.get_json()
     token = (data.get("token") or "").strip()
     if not token:
         return jsonify({"error": "token required"}), 400
 
-    db = get_db()
-    try:
-        db.execute(
-            "INSERT OR IGNORE INTO push_tokens (user_id, token) VALUES (?, ?)",
-            (session["user_id"], token),
-        )
-        db.commit()
-    finally:
-        db.close()
+    existing = PushToken.query.filter_by(token=token).first()
+    if not existing:
+        db.session.add(PushToken(user_id=session["user_id"], token=token))
+        db.session.commit()
     return jsonify({"ok": True})
 
 
 @push_bp.route("/api/push/unsubscribe", methods=["POST"])
+@login_required
 def unsubscribe():
-    if "user_id" not in session:
-        return jsonify({"error": "login required"}), 401
-
     data = request.get_json()
     token = (data.get("token") or "").strip()
     if not token:
         return jsonify({"error": "token required"}), 400
 
-    db = get_db()
-    db.execute(
-        "DELETE FROM push_tokens WHERE user_id = ? AND token = ?",
-        (session["user_id"], token),
-    )
-    db.commit()
-    db.close()
+    PushToken.query.filter_by(user_id=session["user_id"], token=token).delete()
+    db.session.commit()
     return jsonify({"ok": True})
 
 
 @push_bp.route("/api/push/status", methods=["GET"])
+@login_required
 def push_status():
-    if "user_id" not in session:
-        return jsonify({"enabled": False})
-    db = get_db()
-    row = db.execute(
-        "SELECT COUNT(*) AS cnt FROM push_tokens WHERE user_id = ?",
-        (session["user_id"],),
-    ).fetchone()
-    db.close()
-    return jsonify({"enabled": row["cnt"] > 0})
+    count = PushToken.query.filter_by(user_id=session["user_id"]).count()
+    return jsonify({"enabled": count > 0})
 
 
 @push_bp.route("/api/push/notifications", methods=["GET"])
+@login_required
 def get_notifications():
-    if "user_id" not in session:
-        return jsonify({"notifications": [], "unread": 0})
-    db = get_db()
-    rows = db.execute(
-        "SELECT id, title, body, image_name, read, created_at FROM push_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
-        (session["user_id"],),
-    ).fetchall()
-    unread = db.execute(
-        "SELECT COUNT(*) AS cnt FROM push_notifications WHERE user_id = ? AND read = 0",
-        (session["user_id"],),
-    ).fetchone()["cnt"]
-    db.close()
-    return jsonify({"notifications": [dict(r) for r in rows], "unread": unread})
+    rows = (
+        PushNotification.query
+        .filter_by(user_id=session["user_id"])
+        .order_by(PushNotification.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    unread = PushNotification.query.filter_by(
+        user_id=session["user_id"], read=0
+    ).count()
+    return jsonify({
+        "notifications": [
+            {"id": r.id, "title": r.title, "body": r.body,
+             "image_name": r.image_name, "read": r.read, "created_at": r.created_at}
+            for r in rows
+        ],
+        "unread": unread,
+    })
 
 
 @push_bp.route("/api/push/read", methods=["POST"])
+@login_required
 def mark_read():
-    if "user_id" not in session:
-        return jsonify({"error": "login required"}), 401
-    db = get_db()
-    db.execute(
-        "UPDATE push_notifications SET read = 1 WHERE user_id = ? AND read = 0",
-        (session["user_id"],),
-    )
-    db.commit()
-    db.close()
+    PushNotification.query.filter_by(
+        user_id=session["user_id"], read=0
+    ).update({"read": 1})
+    db.session.commit()
     return jsonify({"ok": True})
 
 
 @push_bp.route("/api/push/clear", methods=["DELETE"])
+@login_required
 def clear_notifications():
-    if "user_id" not in session:
-        return jsonify({"error": "login required"}), 401
-    db = get_db()
-    db.execute(
-        "DELETE FROM push_notifications WHERE user_id = ?",
-        (session["user_id"],),
-    )
-    db.commit()
-    db.close()
+    PushNotification.query.filter_by(user_id=session["user_id"]).delete()
+    db.session.commit()
     return jsonify({"ok": True})
