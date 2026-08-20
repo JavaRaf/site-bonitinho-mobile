@@ -159,6 +159,17 @@ def list_images_since():
     return jsonify(list(post_map.values()))
 
 
+@images_bp.route("/api/users/search", methods=["GET"])
+def search_users():
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 1:
+        return jsonify([])
+    users = User.query.filter(
+        User.username.like(f"%{q}%")
+    ).order_by(User.username).limit(8).all()
+    return jsonify([{"id": u.id, "username": u.username, "avatar": u.avatar} for u in users])
+
+
 @images_bp.route("/api/upload", methods=["POST"])
 @login_required
 def upload_images():
