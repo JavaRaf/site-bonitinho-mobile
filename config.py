@@ -19,7 +19,7 @@ class Config:
     BASE_DIR = BASE_DIR
     DB_PATH = BASE_DIR / "db" / "app.db"
     THUMB_DIR = BASE_DIR / "thumbs"
-    THUMB_SIZE = 360
+    THUMB_SIZE = 480
     MAX_IMAGE_BYTES = 10 * 1024 * 1024
     ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov"}

@@ -30,9 +30,12 @@ def admin_delete_images():
         filepath = img_dir / safe_name
         if filepath.exists():
             filepath.unlink()
-        thumb_path = thumb_dir / (safe_name + ".jpg")
+        thumb_path = thumb_dir / (safe_name + ".webp")
         if thumb_path.exists():
             thumb_path.unlink()
+        legacy_thumb = thumb_dir / (safe_name + ".jpg")
+        if legacy_thumb.exists():
+            legacy_thumb.unlink()
 
         Like.query.filter_by(image_name=safe_name).delete()
         from db.models import Comment

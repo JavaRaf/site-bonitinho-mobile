@@ -369,9 +369,12 @@ def delete_my_image(image_name):
         filepath = img_dir / sib.image_name
         if filepath.exists():
             filepath.unlink()
-        thumb_path = Config.THUMB_DIR / (sib.image_name + ".jpg")
+        thumb_path = Config.THUMB_DIR / (sib.image_name + ".webp")
         if thumb_path.exists():
             thumb_path.unlink()
+        legacy_thumb = Config.THUMB_DIR / (sib.image_name + ".jpg")
+        if legacy_thumb.exists():
+            legacy_thumb.unlink()
         Like.query.filter_by(image_name=sib.image_name).delete()
         Comment.query.filter_by(image_name=sib.image_name).delete()
         from db.models import PushNotification
@@ -405,17 +408,26 @@ def avatar_upload():
         return jsonify({"error": "no file"}), 400
 
     ext = Path(file.filename).suffix.lower()
-    if ext not in {".png", ".jpg", ".jpeg", ".webp"}:
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
         return jsonify({"error": "invalid file type"}), 400
 
-    name = f"{session['user_id']}_{uuid.uuid4().hex[:8]}.png"
-    try:
-        with Image.open(file.stream) as im:
-            im = im.convert("RGB")
-            im = ImageOps.fit(im, (128, 128), method=Image.Resampling.LANCZOS)
-            im.save(str(avatar_dir / name), format="PNG")
-    except Exception:
-        return jsonify({"error": "invalid image"}), 400
+    if ext == ".gif":
+        data = file.read()
+        if len(data) > 1024 * 1024:
+            return jsonify({"error": "GIF muito grande (max 1MB)"}), 400
+        if not data.startswith(b"GIF8"):
+            return jsonify({"error": "invalid image"}), 400
+        name = f"{session['user_id']}_{uuid.uuid4().hex[:8]}.gif"
+        (avatar_dir / name).write_bytes(data)
+    else:
+        name = f"{session['user_id']}_{uuid.uuid4().hex[:8]}.webp"
+        try:
+            with Image.open(file.stream) as im:
+                im = im.convert("RGB")
+                im = ImageOps.fit(im, (128, 128), method=Image.Resampling.LANCZOS)
+                im.save(str(avatar_dir / name), format="WEBP", quality=90, method=6)
+        except Exception:
+            return jsonify({"error": "invalid image"}), 400
 
     old_name = user.avatar
     user.avatar = name
@@ -440,28 +452,42 @@ def serve_thumb(filename):
     safe = Path(filename).name
     thumb_dir = Config.THUMB_DIR
     thumb_dir.mkdir(parents=True, exist_ok=True)
-    thumb_path = thumb_dir / (safe + ".jpg")
+    thumb_path = thumb_dir / (safe + ".webp")
 
-    if not thumb_path.exists():
-        src = Config.BASE_DIR / "images" / safe
-        if not src.exists():
-            return jsonify({"error": "not found"}), 404
-        try:
-            with Image.open(src) as im:
-                im = ImageOps.exif_transpose(im)
-                if im.mode in ("RGBA", "LA", "P"):
-                    im = im.convert("RGBA")
-                    bg = Image.new("RGB", im.size, (255, 255, 255))
-                    bg.paste(im, mask=im.split()[-1])
-                    im = bg
-                else:
-                    im = im.convert("RGB")
-                im.thumbnail((Config.THUMB_SIZE, Config.THUMB_SIZE))
-                im.save(str(thumb_path), format="JPEG", quality=82)
-        except Exception:
-            return send_from_directory(Config.BASE_DIR / "images", safe)
+    if thumb_path.exists():
+        return send_file(thumb_path, mimetype="image/webp", max_age=604800)
 
-    return send_file(thumb_path, mimetype="image/jpeg", max_age=604800)
+    src = Config.BASE_DIR / "images" / safe
+    if not src.exists():
+        return jsonify({"error": "not found"}), 404
+
+    ext = Path(safe).suffix.lower()
+
+    if ext == ".gif":
+        return send_from_directory(Config.BASE_DIR / "images", safe, max_age=604800)
+
+    if not (ext in Config.ALLOWED_EXTENSIONS or Path(safe).suffix.lower() in VIDEO_EXTENSIONS):
+        return jsonify({"error": "unsupported"}), 404
+
+    im = None
+    try:
+        with Image.open(src) as opened:
+            im = ImageOps.exif_transpose(opened)
+    except Exception:
+        im = None
+    if im is None:
+        return jsonify({"error": "no preview"}), 404
+
+    if im.mode in ("RGBA", "LA", "P"):
+        im = im.convert("RGBA")
+        bg = Image.new("RGB", im.size, (255, 255, 255))
+        bg.paste(im, mask=im.split()[-1])
+        im = bg
+    else:
+        im = im.convert("RGB")
+    im.thumbnail((Config.THUMB_SIZE, Config.THUMB_SIZE))
+    im.save(str(thumb_path), format="WEBP", quality=82, method=6)
+    return send_file(thumb_path, mimetype="image/webp", max_age=604800)
 
 
 @images_bp.route("/avatars/<path:filename>")

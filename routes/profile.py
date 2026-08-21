@@ -208,29 +208,38 @@ def cover_upload():
         return jsonify({"error": "no file"}), 400
 
     ext = Path(file.filename).suffix.lower()
-    if ext not in {".png", ".jpg", ".jpeg", ".webp"}:
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
         return jsonify({"error": "invalid file type"}), 400
 
-    name = f"{user.id}_{uuid.uuid4().hex[:8]}.jpg"
-    try:
-        with Image.open(file.stream) as im:
-            im = im.convert("RGB")
-            im = ImageOps.exif_transpose(im)
-            w, h = im.size
-            target_ratio = 3.0
-            current_ratio = w / h
-            if current_ratio > target_ratio:
-                new_w = int(h * target_ratio)
-                left = (w - new_w) // 2
-                im = im.crop((left, 0, left + new_w, h))
-            else:
-                new_h = int(w / target_ratio)
-                top = (h - new_h) // 2
-                im = im.crop((0, top, w, top + new_h))
-            im = im.resize((1200, 400), Image.Resampling.LANCZOS)
-            im.save(str(cover_dir / name), format="JPEG", quality=85)
-    except Exception:
-        return jsonify({"error": "invalid image"}), 400
+    if ext == ".gif":
+        data = file.read()
+        if len(data) > 1024 * 1024:
+            return jsonify({"error": "GIF muito grande (max 1MB)"}), 400
+        if not data.startswith(b"GIF8"):
+            return jsonify({"error": "invalid image"}), 400
+        name = f"{user.id}_{uuid.uuid4().hex[:8]}.gif"
+        (cover_dir / name).write_bytes(data)
+    else:
+        name = f"{user.id}_{uuid.uuid4().hex[:8]}.webp"
+        try:
+            with Image.open(file.stream) as im:
+                im = im.convert("RGB")
+                im = ImageOps.exif_transpose(im)
+                w, h = im.size
+                target_ratio = 3.0
+                current_ratio = w / h
+                if current_ratio > target_ratio:
+                    new_w = int(h * target_ratio)
+                    left = (w - new_w) // 2
+                    im = im.crop((left, 0, left + new_w, h))
+                else:
+                    new_h = int(w / target_ratio)
+                    top = (h - new_h) // 2
+                    im = im.crop((0, top, w, top + new_h))
+                im = im.resize((1200, 400), Image.Resampling.LANCZOS)
+                im.save(str(cover_dir / name), format="WEBP", quality=88, method=6)
+        except Exception:
+            return jsonify({"error": "invalid image"}), 400
 
     old_name = user.cover
     user.cover = name
