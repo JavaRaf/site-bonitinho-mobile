@@ -27,12 +27,16 @@ def get_profile(username):
         return jsonify({"error": "user not found"}), 404
 
     viewer_id = session.get("user_id")
-    if _is_blocked(viewer_id, user.id):
-        return jsonify({"error": "profile not available"}), 403
+    blocked_by_me = False
+    if viewer_id:
+        blocked_by_me = Block.query.filter_by(user_id=viewer_id, blocked_id=user.id).first() is not None
+        blocked_me = Block.query.filter_by(user_id=user.id, blocked_id=viewer_id).first() is not None
+        if blocked_me:
+            return jsonify({"error": "profile not available"}), 403
 
     is_me = viewer_id == user.id
     is_following = False
-    if viewer_id and not is_me:
+    if viewer_id and not is_me and not blocked_by_me:
         is_following = Follow.query.filter_by(
             follower_id=viewer_id, following_id=user.id
         ).first() is not None
@@ -53,6 +57,7 @@ def get_profile(username):
         "created_at": user.created_at,
         "is_me": is_me,
         "is_following": is_following,
+        "is_blocked": blocked_by_me,
         "followers_count": user.followers_count,
         "following_count": user.following_count,
         "posts_count": user.posts_count,
@@ -98,6 +103,34 @@ def get_profile_posts(username):
         "page": page,
         "has_more": page * per_page < total,
     })
+
+
+@profile_bp.route("/api/profile/<username>/followers", methods=["GET"])
+def get_followers(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+    rows = (
+        db.session.query(User.id, User.username, User.avatar, User.color)
+        .join(Follow, Follow.follower_id == User.id)
+        .filter(Follow.following_id == user.id)
+        .all()
+    )
+    return jsonify([{"id": r.id, "username": r.username, "avatar": r.avatar or "", "color": r.color or ""} for r in rows])
+
+
+@profile_bp.route("/api/profile/<username>/following-list", methods=["GET"])
+def get_following_list(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+    rows = (
+        db.session.query(User.id, User.username, User.avatar, User.color)
+        .join(Follow, Follow.following_id == User.id)
+        .filter(Follow.follower_id == user.id)
+        .all()
+    )
+    return jsonify([{"id": r.id, "username": r.username, "avatar": r.avatar or "", "color": r.color or ""} for r in rows])
 
 
 @profile_bp.route("/api/auth/profile", methods=["PUT"])

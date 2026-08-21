@@ -7,7 +7,7 @@ from pathlib import Path
 from flask import Blueprint, request, jsonify, session, send_from_directory, send_file
 from PIL import Image, ImageOps
 from db import db
-from db.models import User, Upload, Like, Comment
+from db.models import User, Upload, Like, Comment, Block
 from utils.security import login_required, safe_path
 from config import Config
 
@@ -28,6 +28,16 @@ def _get_video_duration_seconds(filepath):
         return float(result.stdout.strip())
     except Exception:
         return 0
+
+
+def _blocked_ids():
+    viewer_id = session.get("user_id")
+    if not viewer_id:
+        return set()
+    rows = db.session.query(Block.user_id, Block.blocked_id).filter(
+        (Block.user_id == viewer_id) | (Block.blocked_id == viewer_id)
+    ).all()
+    return {r.blocked_id if r.user_id == viewer_id else r.user_id for r in rows}
 
 
 @images_bp.route("/api/images", methods=["GET"])
@@ -66,35 +76,44 @@ def list_images():
         if f.suffix.lower() in Config.ALL_MEDIA_EXTENSIONS
     }
 
-    post_map = {}
+    blocked = _blocked_ids()
+    result = []
+    post_index = {}
     for upload, username, owner_avatar, likes, comments in uploads:
+        if upload.user_id and upload.user_id in blocked:
+            continue
         if upload.post_type == "text" or upload.image_name in disk_files:
             pid = upload.post_id or upload.image_name
             media = {
                 "name": upload.image_name,
                 "media_type": upload.media_type,
             }
-            if pid not in post_map:
-                post_map[pid] = {
-                    "post_id": pid,
-                    "name": upload.image_name,
-                    "owner": username,
-                    "owner_id": upload.user_id,
-                    "likes": likes,
-                    "comments": comments,
-                    "created_at": upload.created_at,
-                    "owner_avatar": owner_avatar or "default-avatar.svg",
-                    "caption": upload.caption or "",
-                    "post_type": upload.post_type,
-                    "nsfw": bool(upload.nsfw),
-                    "media": [media],
-                }
+            entry = {
+                "post_id": pid,
+                "name": upload.image_name,
+                "owner": username,
+                "owner_id": upload.user_id,
+                "likes": likes,
+                "comments": comments,
+                "created_at": upload.created_at,
+                "owner_avatar": owner_avatar or "default-avatar.svg",
+                "caption": upload.caption or "",
+                "post_type": upload.post_type,
+                "nsfw": bool(upload.nsfw),
+                "eleicao": bool(upload.eleicao),
+                "media": [media],
+            }
+            if upload.eleicao:
+                entry["post_id"] = upload.image_name
+                result.append(entry)
+            elif pid not in post_index:
+                post_index[pid] = len(result)
+                result.append(entry)
             else:
-                post_map[pid]["media"].append(media)
-                post_map[pid]["likes"] += likes
-                post_map[pid]["comments"] += comments
-
-    result = list(post_map.values())
+                grouped = result[post_index[pid]]
+                grouped["media"].append(media)
+                grouped["likes"] += likes
+                grouped["comments"] += comments
 
     orphan_names = disk_files - {
         m["name"] for p in result for m in p["media"]
@@ -150,35 +169,46 @@ def list_images_since():
         if f.suffix.lower() in Config.ALL_MEDIA_EXTENSIONS
     }
 
-    post_map = {}
+    blocked = _blocked_ids()
+    result = []
+    post_index = {}
     for upload, username, owner_avatar, likes, comments in uploads:
+        if upload.user_id and upload.user_id in blocked:
+            continue
         if upload.post_type == "text" or upload.image_name in disk_files:
             pid = upload.post_id or upload.image_name
             media = {
                 "name": upload.image_name,
                 "media_type": upload.media_type,
             }
-            if pid not in post_map:
-                post_map[pid] = {
-                    "post_id": pid,
-                    "name": upload.image_name,
-                    "owner": username,
-                    "owner_id": upload.user_id,
-                    "likes": likes,
-                    "comments": comments,
-                    "created_at": upload.created_at,
-                    "owner_avatar": owner_avatar or "default-avatar.svg",
-                    "caption": upload.caption or "",
-                    "post_type": upload.post_type,
-                    "nsfw": bool(upload.nsfw),
-                    "media": [media],
-                }
+            entry = {
+                "post_id": pid,
+                "name": upload.image_name,
+                "owner": username,
+                "owner_id": upload.user_id,
+                "likes": likes,
+                "comments": comments,
+                "created_at": upload.created_at,
+                "owner_avatar": owner_avatar or "default-avatar.svg",
+                "caption": upload.caption or "",
+                "post_type": upload.post_type,
+                "nsfw": bool(upload.nsfw),
+                "eleicao": bool(upload.eleicao),
+                "media": [media],
+            }
+            if upload.eleicao:
+                entry["post_id"] = upload.image_name
+                result.append(entry)
+            elif pid not in post_index:
+                post_index[pid] = len(result)
+                result.append(entry)
             else:
-                post_map[pid]["media"].append(media)
-                post_map[pid]["likes"] += likes
-                post_map[pid]["comments"] += comments
+                grouped = result[post_index[pid]]
+                grouped["media"].append(media)
+                grouped["likes"] += likes
+                grouped["comments"] += comments
 
-    return jsonify(list(post_map.values()))
+    return jsonify(result)
 
 
 @images_bp.route("/api/users/search", methods=["GET"])
@@ -202,7 +232,9 @@ def upload_images():
     has_files = any(f and f.filename for f in files)
     has_zip = bool(zip_file and zip_file.filename)
     caption = (request.form.get("caption") or "").strip()[:400]
+    caption_template = (request.form.get("caption_template") or "").strip()[:400]
     nsfw = 1 if request.form.get("nsfw") == "1" else 0
+    eleicao = 1 if request.form.get("eleicao") == "1" else 0
 
     if not has_files and not has_zip and not caption:
         return jsonify({"error": "no content"}), 400
@@ -227,7 +259,7 @@ def upload_images():
     post_id = uuid.uuid4().hex[:12]
     saved = []
 
-    def save_file(data, filename, post_id):
+    def save_file(data, filename, post_id, caption_override=None):
         ext = Path(filename).suffix.lower()
         is_video = ext in VIDEO_EXTENSIONS
         is_image = ext in Config.ALLOWED_EXTENSIONS
@@ -248,9 +280,10 @@ def upload_images():
             image_name=new_name,
             original_name=base_name,
             media_type=media_type,
-            caption=caption,
+            caption=caption if caption_override is None else caption_override,
             post_type=post_type,
             nsfw=nsfw,
+            eleicao=eleicao,
         )
         db.session.add(upload)
         saved.append(new_name)
@@ -284,6 +317,7 @@ def upload_images():
                 caption=caption,
                 post_type="text",
                 nsfw=nsfw,
+                eleicao=eleicao,
             )
             db.session.add(upload)
             saved.append(text_name)

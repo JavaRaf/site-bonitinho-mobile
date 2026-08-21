@@ -68,8 +68,11 @@ async function loadProfile() {
 
     const data = await fetch("/api/profile/" + encodeURIComponent(username)).then(r => r.json()).catch(() => null);
     if (!data || data.error) {
+        const msg = data?.error === "profile not available"
+            ? "Este perfil não está disponível"
+            : "Perfil não encontrado";
         document.getElementById("profilePage").innerHTML =
-            '<div style="text-align:center;padding:64px 24px;color:var(--text-muted)">Perfil não encontrado</div>';
+            '<div style="text-align:center;padding:64px 24px;color:var(--text-muted)">' + msg + '</div>';
         return;
     }
 
@@ -82,9 +85,14 @@ async function loadProfile() {
     document.getElementById("profileName").textContent = data.username;
 
     document.getElementById("profileStats").innerHTML =
-        "<strong>" + data.followers_count + "</strong> seguidores · " +
-        "<strong>" + data.following_count + "</strong> seguindo · " +
+        "<span class='stat-link' data-list='followers'><strong>" + data.followers_count + "</strong> seguidores</span> · " +
+        "<span class='stat-link' data-list='following'><strong>" + data.following_count + "</strong> seguindo</span> · " +
         "<strong>" + data.posts_count + "</strong> posts";
+
+    document.querySelectorAll(".stat-link").forEach(el => {
+        el.style.cursor = "pointer";
+        el.addEventListener("click", () => openUserList(el.dataset.list));
+    });
 
     renderActions(data);
     renderDetails(data);
@@ -98,6 +106,46 @@ async function loadProfile() {
 
 /* ── Actions ──────────────────────────────────────────────── */
 
+async function openUserList(type) {
+    if (!profile) return;
+    const overlay = document.getElementById("listOverlay");
+    const title = document.getElementById("listTitle");
+    const body = document.getElementById("listBody");
+
+    title.textContent = type === "followers" ? "Seguidores" : "Seguindo";
+    body.innerHTML = '<div class="list-empty">Carregando...</div>';
+    overlay.classList.add("open");
+
+    const endpoint = type === "followers"
+        ? "/api/profile/" + encodeURIComponent(profile.username) + "/followers"
+        : "/api/profile/" + encodeURIComponent(profile.username) + "/following-list";
+
+    const res = await fetch(endpoint).then(r => r.json()).catch(() => []);
+    if (!res.length) {
+        body.innerHTML = '<div class="list-empty">Nenhum ' + (type === "followers" ? "seguidor" : "seguindo") + ' encontrado</div>';
+        return;
+    }
+
+    body.innerHTML = res.map(u =>
+        '<a class="list-user" href="/perfil/' + esc(u.username) + '">' +
+            '<img class="list-user-avatar" src="' + avatarSrc(u.avatar) + '" alt="" onerror="this.src=\'' + AVATAR_DEFAULT + '\'">' +
+            '<span class="list-user-name" style="color:' + esc(u.color || 'var(--text)') + '">@' + esc(u.username) + '</span>' +
+        '</a>'
+    ).join("");
+}
+
+function avatarSrc(avatar) {
+    if (!avatar || avatar === "default-avatar.svg") return AVATAR_DEFAULT;
+    return "/avatars/" + avatar;
+}
+
+document.getElementById("listClose").addEventListener("click", () => {
+    document.getElementById("listOverlay").classList.remove("open");
+});
+document.getElementById("listOverlay").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+});
+
 function renderActions(data) {
     const el = document.getElementById("actionButtons");
     if (data.is_me) {
@@ -107,20 +155,37 @@ function renderActions(data) {
         return;
     }
 
+    if (data.is_blocked) {
+        el.innerHTML =
+            '<button class="action-btn action-btn-danger" id="btnBlock" style="grid-column: 1 / -1">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Desbloquear' +
+            '</button>';
+        document.getElementById("btnBlock").addEventListener("click", toggleBlock);
+        return;
+    }
+
     el.innerHTML =
         '<button class="action-btn action-btn-primary' + (data.is_following ? " following" : "") + '" id="btnFollow">' +
             (data.is_following ?
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Seguindo' :
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Seguir') +
         '</button>' +
-        '<button class="action-btn action-btn-secondary" id="btnInfo">' +
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Saiba mais' +
+        '<button class="action-btn action-btn-danger" id="btnBlock">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Bloquear' +
         '</button>';
 
     document.getElementById("btnFollow").addEventListener("click", toggleFollow);
-    document.getElementById("btnInfo").addEventListener("click", () => {
-        document.getElementById("detailsSection").scrollIntoView({ behavior: "smooth" });
-    });
+    document.getElementById("btnBlock").addEventListener("click", toggleBlock);
+}
+
+async function toggleBlock() {
+    const res = await fetch("/api/auth/block/" + encodeURIComponent(profile.username), { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) return;
+
+    profile.is_blocked = data.blocked;
+    renderActions(profile);
+    loadPosts(profile.username);
 }
 
 async function toggleFollow() {
