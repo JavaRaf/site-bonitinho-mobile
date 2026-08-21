@@ -47,8 +47,6 @@ def register_page_routes(app):
     @app.route("/perfil", methods=["GET"])
     @app.route("/perfil/<username>", methods=["GET"])
     def perfil_page(username=None):
-        if "user_id" not in session:
-            return render_template("login.html")
         return render_template("perfil.html")
 
     @app.route("/admin", methods=["GET"])
