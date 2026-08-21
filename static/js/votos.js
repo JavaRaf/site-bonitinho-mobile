@@ -1,5 +1,5 @@
 async function loadRanking() {
-    const res = await fetch("/api/votos");
+    const res = await fetch("/api/eleicao");
     const items = await res.json();
     const list = document.getElementById("votosList");
 

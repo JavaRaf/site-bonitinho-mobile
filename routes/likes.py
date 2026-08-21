@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from db import db
-from db.models import User, Upload, Like, Setting
+from db.models import User, Upload, Like, Setting, Block
 from utils.security import login_required, get_setting
 from config import Config
 
@@ -44,11 +44,18 @@ def toggle_like(image_name):
         return jsonify({"liked": False})
 
     if get_setting("single_vote_mode") == "1":
-        other = Like.query.filter(
-            Like.user_id == session["user_id"], Like.image_name != image_name
-        ).first()
-        if other:
-            db.session.delete(other)
+        eleicao_names = [
+            r.image_name
+            for r in db.session.query(Upload.image_name).filter(Upload.eleicao == 1).all()
+        ]
+        if eleicao_names:
+            other = Like.query.filter(
+                Like.user_id == session["user_id"],
+                Like.image_name != image_name,
+                Like.image_name.in_(eleicao_names),
+            ).first()
+            if other:
+                db.session.delete(other)
 
     liker = User.query.get(session["user_id"])
     owner = Upload.query.filter_by(image_name=image_name).first()
@@ -75,9 +82,18 @@ def toggle_like(image_name):
     return jsonify({"liked": True})
 
 
-@likes_bp.route("/api/votos", methods=["GET"])
-def ranking_api():
-    rows = (
+def _blocked_ids():
+    viewer_id = session.get("user_id")
+    if not viewer_id:
+        return set()
+    rows = db.session.query(Block.user_id, Block.blocked_id).filter(
+        (Block.user_id == viewer_id) | (Block.blocked_id == viewer_id)
+    ).all()
+    return {r.blocked_id if r.user_id == viewer_id else r.user_id for r in rows}
+
+
+def _ranking_payload(eleicao_only=False):
+    query = (
         db.session.query(
             Upload.image_name,
             Upload.post_id,
@@ -85,16 +101,21 @@ def ranking_api():
             Upload.caption,
             Upload.nsfw,
             Upload.media_type,
+            Upload.eleicao,
+            Upload.user_id,
             User.username.label("owner"),
             db.func.count(Like.id).label("likes"),
         )
         .outerjoin(User, Upload.user_id == User.id)
         .outerjoin(Like, Like.image_name == Upload.image_name)
         .filter(Upload.active == 1)
-        .group_by(Upload.id)
-        .order_by(db.desc("likes"), db.desc(Upload.created_at))
-        .all()
     )
+    if eleicao_only:
+        query = query.filter(Upload.eleicao == 1)
+    rows = query.group_by(Upload.id).order_by(db.desc("likes"), db.desc(Upload.created_at)).all()
+
+    blocked = _blocked_ids()
+    rows = [r for r in rows if not (r.user_id and r.user_id in blocked)]
 
     post_map = {}
     for r in rows:
@@ -109,6 +130,7 @@ def ranking_api():
                 "post_type": r.post_type,
                 "caption": r.caption or "",
                 "nsfw": bool(r.nsfw),
+                "eleicao": bool(r.eleicao),
                 "media": [media],
             }
         else:
@@ -127,4 +149,14 @@ def ranking_api():
 
     img_dir = Config.BASE_DIR / "images"
     result = [x for x in result if any((img_dir / m["name"]).exists() for m in x["media"])]
-    return jsonify(result)
+    return result
+
+
+@likes_bp.route("/api/votos", methods=["GET"])
+def ranking_api():
+    return jsonify(_ranking_payload())
+
+
+@likes_bp.route("/api/eleicao", methods=["GET"])
+def eleicao_ranking_api():
+    return jsonify(_ranking_payload(eleicao_only=True))

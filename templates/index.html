@@ -32,7 +32,7 @@
       <div id="user-avatar"><img src="/static/svg/default-avatar.svg" type="image/svg"></div>
       <div class="user-menu" id="userMenu">
         <button class="menu-item" id="menuPerfil">Perfil</button>
-        <button class="menu-item" id="menuVotos">Votos</button>
+        <button class="menu-item" id="menuEleicao">Eleição/votos</button>
         <button class="menu-item" id="menuDarkToggle">Alternar tema</button>
         <button class="menu-item" id="menuAdmin">Admin</button>
         <button class="menu-item" id="menuLogout">Sair</button>
@@ -52,7 +52,18 @@
   </header>
 
   <div class="header-sections" id="headerSections">
-    <div class="header-section active" id="headerSection1">Para você</div>
+    <div class="header-section active" id="headerSection1">
+      <span class="header-section-label">Para você</span>
+      <div class="header-section-sort" id="paraVoceSort">
+        <button class="header-section-arrow" id="paraVoceSortBtn" type="button" title="Ordenar" aria-label="Ordenar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="header-sort-menu" id="paraVoceSortMenu" hidden>
+          <button type="button" data-sort="popular">Popular</button>
+          <button type="button" data-sort="recente">Recente</button>
+        </div>
+      </div>
+    </div>
     <div class="header-section" id="headerSection2">
       <span class="header-section-label">Seguindo</span>
       <div class="header-section-sort" id="seguindoSort">
@@ -65,7 +76,19 @@
         </div>
       </div>
     </div>
-    <div class="header-section" id="headerSection3">Eleição</div>
+    <div class="header-section" id="headerSection3">
+      <span class="header-section-label">Eleição</span>
+      <span class="single-vote-badge" id="singleVoteBadge" hidden>Voto único</span>
+      <div class="header-section-sort" id="eleicaoSort">
+        <button class="header-section-arrow" id="eleicaoSortBtn" type="button" title="Ordenar" aria-label="Ordenar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="header-sort-menu" id="eleicaoSortMenu" hidden>
+          <button type="button" data-sort="popular">Popular</button>
+          <button type="button" data-sort="recente">Recente</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="composer-overlay" id="composerModal">

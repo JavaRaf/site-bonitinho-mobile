@@ -1,5 +1,5 @@
 from pathlib import Path
-from flask import Flask, jsonify, render_template, session, send_from_directory
+from flask import Flask, jsonify, redirect, render_template, session, send_from_directory
 from config import Config
 
 
@@ -63,9 +63,13 @@ def register_page_routes(app):
             )
         return render_template("admin.html")
 
-    @app.route("/votos", methods=["GET"])
-    def votos_page():
+    @app.route("/eleicao", methods=["GET"])
+    def eleicao_page():
         return render_template("votos.html")
+
+    @app.route("/votos", methods=["GET"])
+    def votos_redirect():
+        return redirect("/eleicao")
 
 
 def register_service_worker(app):

@@ -40,6 +40,8 @@ async function loadSingleVoteFlag() {
         singleVoteMode = data.enabled || false;
         const feedEl = document.getElementById("feedSingleVote");
         if (feedEl) feedEl.style.display = singleVoteMode ? "" : "none";
+        const badge = document.getElementById("singleVoteBadge");
+        if (badge) badge.hidden = !singleVoteMode;
         renderFeed();
     } catch { /* ignore */ }
 }
@@ -79,13 +81,13 @@ function sortedImages() {
     if (nsfwFilter === "hide") {
         imgs = imgs.filter(i => !i.nsfw);
     }
-    if (sortMode === "eleicao") {
+    if (sortMode.startsWith("eleicao")) {
         imgs = imgs.filter(i => i.eleicao);
     } else if (sortMode.startsWith("following_")) {
         const followSet = new Set((followingIds || []).map(Number));
         imgs = imgs.filter(i => followSet.has(Number(i.owner_id)));
     }
-    const byLikes = sortMode === "likes" || sortMode === "following_likes";
+    const byLikes = sortMode === "likes" || sortMode === "following_likes" || sortMode === "eleicao_likes";
     return imgs.sort((a, b) => {
         if (!byLikes) {
             return String(b.created_at || "").localeCompare(String(a.created_at || ""));
@@ -138,7 +140,7 @@ function renderGrid() {
 }
 
 function setSortMode(mode) {
-    const valid = ["likes", "recent", "following_likes", "following_recent", "eleicao"];
+    const valid = ["likes", "recent", "following_likes", "following_recent", "eleicao", "eleicao_likes", "eleicao_recent"];
     if (!valid.includes(mode)) return;
     sortMode = mode;
     localStorage.setItem("sortMode", mode);
@@ -166,7 +168,7 @@ function syncSortSelects() {
     const forYou = document.getElementById("tabForYou");
     const following = document.getElementById("tabFollowing");
     const isFollowing = sortMode.startsWith("following_");
-    const isEleicao = sortMode === "eleicao";
+    const isEleicao = sortMode.startsWith("eleicao");
     if (forYou && following) {
         forYou.classList.toggle("active", !isFollowing && !isEleicao);
         following.classList.toggle("active", isFollowing);
@@ -179,8 +181,14 @@ function syncSortSelects() {
         if (section.id === "headerSection2") section.classList.toggle("active", isFollowing);
         if (section.id === "headerSection3") section.classList.toggle("active", isEleicao);
     });
+    document.querySelectorAll("#paraVoceSortMenu button").forEach(btn => {
+        btn.classList.toggle("active", !isFollowing && !isEleicao && btn.dataset.sort === (sortMode === "likes" ? "popular" : "recente"));
+    });
     document.querySelectorAll("#seguindoSortMenu button").forEach(btn => {
         btn.classList.toggle("active", isFollowing && btn.dataset.sort === (sortMode.endsWith("_likes") ? "popular" : "recente"));
+    });
+    document.querySelectorAll("#eleicaoSortMenu button").forEach(btn => {
+        btn.classList.toggle("active", isEleicao && btn.dataset.sort === (sortMode.endsWith("_likes") ? "popular" : "recente"));
     });
 }
 
@@ -361,23 +369,24 @@ async function toggleFeedLike(btn) {
     let prevUnlikedImg = null;
     if (singleVoteMode && liked) {
         for (const n of likedImages) {
-            if (n !== name) {
-                prevUnlikedName = n;
-                likedImages.delete(n);
-                prevUnlikedImg = allImages.find(x => x.name === n);
-                if (prevUnlikedImg) prevUnlikedImg.likes = Math.max(0, (prevUnlikedImg.likes || 0) - 1);
-                const prevBtn = document.querySelector(`.feed-like[data-name="${CSS.escape(n)}"]`);
-                if (prevBtn) {
-                    prevBtn.classList.remove("liked");
-                    prevBtn.querySelector("img").src = "/static/svg/upvote.svg";
-                }
-                const prevCountEl = document.querySelector(`.feed-likes[data-name="${CSS.escape(n)}"]`);
-                if (prevCountEl) {
-                    const pv = parseInt(prevCountEl.textContent) || 0;
-                    prevCountEl.textContent = Math.max(0, pv - 1) > 0 ? Math.max(0, pv - 1) : "";
-                }
-                break;
+            if (n === name) continue;
+            const cand = allImages.find(x => x.name === n);
+            if (!cand || !cand.eleicao) continue;
+            prevUnlikedName = n;
+            likedImages.delete(n);
+            prevUnlikedImg = cand;
+            if (prevUnlikedImg) prevUnlikedImg.likes = Math.max(0, (prevUnlikedImg.likes || 0) - 1);
+            const prevBtn = document.querySelector(`.feed-like[data-name="${CSS.escape(n)}"]`);
+            if (prevBtn) {
+                prevBtn.classList.remove("liked");
+                prevBtn.querySelector("img").src = "/static/svg/upvote.svg";
             }
+            const prevCountEl = document.querySelector(`.feed-likes[data-name="${CSS.escape(n)}"]`);
+            if (prevCountEl) {
+                const pv = parseInt(prevCountEl.textContent) || 0;
+                prevCountEl.textContent = Math.max(0, pv - 1) > 0 ? Math.max(0, pv - 1) : "";
+            }
+            break;
         }
     }
 

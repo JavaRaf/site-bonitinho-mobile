@@ -39,10 +39,10 @@ document.getElementById("menuPerfil").addEventListener("click", () => {
     window.location.href = "/perfil";
 });
 
-// Votos
-document.getElementById("menuVotos").addEventListener("click", () => {
+// Eleição
+document.getElementById("menuEleicao").addEventListener("click", () => {
     menu.classList.remove("open");
-    window.location.href = "/votos";
+    window.location.href = "/eleicao";
 });
 
 // Logout

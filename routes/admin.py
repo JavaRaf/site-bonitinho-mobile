@@ -198,7 +198,7 @@ def admin_turnos():
         )
         .outerjoin(User, Upload.user_id == User.id)
         .outerjoin(Like, Like.image_name == Upload.image_name)
-        .filter(Upload.active == 1)
+        .filter(Upload.active == 1, Upload.eleicao == 1)
         .group_by(Upload.id)
         .order_by(db.desc("likes"), db.desc(Upload.created_at))
         .all()
@@ -226,7 +226,7 @@ def admin_turnos_advance():
 
     rows = (
         db.session.query(Upload.image_name)
-        .filter(Upload.active == 1)
+        .filter(Upload.active == 1, Upload.eleicao == 1)
         .outerjoin(Like, Like.image_name == Upload.image_name)
         .group_by(Upload.id)
         .order_by(db.desc(db.func.count(Like.id)), db.desc(Upload.created_at))
@@ -235,7 +235,7 @@ def admin_turnos_advance():
     names = [r.image_name for r in rows]
 
     if len(names) <= cutoff:
-        return jsonify({"error": "Nada a fazer: imagens ativas <= cutoff"}), 400
+        return jsonify({"error": "Nada a fazer: posts de eleição ativos <= cutoff"}), 400
 
     survivors = names[:cutoff]
     eliminated = names[cutoff:]
@@ -250,7 +250,7 @@ def admin_turnos_advance():
     from db.models import Comment
     Comment.query.filter(Comment.image_name.in_(eliminated)).delete(synchronize_session=False)
 
-    Like.query.delete()
+    Like.query.filter(Like.image_name.in_(names)).delete(synchronize_session=False)
 
     current_round = db.session.query(db.func.coalesce(db.func.max(Round.round_number), 0)).scalar()
     db.session.add(Round(round_number=current_round + 1, cutoff=cutoff))
