@@ -1297,6 +1297,14 @@ header.hidden {
   cursor: pointer;
 }
 
+.feed-time {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .feed-singlevote {
   margin-right: 0.5rem;
   padding: 0.3rem 0.5rem;
