@@ -65,9 +65,37 @@ async function loadCarousel() {
     if (!images.length) return;
 
     await loadLikes();
-    loadSingleVoteFlag();
+    await loadSingleVoteFlag();
     renderFeed();
     syncSortSelects();
+    openPostFromUrl();
+}
+
+function openPostFromUrl() {
+    const name = new URLSearchParams(location.search).get("img");
+    if (!name) return;
+    const target = allImages.find(p =>
+        p.name === name || (p.media || []).some(m => m.name === name)
+    );
+    if (!target) return;
+    const card = document.querySelector(`.feed-card[data-name="${CSS.escape(target.name)}"]`);
+    if (!card) return;
+
+    const jumpToCard = () => {
+        const rect = card.getBoundingClientRect();
+        const y = rect.top + window.scrollY - (window.innerHeight - rect.height) / 2;
+        window.scrollTo(0, Math.max(0, y));
+    };
+
+    requestAnimationFrame(() => {
+        jumpToCard();
+        setTimeout(jumpToCard, 500);
+        if (document.readyState !== "complete") {
+            window.addEventListener("load", () => setTimeout(jumpToCard, 100), { once: true });
+        }
+        card.style.boxShadow = "0 0 0 2px #378ee9";
+        setTimeout(() => { card.style.boxShadow = ""; }, 2000);
+    });
 }
 
 function escText(str) {
