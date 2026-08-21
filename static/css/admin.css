@@ -212,6 +212,24 @@
   color: #fff;
 }
 
+.admin-eleicao-badge {
+  position: absolute;
+  top: 0.35rem;
+  left: 2.75rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: #8b5cf6;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.admin-type-video ~ .admin-eleicao-badge {
+  left: 5.5rem;
+}
+
 .admin-card-likes {
   flex: none;
   margin-left: 0.25rem;
@@ -791,8 +809,6 @@
 /* Posts tab */
 .admin-type-badge {
   position: absolute;
-  left: 0.3rem;
-  bottom: 2rem;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   font-size: 0.625rem;
@@ -801,17 +817,31 @@
   pointer-events: none;
 }
 .admin-type-video {
+  top: 0.35rem;
+  left: 2.75rem;
   background: #8b5cf6;
   color: #fff;
 }
 
 .admin-card-thumb {
-  width: 60%;
+  width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   display: block;
   background: #000;
-  align-self: center;
+}
+
+.admin-text-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  background: var(--surface-2);
 }
 
 .admin-card-caption {

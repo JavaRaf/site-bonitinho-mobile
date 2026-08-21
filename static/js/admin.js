@@ -36,6 +36,7 @@ function getPostType(post) {
 
 function getFilteredPosts() {
     if (postFilter === "all") return allPosts;
+    if (postFilter === "eleicao") return allPosts.filter(p => p.eleicao);
     return allPosts.filter(p => getPostType(p) === postFilter);
 }
 
@@ -49,8 +50,6 @@ function renderPosts() {
     const grid = document.getElementById("adminGrid");
     const list = document.getElementById("adminTextList");
     const posts = getFilteredPosts();
-    const textPosts = posts.filter(p => getPostType(p) === "text");
-    const mediaPosts = posts.filter(p => getPostType(p) !== "text");
 
     if (!posts.length) {
         grid.innerHTML = "";
@@ -58,19 +57,23 @@ function renderPosts() {
         return;
     }
 
-    grid.innerHTML = mediaPosts.map(img => {
+    grid.innerHTML = posts.map(img => {
         const type = getPostType(img);
         const typeBadge = type === "video" ? '<span class="admin-type-badge admin-type-video">Video</span>' : "";
-        const captionPreview = img.caption ? `<div class="admin-card-caption">${esc(img.caption)}</div>` : "";
+        const captionPreview = img.caption && type !== "text" ? `<div class="admin-card-caption">${esc(img.caption)}</div>` : "";
+        const body = type === "text"
+            ? `<div class="admin-text-thumb">${esc(img.caption || "")}</div>`
+            : type === "video"
+                ? `<video src="/images/${esc(img.name)}" muted playsinline preload="metadata" class="admin-card-thumb"></video>`
+                : `<img src="/images/${esc(img.name)}" alt="${esc(img.name)}" loading="lazy">`;
         return `
         <div class="admin-card" data-name="${esc(img.name)}">
-            ${type === "video"
-                ? `<video src="/images/${esc(img.name)}" muted playsinline preload="metadata" class="admin-card-thumb"></video>`
-                : `<img src="/images/${esc(img.name)}" alt="${esc(img.name)}" loading="lazy">`}
+            ${body}
             <input type="checkbox" class="admin-select">
             ${typeBadge}
             ${img.nsfw ? '<span class="admin-nsfw-badge">18+</span>' : ''}
             <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar +18">18+</button>
+            ${img.eleicao ? '<span class="admin-eleicao-badge">Eleição</span>' : ''}
             ${captionPreview}
             <div class="admin-card-info">
                 <span>${esc(img.owner || "\u2014")}</span>
@@ -84,25 +87,9 @@ function renderPosts() {
         </div>`;
     }).join("");
 
-    list.innerHTML = textPosts.map(t => `
-        <div class="admin-text-card" data-name="${esc(t.name)}">
-            <input type="checkbox" class="admin-select">
-            <div class="admin-text-content">
-                <div class="admin-text-header">
-                    <span class="admin-text-owner">@${esc(t.owner || "\u2014")}</span>
-                    <span class="admin-text-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${t.likes || 0}</span>
-                </div>
-                <div class="admin-text-body">${esc(t.caption || "")}</div>
-                <div class="admin-text-likers">
-                    ${t.likers && t.likers.length
-                        ? t.likers.map(u => `<span class="admin-liker-tag" data-user-id="${u.id}" data-image="${esc(t.name)}"><span class="admin-liker-name">@${esc(u.username)}</span><img src="/static/svg/trash.svg" alt="del" class="admin-liker-icon"></span>`).join("")
-                        : `<span style="font-size:0.6875rem;color:#9ca3af">Nenhum like</span>`}
-                </div>
-            </div>
-        </div>
-    `).join("");
+    list.innerHTML = "";
 
-    document.querySelectorAll(".admin-card, .admin-text-card").forEach(card => {
+    document.querySelectorAll(".admin-card").forEach(card => {
         card.addEventListener("click", e => {
             if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select") || e.target.closest(".admin-nsfw-btn")) return;
             card.classList.toggle("expanded");
@@ -172,7 +159,7 @@ document.querySelectorAll(".admin-filter").forEach(btn => {
 
 /* Select all */
 document.getElementById("adminSelectAll").addEventListener("click", () => {
-    const cards = document.querySelectorAll("#tabPosts .admin-card, #tabPosts .admin-text-card");
+    const cards = document.querySelectorAll("#tabPosts .admin-card");
     const names = [...cards].map(c => c.dataset.name);
     const allSelected = names.length > 0 && names.every(n => selected.has(n));
     cards.forEach(c => {
