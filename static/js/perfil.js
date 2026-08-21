@@ -16,7 +16,13 @@ let selectedColor = "";
 
 function getUsernameFromURL() {
     const parts = location.pathname.split("/").filter(Boolean);
-    if (parts.length >= 2 && parts[0] === "perfil") return parts[1];
+    if (parts.length >= 2 && parts[0] === "perfil") {
+        try {
+            return decodeURIComponent(parts[1]);
+        } catch {
+            return parts[1];
+        }
+    }
     return null;
 }
 
