@@ -33,7 +33,6 @@
       <div class="user-menu" id="userMenu">
         <button class="menu-item" id="menuPerfil">Perfil</button>
         <button class="menu-item" id="menuVotos">Votos</button>
-        <button class="menu-item" id="menuUpload">Criar post</button>
         <button class="menu-item" id="menuDarkToggle">Alternar tema</button>
         <button class="menu-item" id="menuAdmin">Admin</button>
         <button class="menu-item" id="menuLogout">Sair</button>
@@ -52,19 +51,21 @@
     </div>
   </header>
 
-  <div class="feed-create" id="feedCreate">
-    <div class="feed-create-inner">
-      <img class="feed-create-avatar" id="feedCreateAvatar" src="/static/svg/default-avatar.svg" alt="">
-      <textarea class="feed-create-input" id="feedCreateText" placeholder="No que voce esta pensando?" rows="1" autocomplete="off"></textarea>
-      <input type="file" id="feedCreateFile" accept="image/*,video/mp4,video/webm,video/quicktime" multiple hidden>
-      <button class="feed-create-icon" id="feedCreateImg" type="button" title="Midia">
-        <img src="/static/svg/image.svg" alt="">
-      </button>
-      <button class="feed-create-send" id="feedCreateSend" type="button" title="Publicar" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      </button>
+  <div class="header-sections" id="headerSections">
+    <div class="header-section active" id="headerSection1">Para você</div>
+    <div class="header-section" id="headerSection2">
+      <span class="header-section-label">Seguindo</span>
+      <div class="header-section-sort" id="seguindoSort">
+        <button class="header-section-arrow" id="seguindoSortBtn" type="button" title="Ordenar" aria-label="Ordenar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="header-sort-menu" id="seguindoSortMenu" hidden>
+          <button type="button" data-sort="popular">Popular</button>
+          <button type="button" data-sort="recente">Recente</button>
+        </div>
+      </div>
     </div>
-    <div class="feed-create-previews" id="feedCreatePreviews"></div>
+    <div class="header-section" id="headerSection3">Eleição</div>
   </div>
 
   <div class="composer-overlay" id="composerModal">
@@ -109,14 +110,43 @@
     </div>
   </div>
 
-  <div class="feed-sort-wrap" id="feedSortWrap">
-    <span class="feed-singlevote" id="feedSingleVote" style="display:none">Voto único</span>
-    <select class="sort-select" id="feedSortSelect" title="Ordenar" aria-label="Ordenar">
-      <option value="likes">Mais votadas</option>
-      <option value="recent">Mais recentes</option>
-      <option value="following_likes">Seguindo - mais votadas</option>
-      <option value="following_recent">Seguindo - mais recentes</option>
-    </select>
+  <div class="feed-create" id="feedCreate">
+    <div class="feed-create-inner">
+      <img class="feed-create-avatar" id="feedCreateAvatar" src="/static/svg/default-avatar.svg" alt="">
+      <div class="feed-create-main">
+        <textarea class="feed-create-input" id="feedCreateText" placeholder="No que você esta pensando?" rows="1" autocomplete="off"></textarea>
+        <div class="feed-create-toolbar">
+          <input type="file" id="feedCreateFile" accept="image/*,video/mp4,video/webm,video/quicktime" multiple hidden>
+          <input type="file" id="feedCreateZip" accept=".zip,application/zip" hidden>
+          <button class="feed-create-icon" id="feedCreateZipBtn" type="button" title="Enviar ZIP" aria-label="Enviar ZIP">
+            <img src="/static/png/rar.webp" alt="" width="20" height="20">
+          </button>
+          <button class="feed-create-icon" id="feedCreateImg" type="button" title="Mídia" aria-label="Adicionar mídia">
+            <img src="/static/svg/photo.svg" alt="" width="20" height="20">
+          </button>
+          <div class="feed-create-divider"></div>
+          <button class="feed-create-icon" id="feedCreateNsfwBtn" type="button" title="Marcar como 18+" aria-label="Marcar como 18+">
+            <img src="/static/svg/NSFW.svg" alt="" width="20" height="20">
+          </button>
+          <div class="feed-create-divider"></div>
+          <button class="feed-create-icon" id="feedCreateEleicaoBtn" type="button" title="Marcar como Eleição" aria-label="Marcar como Eleição">
+            <img src="/static/svg/eleicao.svg" alt="" width="20" height="20">
+          </button>
+          <button class="feed-create-send" id="feedCreateSend" type="button" title="Publicar" aria-label="Publicar" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="feed-create-zip" id="feedCreateZipPreview" hidden>
+      <img class="feed-create-zip-icon" src="/static/png/rar.webp" alt="" width="20" height="20">
+      <div class="feed-create-zip-info">
+        <span class="feed-create-zip-name" id="feedCreateZipLabel">Arquivo ZIP selecionado</span>
+        <span class="feed-create-zip-size" id="feedCreateZipSize"></span>
+      </div>
+      <button class="feed-create-zip-remove" id="feedCreateZipRemove" type="button" aria-label="Remover arquivo">&times;</button>
+    </div>
+    <div class="feed-create-previews" id="feedCreatePreviews"></div>
   </div>
 
   <div class="feed-view" id="feedView"></div>
@@ -162,6 +192,7 @@
 <script src="/static/js/lightbox.js"></script>
 <script src="/static/js/video-player.js"></script>
 <script src="/static/js/notifications.js"></script>
+<script src="/static/js/header-sections.js"></script>
 
 <script>
 if ('serviceWorker' in navigator) {

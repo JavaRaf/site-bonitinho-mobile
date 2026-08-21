@@ -74,6 +74,7 @@ class Upload(db.Model):
     caption = db.Column(db.Text, nullable=False, default="")
     post_type = db.Column(db.Text, nullable=False, default="image")
     nsfw = db.Column(db.Integer, nullable=False, default=0)
+    eleicao = db.Column(db.Integer, nullable=False, default=0)
     active = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
 

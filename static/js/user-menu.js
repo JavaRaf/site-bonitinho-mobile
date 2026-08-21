@@ -45,12 +45,6 @@ document.getElementById("menuVotos").addEventListener("click", () => {
     window.location.href = "/votos";
 });
 
-// Criar post
- document.getElementById("menuUpload").addEventListener("click", () => {
-    menu.classList.remove("open");
-    document.getElementById("composerModal").classList.add("open");
-});
-
 // Logout
 document.getElementById("menuLogout").addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST" });

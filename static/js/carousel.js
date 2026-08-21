@@ -79,8 +79,10 @@ function sortedImages() {
     if (nsfwFilter === "hide") {
         imgs = imgs.filter(i => !i.nsfw);
     }
-    if (sortMode.startsWith("following_") && Array.isArray(followingIds) && followingIds.length) {
-        const followSet = new Set(followingIds.map(Number));
+    if (sortMode === "eleicao") {
+        imgs = imgs.filter(i => i.eleicao);
+    } else if (sortMode.startsWith("following_")) {
+        const followSet = new Set((followingIds || []).map(Number));
         imgs = imgs.filter(i => followSet.has(Number(i.owner_id)));
     }
     const byLikes = sortMode === "likes" || sortMode === "following_likes";
@@ -136,7 +138,7 @@ function renderGrid() {
 }
 
 function setSortMode(mode) {
-    const valid = ["likes", "recent", "following_likes", "following_recent"];
+    const valid = ["likes", "recent", "following_likes", "following_recent", "eleicao"];
     if (!valid.includes(mode)) return;
     sortMode = mode;
     localStorage.setItem("sortMode", mode);
@@ -161,6 +163,25 @@ async function fetchFollowingIds() {
 
 function syncSortSelects() {
     document.querySelectorAll(".sort-select").forEach(sel => { sel.value = sortMode; });
+    const forYou = document.getElementById("tabForYou");
+    const following = document.getElementById("tabFollowing");
+    const isFollowing = sortMode.startsWith("following_");
+    const isEleicao = sortMode === "eleicao";
+    if (forYou && following) {
+        forYou.classList.toggle("active", !isFollowing && !isEleicao);
+        following.classList.toggle("active", isFollowing);
+    }
+    document.querySelectorAll(".feed-tab-option").forEach(opt => {
+        opt.classList.toggle("active", opt.dataset.mode === sortMode);
+    });
+    document.querySelectorAll(".header-section").forEach(section => {
+        if (section.id === "headerSection1") section.classList.toggle("active", !isFollowing && !isEleicao);
+        if (section.id === "headerSection2") section.classList.toggle("active", isFollowing);
+        if (section.id === "headerSection3") section.classList.toggle("active", isEleicao);
+    });
+    document.querySelectorAll("#seguindoSortMenu button").forEach(btn => {
+        btn.classList.toggle("active", isFollowing && btn.dataset.sort === (sortMode.endsWith("_likes") ? "popular" : "recente"));
+    });
 }
 
 function openGrid() {
@@ -175,7 +196,35 @@ document.getElementById("grid-btn")?.addEventListener("click", openGrid);
 
 document.getElementById("gridClose")?.addEventListener("click", closeGrid);
 
-document.getElementById("feedSortSelect")?.addEventListener("change", e => setSortMode(e.target.value));
+const followingMenu = document.getElementById("followingMenu");
+
+function closeFollowingMenu() {
+    followingMenu?.classList.remove("open");
+}
+
+document.getElementById("tabForYou")?.addEventListener("click", () => {
+    closeFollowingMenu();
+    setSortMode("likes");
+});
+
+document.getElementById("tabFollowing")?.addEventListener("click", () => {
+    followingMenu?.classList.toggle("open");
+});
+
+document.getElementById("tabAddPost")?.addEventListener("click", () => {
+    document.getElementById("composerModal")?.classList.add("open");
+});
+
+document.querySelectorAll(".feed-tab-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+        setSortMode(opt.dataset.mode);
+        closeFollowingMenu();
+    });
+});
+
+document.addEventListener("click", e => {
+    if (!e.target.closest("#tabFollowingWrap")) closeFollowingMenu();
+});
 
 document.getElementById("gridOverlay")?.addEventListener("click", e => {
     if (e.target === e.currentTarget) closeGrid();
@@ -252,8 +301,11 @@ function renderFeed() {
             <div class="feed-owner">
                 <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
                 <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>
-                ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
-                ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
+                <div class="feed-owner-flags">
+                    ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
+                    ${img.eleicao ? '<span class="feed-eleicao-badge">Eleição</span>' : ''}
+                    ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
+                </div>
             </div>
             <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
             ${mediaSection}
@@ -740,16 +792,75 @@ setInterval(checkNewPosts, 60000);
 
 /* === Feed create post (compact) === */
 let feedCreateFiles = [];
+let feedCreateZip = null;
 let feedCreateNsfw = false;
+let feedCreateEleicao = false;
 
 document.getElementById("feedCreateImg")?.addEventListener("click", () => {
     document.getElementById("feedCreateFile")?.click();
+});
+
+document.getElementById("feedCreateZipBtn")?.addEventListener("click", () => {
+    document.getElementById("feedCreateZip")?.click();
+});
+
+function setFeedCreateNsfw(active) {
+    feedCreateNsfw = active;
+    document.getElementById("feedCreateNsfwBtn")?.classList.toggle("active", active);
+}
+
+document.getElementById("feedCreateNsfwBtn")?.addEventListener("click", () => {
+    setFeedCreateNsfw(!feedCreateNsfw);
+});
+
+function setFeedCreateEleicao(active) {
+    feedCreateEleicao = active;
+    document.getElementById("feedCreateEleicaoBtn")?.classList.toggle("active", active);
+}
+
+document.getElementById("feedCreateEleicaoBtn")?.addEventListener("click", () => {
+    setFeedCreateEleicao(!feedCreateEleicao);
+});
+
+function clearFeedCreateZip() {
+    feedCreateZip = null;
+    const input = document.getElementById("feedCreateZip");
+    if (input) input.value = "";
+    const preview = document.getElementById("feedCreateZipPreview");
+    if (preview) preview.hidden = true;
+    const label = document.getElementById("feedCreateZipLabel");
+    if (label) label.textContent = "Arquivo ZIP selecionado";
+    const size = document.getElementById("feedCreateZipSize");
+    if (size) size.textContent = "";
+}
+
+document.getElementById("feedCreateZip")?.addEventListener("change", () => {
+    const input = document.getElementById("feedCreateZip");
+    const file = input.files[0];
+    if (!file) return;
+    feedCreateFiles = [];
+    renderFeedCreatePreviews();
+    feedCreateZip = file;
+    const label = document.getElementById("feedCreateZipLabel");
+    if (label) label.textContent = file.name;
+    const size = document.getElementById("feedCreateZipSize");
+    if (size) size.textContent = `${Math.round(file.size / 1024)} KB`;
+    const preview = document.getElementById("feedCreateZipPreview");
+    if (preview) preview.hidden = false;
+    updateFeedCreateBtn();
+    input.value = "";
+});
+
+document.getElementById("feedCreateZipRemove")?.addEventListener("click", () => {
+    clearFeedCreateZip();
+    updateFeedCreateBtn();
 });
 
 document.getElementById("feedCreateFile")?.addEventListener("change", () => {
     const fileInput = document.getElementById("feedCreateFile");
     const files = Array.from(fileInput.files);
     if (!files.length) return;
+    clearFeedCreateZip();
     for (const file of files) {
         if (file.type.startsWith("video/")) {
             const vid = document.createElement("video");
@@ -812,8 +923,7 @@ function renderFeedCreatePreviews() {
         nsfwBtn.className = "feed-create-nsfw" + (feedCreateNsfw ? " active visible" : " visible");
         nsfwBtn.textContent = "18+";
         nsfwBtn.addEventListener("click", () => {
-            feedCreateNsfw = !feedCreateNsfw;
-            nsfwBtn.classList.toggle("active", feedCreateNsfw);
+            setFeedCreateNsfw(!feedCreateNsfw);
         });
         container.appendChild(nsfwBtn);
     }
@@ -845,13 +955,13 @@ function autoResizeFeedCreate(el) {
 function updateFeedCreateBtn() {
     const btn = document.getElementById("feedCreateSend");
     const text = document.getElementById("feedCreateText")?.value.trim();
-    btn.disabled = !feedCreateFiles.length && !text;
+    btn.disabled = !feedCreateFiles.length && !feedCreateZip && !text;
 }
 
 document.getElementById("feedCreateSend")?.addEventListener("click", async () => {
     const btn = document.getElementById("feedCreateSend");
     const text = document.getElementById("feedCreateText")?.value.trim();
-    if (!feedCreateFiles.length && !text) return;
+    if (!feedCreateFiles.length && !feedCreateZip && !text) return;
     btn.disabled = true;
 
     const form = new FormData();
@@ -873,14 +983,18 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
             form.append("images", imageToUpload, imageName);
         }
     }
+    if (feedCreateZip) form.append("zip", feedCreateZip);
     form.append("caption", text);
     if (feedCreateNsfw) form.append("nsfw", "1");
+    if (feedCreateEleicao) form.append("eleicao", "1");
 
     try {
         const res = await fetch("/api/upload", { method: "POST", body: form });
         if (res.ok) {
             feedCreateFiles = [];
-            feedCreateNsfw = false;
+            setFeedCreateNsfw(false);
+            setFeedCreateEleicao(false);
+            clearFeedCreateZip();
             const feedInput = document.getElementById("feedCreateText");
             feedInput.value = "";
             autoResizeFeedCreate(feedInput);

@@ -21,6 +21,7 @@ def _run_migrations():
         ("uploads", "active", "INTEGER NOT NULL DEFAULT 1"),
         ("uploads", "caption", "TEXT NOT NULL DEFAULT ''"),
         ("uploads", "nsfw", "INTEGER NOT NULL DEFAULT 0"),
+        ("uploads", "eleicao", "INTEGER NOT NULL DEFAULT 0"),
         ("comments", "parent_id", "INTEGER REFERENCES comments(id) ON DELETE CASCADE"),
         ("push_notifications", "image_name", "TEXT NOT NULL DEFAULT ''"),
         ("uploads", "post_type", "TEXT NOT NULL DEFAULT 'image'"),
