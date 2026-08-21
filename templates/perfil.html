@@ -51,11 +51,14 @@
         </div>
       </div>
 
+      <p class="profile-bio" id="profileBio" hidden></p>
+
       <div class="action-buttons" id="actionButtons"></div>
 
       <nav class="profile-tabs" id="profileTabs" role="tablist">
         <button class="tab active" role="tab" data-tab="all" aria-selected="true">Tudo</button>
         <button class="tab" role="tab" data-tab="photos" aria-selected="false">Fotos</button>
+        <button class="tab" id="tabBlocked" role="tab" data-tab="blocked" aria-selected="false" hidden>Bloqueados</button>
         <button class="tab tab-edit" id="btnEdit" hidden role="tab">Editar</button>
       </nav>
 
@@ -89,18 +92,6 @@
           <div class="edit-field">
             <label for="editBio">Bio <span id="bioCounter">0/110</span></label>
             <textarea id="editBio" maxlength="110" rows="3"></textarea>
-          </div>
-          <div class="edit-field">
-            <label for="editCategory">Categoria</label>
-            <input type="text" id="editCategory" placeholder="Ex: Beleza, cosméticos..." autocomplete="off">
-          </div>
-          <div class="edit-field">
-            <label for="editPrice">Preço</label>
-            <input type="text" id="editPrice" placeholder="Ex: $$" autocomplete="off">
-          </div>
-          <div class="edit-field">
-            <label for="editHours">Horário</label>
-            <input type="text" id="editHours" placeholder="Ex: Sempre aberto" autocomplete="off">
           </div>
           <div class="edit-field">
             <label for="editLocation">Localização</label>
@@ -179,6 +170,20 @@
           <button class="list-close" id="listClose" aria-label="Fechar">&times;</button>
         </div>
         <div class="list-body" id="listBody"></div>
+      </div>
+    </div>
+
+    <!-- Bio Actions -->
+    <div class="list-overlay" id="bioOverlay">
+      <div class="list-card">
+        <div class="list-header">
+          <h3>Bio</h3>
+          <button class="list-close" id="bioClose" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="bio-actions">
+          <button class="bio-action-btn" id="bioEdit">Editar</button>
+          <button class="bio-action-btn danger" id="bioDelete">Excluir</button>
+        </div>
       </div>
     </div>
 

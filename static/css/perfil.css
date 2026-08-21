@@ -92,6 +92,45 @@
   margin-bottom: 16px;
 }
 
+/* === Bio === */
+.profile-bio {
+  margin: 0 0 16px;
+  font-size: clamp(0.875rem, 2.4vw, 0.9375rem);
+  color: var(--text);
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.profile-bio.editable {
+  cursor: pointer;
+}
+.profile-bio.editable:hover {
+  opacity: 0.8;
+}
+
+.bio-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.bio-action-btn {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bio-action-btn:hover { background: var(--border); }
+.bio-action-btn.danger {
+  color: var(--danger);
+}
+
 /* === Avatar === */
 .avatar-area {
   position: relative;
@@ -131,6 +170,10 @@
 .avatar-edit:focus-visible {
   outline: 2px solid var(--btn-bg);
   outline-offset: 2px;
+}
+.avatar-edit[hidden],
+.cover-btn[hidden] {
+  display: none;
 }
 
 /* === Identity === */
@@ -222,7 +265,6 @@
 /* === Tabs === */
 .profile-tabs {
   display: flex;
-  gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 4px;
@@ -305,6 +347,24 @@
 .posts-section {
   padding: clamp(24px, 4vw, 40px) clamp(20px, 5vw, 40px);
 }
+
+/* === Blocked Users (modal list) === */
+.list-unblock {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.list-unblock:hover { background: var(--surface-2); }
+.list-unblock:disabled { opacity: 0.5; cursor: default; }
 .posts-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

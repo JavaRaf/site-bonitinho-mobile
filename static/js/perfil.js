@@ -96,13 +96,60 @@ async function loadProfile() {
 
     renderActions(data);
     renderDetails(data);
+    updateBioDisplay();
     loadPosts(data.username);
 
     if (data.is_me) {
         document.getElementById("btnCoverEdit").hidden = false;
         document.getElementById("btnAvatarEdit").hidden = false;
+        document.getElementById("tabBlocked").hidden = false;
     }
 }
+
+/* ── Bio ──────────────────────────────────────────────────── */
+
+function updateBioDisplay() {
+    const bioEl = document.getElementById("profileBio");
+    if (profile.bio) {
+        bioEl.textContent = profile.bio;
+        bioEl.hidden = false;
+        bioEl.classList.toggle("editable", !!profile.is_me);
+    } else {
+        bioEl.textContent = "";
+        bioEl.hidden = true;
+    }
+}
+
+document.getElementById("profileBio").addEventListener("click", () => {
+    if (!profile || !profile.is_me) return;
+    document.getElementById("bioOverlay").classList.add("open");
+});
+
+document.getElementById("bioClose").addEventListener("click", () => {
+    document.getElementById("bioOverlay").classList.remove("open");
+});
+
+document.getElementById("bioOverlay").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+});
+
+document.getElementById("bioEdit").addEventListener("click", () => {
+    document.getElementById("bioOverlay").classList.remove("open");
+    openEditModal();
+});
+
+document.getElementById("bioDelete").addEventListener("click", async () => {
+    document.getElementById("bioOverlay").classList.remove("open");
+    const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bio: "" }),
+    });
+    const data = await res.json();
+    if (data.error) return alert(data.error);
+    profile.bio = "";
+    updateBioDisplay();
+});
 
 /* ── Actions ──────────────────────────────────────────────── */
 
@@ -112,17 +159,41 @@ async function openUserList(type) {
     const title = document.getElementById("listTitle");
     const body = document.getElementById("listBody");
 
-    title.textContent = type === "followers" ? "Seguidores" : "Seguindo";
+    title.textContent = type === "followers" ? "Seguidores" : type === "following" ? "Seguindo" : "Bloqueados";
     body.innerHTML = '<div class="list-empty">Carregando...</div>';
     overlay.classList.add("open");
 
-    const endpoint = type === "followers"
-        ? "/api/profile/" + encodeURIComponent(profile.username) + "/followers"
-        : "/api/profile/" + encodeURIComponent(profile.username) + "/following-list";
+    const endpoints = {
+        followers: "/api/profile/" + encodeURIComponent(profile.username) + "/followers",
+        following: "/api/profile/" + encodeURIComponent(profile.username) + "/following-list",
+        blocked: "/api/auth/blocked",
+    };
 
-    const res = await fetch(endpoint).then(r => r.json()).catch(() => []);
-    if (!res.length) {
-        body.innerHTML = '<div class="list-empty">Nenhum ' + (type === "followers" ? "seguidor" : "seguindo") + ' encontrado</div>';
+    const res = await fetch(endpoints[type]).then(r => r.json()).catch(() => []);
+    if (!Array.isArray(res) || !res.length) {
+        body.innerHTML = '<div class="list-empty">' +
+            (type === "blocked" ? "Ninguém bloqueado" : "Nenhum " + (type === "followers" ? "seguidor" : "seguindo") + " encontrado") +
+            '</div>';
+        return;
+    }
+
+    if (type === "blocked") {
+        body.innerHTML = res.map(u =>
+            '<div class="list-user">' +
+                '<img class="list-user-avatar" src="' + avatarSrc(u.avatar) + '" alt="" onerror="this.src=\'' + AVATAR_DEFAULT + '\'">' +
+                '<span class="list-user-name">@' + esc(u.username) + '</span>' +
+                '<button class="list-unblock" data-username="' + esc(u.username) + '">Desbloquear</button>' +
+            '</div>'
+        ).join("");
+        body.querySelectorAll(".list-unblock").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                btn.disabled = true;
+                try {
+                    await fetch("/api/auth/block/" + encodeURIComponent(btn.dataset.username), { method: "POST" });
+                    openUserList("blocked");
+                } catch { btn.disabled = false; }
+            });
+        });
         return;
     }
 
@@ -141,9 +212,13 @@ function avatarSrc(avatar) {
 
 document.getElementById("listClose").addEventListener("click", () => {
     document.getElementById("listOverlay").classList.remove("open");
+    syncTabsActive();
 });
 document.getElementById("listOverlay").addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+    if (e.target === e.currentTarget) {
+        e.currentTarget.classList.remove("open");
+        syncTabsActive();
+    }
 });
 
 function renderActions(data) {
@@ -214,22 +289,17 @@ function renderDetails(data) {
     const list = document.getElementById("detailsList");
     let html = "";
 
-    if (data.price) {
-        html += '<div class="detail-item">' +
-            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
-            '<span class="detail-text">' + esc(data.price) + '</span></div>';
-    }
-
-    if (data.hours) {
-        html += '<div class="detail-item">' +
-            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>' +
-            '<span class="detail-text">' + esc(data.hours) + '</span></div>';
-    }
-
     if (data.location) {
         html += '<div class="detail-item">' +
             '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>' +
             '<span class="detail-text">' + esc(data.location) + '</span></div>';
+    }
+
+    if (data.birthday && /^\d{4}-\d{2}-\d{2}$/.test(data.birthday)) {
+        const [y, m, d] = data.birthday.split("-");
+        html += '<div class="detail-item">' +
+            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
+            '<span class="detail-text">' + esc(d + "/" + m + "/" + y) + '</span></div>';
     }
 
     list.innerHTML = html;
@@ -240,18 +310,39 @@ function renderDetails(data) {
 
 /* ── Tabs ─────────────────────────────────────────────────── */
 
+function syncTabsActive() {
+    document.querySelectorAll(".profile-tabs .tab").forEach(t => {
+        const isActive = t.dataset.tab === activeTab;
+        t.classList.toggle("active", isActive);
+        t.setAttribute("aria-selected", String(isActive));
+    });
+}
+
 document.getElementById("profileTabs").addEventListener("click", (e) => {
     const tab = e.target.closest(".tab");
-    if (!tab) return;
+    if (!tab || !tab.dataset.tab) return;
 
-    document.querySelectorAll(".tab").forEach(t => {
-        t.classList.remove("active");
-        t.setAttribute("aria-selected", "false");
-    });
-    tab.classList.add("active");
-    tab.setAttribute("aria-selected", "true");
+    if (tab.dataset.tab === "blocked") {
+        const overlay = document.getElementById("listOverlay");
+        if (overlay.classList.contains("open")) {
+            overlay.classList.remove("open");
+            syncTabsActive();
+        } else {
+            document.querySelectorAll(".profile-tabs .tab").forEach(t => {
+                if (t !== tab) {
+                    t.classList.remove("active");
+                    t.setAttribute("aria-selected", "false");
+                }
+            });
+            tab.classList.add("active");
+            tab.setAttribute("aria-selected", "true");
+            openUserList("blocked");
+        }
+        return;
+    }
 
     activeTab = tab.dataset.tab;
+    syncTabsActive();
     postsPage = 1;
     postsHasMore = true;
     document.getElementById("postsGrid").innerHTML = "";
@@ -351,9 +442,6 @@ function openEditModal() {
     if (!profile) return;
     document.getElementById("editUsername").value = profile.username;
     document.getElementById("editBio").value = profile.bio || "";
-    document.getElementById("editCategory").value = profile.category || "";
-    document.getElementById("editPrice").value = profile.price || "";
-    document.getElementById("editHours").value = profile.hours || "";
     document.getElementById("editLocation").value = profile.location || "";
     document.getElementById("editBirthday").value = profile.birthday || "";
     document.getElementById("editMarital").value = profile.marital_status || "";
@@ -416,9 +504,6 @@ document.getElementById("editSave").addEventListener("click", async () => {
     const body = {
         username,
         bio: document.getElementById("editBio").value.trim(),
-        category: document.getElementById("editCategory").value.trim(),
-        price: document.getElementById("editPrice").value.trim(),
-        hours: document.getElementById("editHours").value.trim(),
         location: document.getElementById("editLocation").value.trim(),
         birthday: document.getElementById("editBirthday").value,
         marital_status: document.getElementById("editMarital").value,
