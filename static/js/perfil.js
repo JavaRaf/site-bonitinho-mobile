@@ -47,7 +47,8 @@ function setCover(img, cover) {
 
 function formatDate(dateStr) {
     if (!dateStr) return "";
-    const d = new Date(dateStr);
+    const normalized = /Z$|[+-]\d{2}:?\d{2}$/.test(dateStr) ? dateStr : dateStr + "Z";
+    const d = new Date(normalized);
     const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
     return months[d.getMonth()] + " " + d.getFullYear();
 }
@@ -88,12 +89,15 @@ async function loadProfile() {
     setAvatar(document.getElementById("avatarImg"), data.avatar);
     setCover(document.getElementById("coverImg"), data.cover);
 
-    document.getElementById("profileName").textContent = data.username;
+    const nameEl = document.getElementById("profileName");
+    nameEl.textContent = data.username;
+    if (data.color) nameEl.style.color = data.color;
 
-    document.getElementById("profileStats").innerHTML =
-        "<span class='stat-link' data-list='followers'><strong>" + data.followers_count + "</strong> seguidores</span> · " +
-        "<span class='stat-link' data-list='following'><strong>" + data.following_count + "</strong> seguindo</span> · " +
-        "<strong>" + data.posts_count + "</strong> posts";
+    document.getElementById("topbarName").textContent = data.username;
+    document.getElementById("topbarCount").textContent = data.posts_count + " posts";
+    document.getElementById("profileHandle").textContent = "@" + data.username;
+
+    renderStats(data);
 
     document.querySelectorAll(".stat-link").forEach(el => {
         el.style.cursor = "pointer";
@@ -110,6 +114,14 @@ async function loadProfile() {
         document.getElementById("btnAvatarEdit").hidden = false;
         document.getElementById("tabBlocked").hidden = false;
     }
+}
+
+/* ── Stats ────────────────────────────────────────────────── */
+
+function renderStats(data) {
+    document.getElementById("profileStats").innerHTML =
+        "<span class='stat-link' data-list='following'><strong>" + data.following_count + "</strong> Seguindo</span>" +
+        "<span class='stat-link' data-list='followers'><strong>" + data.followers_count + "</strong> Seguidores</span>";
 }
 
 /* ── Bio ──────────────────────────────────────────────────── */
@@ -276,11 +288,7 @@ async function toggleFollow() {
 
     profile.is_following = data.following;
     profile.followers_count = data.followers_count;
-
-    document.getElementById("profileStats").innerHTML =
-        "<strong>" + data.followers_count + "</strong> seguidores · " +
-        "<strong>" + profile.following_count + "</strong> seguindo · " +
-        "<strong>" + profile.posts_count + "</strong> posts";
+    renderStats(profile);
 
     const btn = document.getElementById("btnFollow");
     btn.classList.toggle("following", data.following);
@@ -297,21 +305,33 @@ function renderDetails(data) {
 
     if (data.location) {
         html += '<div class="detail-item">' +
-            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>' +
+            '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>' +
             '<span class="detail-text">' + esc(data.location) + '</span></div>';
     }
 
     if (data.birthday && /^\d{4}-\d{2}-\d{2}$/.test(data.birthday)) {
         const [y, m, d] = data.birthday.split("-");
         html += '<div class="detail-item">' +
-            '<div class="detail-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
-            '<span class="detail-text">' + esc(d + "/" + m + "/" + y) + '</span></div>';
+            '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>' +
+            '<span class="detail-text">Nascido em ' + esc(d + "/" + m + "/" + y) + '</span></div>';
+    }
+
+    if (data.marital_status) {
+        html += '<div class="detail-item">' +
+            '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>' +
+            '<span class="detail-text">' + esc(data.marital_status) + '</span></div>';
+    }
+
+    if (data.created_at) {
+        const joined = formatDate(data.created_at);
+        if (joined) {
+            html += '<div class="detail-item">' +
+                '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>' +
+                '<span class="detail-text">Ingressou em ' + joined + '</span></div>';
+        }
     }
 
     list.innerHTML = html;
-    if (!html) {
-        document.getElementById("detailsSection").style.display = "none";
-    }
 }
 
 /* ── Tabs ─────────────────────────────────────────────────── */
@@ -381,25 +401,26 @@ async function loadPosts(username) {
 
         const isVideo = post.media_type === "video";
 
+        let media;
         if (isVideo) {
-            const vid = document.createElement("video");
-            vid.src = "/images/" + post.image_name;
-            vid.preload = "metadata";
-            vid.muted = true;
-            vid.playsInline = true;
-            vid.setAttribute("playsinline", "");
-            div.appendChild(vid);
+            media = document.createElement("video");
+            media.src = "/images/" + post.image_name;
+            media.preload = "metadata";
+            media.muted = true;
+            media.playsInline = true;
+            media.setAttribute("playsinline", "");
+            div.appendChild(media);
 
             const playIcon = document.createElement("div");
             playIcon.className = "post-play";
             playIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
             div.appendChild(playIcon);
         } else {
-            const img = document.createElement("img");
-            img.src = "/thumbs/" + post.image_name;
-            img.loading = "lazy";
-            img.alt = post.caption || "";
-            div.appendChild(img);
+            media = document.createElement("img");
+            media.src = "/thumbs/" + post.image_name;
+            media.loading = "lazy";
+            media.alt = post.caption || "";
+            div.appendChild(media);
         }
 
         if (post.nsfw) {
@@ -411,8 +432,7 @@ async function loadPosts(username) {
                 ov.className = "post-nsfw";
                 ov.textContent = "+18";
                 div.appendChild(ov);
-                if (!isVideo) div.querySelector("img").style.filter = "blur(12px)";
-                else div.querySelector("video").style.filter = "blur(12px)";
+                media.style.filter = "blur(12px)";
             }
         }
 
@@ -542,8 +562,22 @@ document.getElementById("coverFileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     e.target.value = "";
     if (!file) return;
+    if (file.type === "image/gif") return uploadCoverDirect(file);
     openCoverCrop(file);
 });
+
+async function uploadCoverDirect(file) {
+    const form = new FormData();
+    form.append("cover", file, file.name);
+    const res = await fetch("/api/auth/cover", { method: "POST", body: form });
+    const data = await res.json().catch(() => null);
+    if (data && data.cover) {
+        profile.cover = data.cover;
+        setCover(document.getElementById("coverImg"), data.cover);
+    } else {
+        alert((data && data.error) || "Erro ao enviar capa");
+    }
+}
 
 /* ── Cover Crop ───────────────────────────────────────────── */
 
@@ -553,6 +587,23 @@ const coverCropArea = document.getElementById("coverCropArea");
 const coverCropCtx = coverCropCanvas.getContext("2d");
 let ccImg = null, ccScale = 1, ccImgX = 0, ccImgY = 0, ccDrag = null;
 let ccPinchDist = 0, ccPinchScale = 1;
+
+function cropMinScale(img, w, h) {
+    return Math.max(w / img.naturalWidth, h / img.naturalHeight);
+}
+function cropMaxScale(img, w, h) {
+    return cropMinScale(img, w, h) * 10;
+}
+function clampedOffset(x, y, scale, img, w, h) {
+    const dw = img.naturalWidth * scale;
+    const dh = img.naturalHeight * scale;
+    const minX = Math.min(0, w - dw);
+    const minY = Math.min(0, h - dh);
+    return {
+        x: Math.min(0, Math.max(minX, x)),
+        y: Math.min(0, Math.max(minY, y)),
+    };
+}
 
 function openCoverCrop(file) {
     const url = URL.createObjectURL(file);
@@ -569,7 +620,7 @@ function resetCoverCrop() {
     const w = coverCropArea.clientWidth;
     const h = coverCropArea.clientHeight;
     if (!w || !h) return;
-    ccScale = Math.max(w / ccImg.naturalWidth, h / ccImg.naturalHeight);
+    ccScale = cropMinScale(ccImg, w, h);
     ccImgX = (w - ccImg.naturalWidth * ccScale) / 2;
     ccImgY = (h - ccImg.naturalHeight * ccScale) / 2;
     drawCoverCrop();
@@ -610,7 +661,10 @@ coverCropArea.addEventListener("pointermove", (e) => {
     if (active && active.size === 2) {
         const pts = [...active.values()];
         const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-        const newScale = Math.min(Math.max(ccPinchScale * (dist / ccPinchDist), 0.3), 5);
+        if (!dist || !ccPinchDist) return;
+        const w = coverCropArea.clientWidth;
+        const h = coverCropArea.clientHeight;
+        const newScale = Math.min(Math.max(ccPinchScale * (dist / ccPinchDist), cropMinScale(ccImg, w, h)), cropMaxScale(ccImg, w, h));
         const cx = (pts[0].x + pts[1].x) / 2;
         const cy = (pts[0].y + pts[1].y) / 2;
         const rect = coverCropArea.getBoundingClientRect();
@@ -619,12 +673,16 @@ coverCropArea.addEventListener("pointermove", (e) => {
         ccImgX = mx - (mx - ccImgX) * (newScale / ccScale);
         ccImgY = my - (my - ccImgY) * (newScale / ccScale);
         ccScale = newScale;
+        ({ x: ccImgX, y: ccImgY } = clampedOffset(ccImgX, ccImgY, ccScale, ccImg, w, h));
         drawCoverCrop();
         return;
     }
     if (ccDrag) {
+        const w = coverCropArea.clientWidth;
+        const h = coverCropArea.clientHeight;
         ccImgX = ccDrag.sx + (e.clientX - ccDrag.x);
         ccImgY = ccDrag.sy + (e.clientY - ccDrag.y);
+        ({ x: ccImgX, y: ccImgY } = clampedOffset(ccImgX, ccImgY, ccScale, ccImg, w, h));
         drawCoverCrop();
     }
 });
@@ -640,14 +698,17 @@ coverCropArea.addEventListener("pointercancel", (e) => {
 });
 coverCropArea.addEventListener("wheel", (e) => {
     e.preventDefault();
+    const w = coverCropArea.clientWidth;
+    const h = coverCropArea.clientHeight;
     const rect = coverCropArea.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.min(Math.max(ccScale * factor, 0.3), 5);
+    const newScale = Math.min(Math.max(ccScale * factor, cropMinScale(ccImg, w, h)), cropMaxScale(ccImg, w, h));
     ccImgX = mx - (mx - ccImgX) * (newScale / ccScale);
     ccImgY = my - (my - ccImgY) * (newScale / ccScale);
     ccScale = newScale;
+    ({ x: ccImgX, y: ccImgY } = clampedOffset(ccImgX, ccImgY, ccScale, ccImg, w, h));
     drawCoverCrop();
 }, { passive: false });
 
@@ -697,8 +758,22 @@ document.getElementById("avatarFileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     e.target.value = "";
     if (!file) return;
+    if (file.type === "image/gif") return uploadAvatarDirect(file);
     openAvatarCrop(file);
 });
+
+async function uploadAvatarDirect(file) {
+    const form = new FormData();
+    form.append("avatar", file, file.name);
+    const res = await fetch("/api/auth/avatar", { method: "POST", body: form });
+    const data = await res.json().catch(() => null);
+    if (data && data.avatar) {
+        profile.avatar = data.avatar;
+        setAvatar(document.getElementById("avatarImg"), data.avatar);
+    } else {
+        alert((data && data.error) || "Erro ao enviar avatar");
+    }
+}
 
 /* ── Avatar Crop ──────────────────────────────────────────── */
 
@@ -723,7 +798,7 @@ function openAvatarCrop(file) {
 function resetAvatarCrop() {
     const s = cropArea.clientWidth;
     if (!s) return;
-    acScale = Math.max(s / acImg.naturalWidth, s / acImg.naturalHeight);
+    acScale = cropMinScale(acImg, s, s);
     acImgX = (s - acImg.naturalWidth * acScale) / 2;
     acImgY = (s - acImg.naturalHeight * acScale) / 2;
     drawAvatarCrop();
@@ -766,7 +841,9 @@ cropArea.addEventListener("pointermove", (e) => {
     if (active && active.size === 2) {
         const pts = [...active.values()];
         const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-        const newScale = Math.min(Math.max(acPinchScale * (dist / acPinchDist), 0.3), 5);
+        if (!dist || !acPinchDist) return;
+        const s = cropArea.clientWidth;
+        const newScale = Math.min(Math.max(acPinchScale * (dist / acPinchDist), cropMinScale(acImg, s, s)), cropMaxScale(acImg, s, s));
         const cx = (pts[0].x + pts[1].x) / 2;
         const cy = (pts[0].y + pts[1].y) / 2;
         const rect = cropArea.getBoundingClientRect();
@@ -775,12 +852,15 @@ cropArea.addEventListener("pointermove", (e) => {
         acImgX = mx - (mx - acImgX) * (newScale / acScale);
         acImgY = my - (my - acImgY) * (newScale / acScale);
         acScale = newScale;
+        ({ x: acImgX, y: acImgY } = clampedOffset(acImgX, acImgY, acScale, acImg, s, s));
         drawAvatarCrop();
         return;
     }
     if (acDrag) {
+        const s = cropArea.clientWidth;
         acImgX = acDrag.sx + (e.clientX - acDrag.x);
         acImgY = acDrag.sy + (e.clientY - acDrag.y);
+        ({ x: acImgX, y: acImgY } = clampedOffset(acImgX, acImgY, acScale, acImg, s, s));
         drawAvatarCrop();
     }
 });
@@ -796,14 +876,16 @@ cropArea.addEventListener("pointercancel", (e) => {
 });
 cropArea.addEventListener("wheel", (e) => {
     e.preventDefault();
+    const s = cropArea.clientWidth;
     const rect = cropArea.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.min(Math.max(acScale * factor, 0.3), 5);
+    const newScale = Math.min(Math.max(acScale * factor, cropMinScale(acImg, s, s)), cropMaxScale(acImg, s, s));
     acImgX = mx - (mx - acImgX) * (newScale / acScale);
     acImgY = my - (my - acImgY) * (newScale / acScale);
     acScale = newScale;
+    ({ x: acImgX, y: acImgY } = clampedOffset(acImgX, acImgY, acScale, acImg, s, s));
     drawAvatarCrop();
 }, { passive: false });
 

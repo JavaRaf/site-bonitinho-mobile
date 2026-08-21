@@ -14,61 +14,66 @@
 
   <main class="profile-page" id="profilePage">
 
+    <!-- Top Bar -->
+    <nav class="topbar" aria-label="Barra do perfil">
+      <button class="topbar-btn" id="btnBack" aria-label="Voltar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <div class="topbar-identity">
+        <h2 class="topbar-name" id="topbarName"></h2>
+        <p class="topbar-count" id="topbarCount"></p>
+      </div>
+    </nav>
+
     <!-- Cover -->
     <section class="cover" id="coverSection">
       <img class="cover-img" id="coverImg" src="" alt="Capa">
       <div class="cover-fallback" id="coverFallback"></div>
-
-      <nav class="cover-controls" aria-label="Controles da capa">
-        <button class="cover-btn" id="btnBack" aria-label="Voltar">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-        </button>
-        <button class="cover-btn cover-edit" id="btnCoverEdit" hidden aria-label="Editar capa">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        </button>
-      </nav>
-
+      <button class="cover-btn" id="btnCoverEdit" hidden aria-label="Editar capa">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </button>
       <input type="file" id="coverFileInput" accept="image/*" hidden>
     </section>
 
-    <!-- Profile Card -->
-    <section class="profile-card" id="profileCard">
+    <!-- Profile Header -->
+    <section class="profile-header" id="profileCard">
 
-      <div class="profile-header-row">
+      <div class="header-top">
         <div class="avatar-area">
           <div class="avatar" id="avatarEl">
             <img id="avatarImg" src="/static/svg/default-avatar.svg" alt="Avatar">
           </div>
-        <button class="avatar-edit" id="btnAvatarEdit" hidden aria-label="Editar avatar">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        </button>
+          <button class="avatar-edit" id="btnAvatarEdit" hidden aria-label="Editar avatar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
           <input type="file" id="avatarFileInput" accept="image/*" hidden>
         </div>
 
-        <div class="identity">
-          <h1 class="profile-name" id="profileName"></h1>
-          <p class="profile-stats" id="profileStats"></p>
+        <div class="header-actions">
+          <div class="action-buttons" id="actionButtons"></div>
+          <button class="edit-pill" id="btnEdit" hidden>Editar perfil</button>
         </div>
+      </div>
+
+      <div class="identity">
+        <h1 class="profile-name" id="profileName"></h1>
+        <p class="profile-handle" id="profileHandle"></p>
       </div>
 
       <p class="profile-bio" id="profileBio" hidden></p>
 
-      <div class="action-buttons" id="actionButtons"></div>
-
-      <nav class="profile-tabs" id="profileTabs" role="tablist">
-        <button class="tab active" role="tab" data-tab="all" aria-selected="true">Tudo</button>
-        <button class="tab" role="tab" data-tab="photos" aria-selected="false">Fotos</button>
-        <button class="tab" id="tabBlocked" role="tab" data-tab="blocked" aria-selected="false" hidden>Bloqueados</button>
-        <button class="tab tab-edit" id="btnEdit" hidden role="tab">Editar</button>
-      </nav>
-
-    </section>
-
-    <!-- Details Section -->
-    <section class="details-section" id="detailsSection">
-      <h2 class="details-title">Detalhes</h2>
       <div class="details-list" id="detailsList"></div>
+
+      <p class="profile-stats" id="profileStats"></p>
+
     </section>
+
+    <!-- Tabs -->
+    <nav class="profile-tabs" id="profileTabs" role="tablist" aria-label="Abas do perfil">
+      <button class="tab active" role="tab" data-tab="all" aria-selected="true">Posts</button>
+      <button class="tab" role="tab" data-tab="photos" aria-selected="false">Fotos</button>
+      <button class="tab" id="tabBlocked" role="tab" data-tab="blocked" aria-selected="false" hidden>Bloqueados</button>
+    </nav>
 
     <!-- Posts Grid -->
     <section class="posts-section" id="postsSection">
