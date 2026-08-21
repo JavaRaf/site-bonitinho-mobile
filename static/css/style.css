@@ -1027,6 +1027,7 @@ header.hidden {
 
 .feed-create-icon.active {
   background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .feed-create-send {
