@@ -1,4 +1,4 @@
-document.getElementById("download-btn").addEventListener("click", () => {
+document.getElementById("download-btn")?.addEventListener("click", () => {
     const slides = document.querySelectorAll(".carousel-slide");
     const dots = document.querySelectorAll(".carousel-dot");
     let idx = 0;
