@@ -81,7 +81,9 @@ function openPostFromUrl() {
     const card = document.querySelector(`.feed-card[data-name="${CSS.escape(target.name)}"]`);
     if (!card) return;
 
+    let active = true;
     const jumpToCard = () => {
+        if (!active) return;
         const rect = card.getBoundingClientRect();
         const y = rect.top + window.scrollY - (window.innerHeight - rect.height) / 2;
         window.scrollTo(0, Math.max(0, y));
@@ -89,14 +91,26 @@ function openPostFromUrl() {
 
     requestAnimationFrame(() => {
         jumpToCard();
-        setTimeout(jumpToCard, 500);
-        if (document.readyState !== "complete") {
-            window.addEventListener("load", () => setTimeout(jumpToCard, 100), { once: true });
-        }
         card.style.boxShadow = "0 0 0 2px #378ee9";
         setTimeout(() => { card.style.boxShadow = ""; }, 2000);
+
+        const cards = Array.from(document.querySelectorAll(".feed-card"));
+        const idx = cards.indexOf(card);
+        const medias = [];
+        cards.slice(0, idx).forEach(c =>
+            c.querySelectorAll("img, video").forEach(m => medias.push(m))
+        );
+        medias.forEach(m => {
+            m.addEventListener("load", jumpToCard, { once: true });
+            m.addEventListener("loadeddata", jumpToCard, { once: true });
+            m.addEventListener("error", jumpToCard, { once: true });
+        });
+        window.addEventListener("load", jumpToCard, { once: true });
+
+        setTimeout(() => { active = false; }, 8000);
     });
 }
+
 
 function escText(str) {
     const div = document.createElement("div");

@@ -14,7 +14,7 @@ class Config:
 
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
-    SEND_FILE_MAX_AGE_DEFAULT = 3600
+    SEND_FILE_MAX_AGE_DEFAULT = 300
 
     BASE_DIR = BASE_DIR
     DB_PATH = BASE_DIR / "db" / "app.db"
