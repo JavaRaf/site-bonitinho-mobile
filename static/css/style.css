@@ -1637,6 +1637,16 @@ header.hidden {
   display: flex;
 }
 
+.feed-likers .liker-tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 0.125rem 0.45rem;
+  white-space: nowrap;
+}
+
 .feed-comments {
   border-top: 1px solid var(--border);
   padding: 0.5rem 0.75rem 0.75rem;
