@@ -118,7 +118,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-top: calc(var(--avatar-size) / -2);
-  margin-bottom: clamp(44px, 10vw, 74px);
+  margin-bottom: 1rem;
 }
 
 .avatar-area {
