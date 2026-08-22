@@ -1,5 +1,6 @@
 from pathlib import Path
 from flask import Flask, jsonify, redirect, render_template, session, send_from_directory
+from apscheduler.schedulers.background import BackgroundScheduler
 from config import Config
 
 
@@ -82,7 +83,19 @@ def register_service_worker(app):
         )
 
 
+def start_scheduler():
+    from cron_jobs.renew_pythonanywhere import should_renew, renew
+    def job():
+        if should_renew():
+            renew()
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(job, "interval", days=1)
+    scheduler.start()
+    job()
+
+
 app = create_app()
+start_scheduler()
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

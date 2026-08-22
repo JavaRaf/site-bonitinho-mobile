@@ -9,3 +9,4 @@ __pycache__
 .env
 firebase-service-account.json
 fixs.txt
+cron_jobs/renew_log.json
