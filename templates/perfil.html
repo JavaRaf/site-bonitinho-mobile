@@ -194,6 +194,43 @@
 
   </main>
 
+  <div class="lightbox-overlay" id="lightboxOverlay">
+    <div class="lightbox-header">
+      <div class="lightbox-info">
+        <img class="lightbox-avatar" id="lightboxAvatar" src="/static/svg/default-avatar.svg" alt="">
+        <span class="lightbox-owner" id="lightboxOwner"></span>
+        <span class="lightbox-likes" id="lightboxLikes"></span>
+      </div>
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="lightbox-body" id="lightboxBody">
+      <button class="lightbox-nav lightbox-prev" id="lightboxPrev" type="button" aria-label="Anterior">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="lightbox-img-wrap" id="lightboxImgWrap">
+        <img class="lightbox-img" id="lightboxImg" src="" alt="">
+      </div>
+      <button class="lightbox-nav lightbox-next" id="lightboxNext" type="button" aria-label="Próximo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-card">
+      <p id="confirmMsg"></p>
+      <div class="confirm-actions">
+        <button id="confirmNo" class="admin-btn">Nao</button>
+        <button id="confirmYes" class="admin-btn danger">Sim</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/carousel.js"></script>
+  <script src="/static/js/comments.js"></script>
+  <script src="/static/js/video-player.js"></script>
+  <script src="/static/js/lightbox.js"></script>
   <script src="/static/js/perfil.js"></script>
 </body>
 

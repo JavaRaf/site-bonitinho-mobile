@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify, session, send_from_directory
 from PIL import Image, ImageOps
 from config import Config
 from db import db
-from db.models import User, Upload, Follow, Block
+from db.models import User, Upload, Follow, Block, Like, Comment
 from utils.security import login_required
 
 profile_bp = Blueprint("profile", __name__)
@@ -72,33 +72,70 @@ def get_profile_posts(username):
 
     viewer_id = session.get("user_id")
     if _is_blocked(viewer_id, user.id):
-        return jsonify([])
+        return jsonify({"posts": [], "total": 0, "page": 1, "has_more": False})
 
     page = request.args.get("page", 1, type=int)
     per_page = 12
 
-    query = Upload.query.filter_by(user_id=user.id, active=1).order_by(Upload.created_at.desc())
+    like_count = (
+        db.session.query(db.func.count(Like.id))
+        .filter(Like.image_name == Upload.image_name)
+        .correlate(Upload)
+        .scalar_subquery()
+    )
+    comment_count = (
+        db.session.query(db.func.count(Comment.id))
+        .filter(Comment.image_name == Upload.image_name)
+        .correlate(Upload)
+        .scalar_subquery()
+    )
+
+    query = (
+        db.session.query(
+            Upload,
+            like_count.label("likes"),
+            comment_count.label("comments"),
+        )
+        .filter(Upload.user_id == user.id, Upload.active == 1)
+        .order_by(db.desc(Upload.created_at))
+    )
     total = query.count()
-    posts = query.offset((page - 1) * per_page).limit(per_page).all()
+    rows = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    result = []
+    post_index = {}
+    for upload, likes, comments in rows:
+        pid = upload.post_id or upload.image_name
+        media = {
+            "name": upload.image_name,
+            "media_type": upload.media_type,
+        }
+        entry = {
+            "post_id": upload.image_name if upload.eleicao else pid,
+            "name": upload.image_name,
+            "owner": user.username,
+            "owner_id": user.id,
+            "likes": likes,
+            "comments": comments,
+            "created_at": upload.created_at,
+            "owner_avatar": user.avatar or "default-avatar.svg",
+            "caption": upload.caption or "",
+            "post_type": upload.post_type or "image",
+            "nsfw": bool(upload.nsfw),
+            "eleicao": bool(upload.eleicao),
+            "media": [media],
+        }
+        if pid in post_index:
+            grouped = result[post_index[pid]]
+            grouped["media"].append(media)
+            grouped["likes"] += likes
+            grouped["comments"] += comments
+        else:
+            post_index[pid] = len(result)
+            result.append(entry)
 
     return jsonify({
-        "posts": [
-            {
-                "id": p.id,
-                "image_name": p.image_name,
-                "caption": p.caption or "",
-                "media_type": p.media_type or "image",
-                "post_type": p.post_type or "image",
-                "nsfw": p.nsfw,
-                "created_at": p.created_at,
-                "owner": {
-                    "username": user.username,
-                    "avatar": user.avatar,
-                    "color": user.color or "",
-                },
-            }
-            for p in posts
-        ],
+        "posts": result,
         "total": total,
         "page": page,
         "has_more": page * per_page < total,

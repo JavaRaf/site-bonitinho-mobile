@@ -372,11 +372,21 @@ document.getElementById("profileTabs").addEventListener("click", (e) => {
     postsPage = 1;
     postsHasMore = true;
     document.getElementById("postsGrid").innerHTML = "";
+    if (typeof allImages !== "undefined") allImages.length = 0;
     document.getElementById("postsEnd").hidden = true;
     if (profile) loadPosts(profile.username);
 });
 
 /* ── Posts ────────────────────────────────────────────────── */
+
+let feedStateReady = false;
+
+async function ensureFeedState() {
+    if (feedStateReady) return;
+    if (typeof initFeedState !== "function" || typeof feedCardHTML !== "function") return;
+    await initFeedState();
+    feedStateReady = true;
+}
 
 async function loadPosts(username) {
     if (postsLoading || !postsHasMore) return;
@@ -385,63 +395,24 @@ async function loadPosts(username) {
 
     const data = await fetch("/api/profile/" + encodeURIComponent(username) + "/posts?page=" + postsPage)
         .then(r => r.json()).catch(() => null);
+
+    await ensureFeedState();
+
     postsLoading = false;
     document.getElementById("postsLoading").hidden = true;
     if (!data || !data.posts) return;
 
     const grid = document.getElementById("postsGrid");
+    const cards = [];
     for (const post of data.posts) {
-        if (activeTab === "photos" && post.media_type !== "image") continue;
-
-        const div = document.createElement("div");
-        div.className = "post-item";
-        div.tabIndex = 0;
-        div.setAttribute("role", "link");
-        div.setAttribute("aria-label", post.caption || "Post");
-
-        const isVideo = post.media_type === "video";
-
-        let media;
-        if (isVideo) {
-            media = document.createElement("video");
-            media.src = "/images/" + post.image_name;
-            media.preload = "metadata";
-            media.muted = true;
-            media.playsInline = true;
-            media.setAttribute("playsinline", "");
-            div.appendChild(media);
-
-            const playIcon = document.createElement("div");
-            playIcon.className = "post-play";
-            playIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-            div.appendChild(playIcon);
-        } else {
-            media = document.createElement("img");
-            media.src = "/thumbs/" + post.image_name;
-            media.loading = "lazy";
-            media.alt = post.caption || "";
-            div.appendChild(media);
-        }
-
-        if (post.nsfw) {
-            const filter = localStorage.getItem("nsfwFilter") || "blur";
-            if (filter === "hide") {
-                div.style.display = "none";
-            } else if (filter === "blur") {
-                const ov = document.createElement("div");
-                ov.className = "post-nsfw";
-                ov.textContent = "+18";
-                div.appendChild(ov);
-                media.style.filter = "blur(12px)";
-            }
-        }
-
-        const open = () => { location.href = "/?img=" + encodeURIComponent(post.image_name); };
-        div.addEventListener("click", open);
-        div.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
-
-        grid.appendChild(div);
+        if (activeTab === "photos" && post.post_type !== "image") continue;
+        if (nsfwFilter === "hide" && post.nsfw) continue;
+        allImages.push(post);
+        cards.push(post);
     }
+
+    grid.insertAdjacentHTML("beforeend", cards.map(feedCardHTML).join(""));
+    initFeedMedia(grid);
 
     postsHasMore = data.has_more;
     postsPage++;
@@ -455,6 +426,11 @@ const postsObserver = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && profile) loadPosts(profile.username);
 }, { rootMargin: "300px" });
 postsObserver.observe(document.getElementById("postsLoading"));
+
+const postsGridEl = document.getElementById("postsGrid");
+if (postsGridEl && typeof bindFeedEvents === "function") {
+    bindFeedEvents(postsGridEl);
+}
 
 /* ── Back ─────────────────────────────────────────────────── */
 

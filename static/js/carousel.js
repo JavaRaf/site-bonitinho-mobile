@@ -46,17 +46,27 @@ async function loadSingleVoteFlag() {
     } catch { /* ignore */ }
 }
 
+async function initFeedState() {
+    await fetchMyUserId();
+    await loadLikes();
+    await loadSingleVoteFlag();
+}
+
+async function fetchMyUserId() {
+    try {
+        const me = await fetch("/api/auth/me");
+        const meData = await me.json();
+        if (meData.user) myUserId = meData.user.id;
+    } catch { /* not logged in */ }
+}
+
 async function loadCarousel() {
     const res = await fetch("/api/images");
     const images = await res.json();
     allImages = images;
     updateLastTimestamp();
 
-    try {
-        const me = await fetch("/api/auth/me");
-        const meData = await me.json();
-        if (meData.user) myUserId = meData.user.id;
-    } catch { /* not logged in */ }
+    await fetchMyUserId();
 
     await fetchFollowingIds();
 
@@ -68,49 +78,7 @@ async function loadCarousel() {
     await loadSingleVoteFlag();
     renderFeed();
     syncSortSelects();
-    openPostFromUrl();
 }
-
-function openPostFromUrl() {
-    const name = new URLSearchParams(location.search).get("img");
-    if (!name) return;
-    const target = allImages.find(p =>
-        p.name === name || (p.media || []).some(m => m.name === name)
-    );
-    if (!target) return;
-    const card = document.querySelector(`.feed-card[data-name="${CSS.escape(target.name)}"]`);
-    if (!card) return;
-
-    let active = true;
-    const jumpToCard = () => {
-        if (!active) return;
-        const rect = card.getBoundingClientRect();
-        const y = rect.top + window.scrollY - (window.innerHeight - rect.height) / 2;
-        window.scrollTo(0, Math.max(0, y));
-    };
-
-    requestAnimationFrame(() => {
-        jumpToCard();
-        card.style.boxShadow = "0 0 0 2px #378ee9";
-        setTimeout(() => { card.style.boxShadow = ""; }, 2000);
-
-        const cards = Array.from(document.querySelectorAll(".feed-card"));
-        const idx = cards.indexOf(card);
-        const medias = [];
-        cards.slice(0, idx).forEach(c =>
-            c.querySelectorAll("img, video").forEach(m => medias.push(m))
-        );
-        medias.forEach(m => {
-            m.addEventListener("load", jumpToCard, { once: true });
-            m.addEventListener("loadeddata", jumpToCard, { once: true });
-            m.addEventListener("error", jumpToCard, { once: true });
-        });
-        window.addEventListener("load", jumpToCard, { once: true });
-
-        setTimeout(() => { active = false; }, 8000);
-    });
-}
-
 
 function escText(str) {
     const div = document.createElement("div");
@@ -317,73 +285,78 @@ function initFeedCarousel(el) {
 function renderFeed() {
     const feed = document.getElementById("feedView");
     if (!feed) return;
-    feed.innerHTML = sortedImages().map((img) => {
-        const liked = likedImages.has(img.name);
-        const likes = img.likes || 0;
-        const comments = img.comments || 0;
-        const isText = img.post_type === "text";
-        const isVideo = img.post_type === "video";
-        const isMulti = img.media && img.media.length > 1;
-        const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
+    feed.innerHTML = sortedImages().map(feedCardHTML).join("");
+    initFeedMedia(feed);
+}
 
-        let mediaSection = "";
-        if (!isText) {
-            if (isMulti) {
-                const slides = img.media.map((m, i) => {
-                    if (m.media_type === "video") {
-                        return `<div class="feed-carousel-slide">${createVideoPlayerHTML("/images/" + escText(m.name))}</div>`;
-                    }
-                    const loadLazy = i > 0 ? ' loading="lazy"' : '';
-                    return `<div class="feed-carousel-slide"><img src="/images/${escText(m.name)}" alt=""${loadLazy} decoding="async" class="${nsfwClass.trim()}"></div>`;
-                }).join("");
-                const dots = img.media.map((_, i) => `<span class="feed-carousel-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`).join("");
-                mediaSection = `<div class="feed-carousel" data-post="${escText(img.post_id)}">${slides}<div class="feed-carousel-dots">${dots}</div></div>`;
-            } else if (isVideo) {
-                mediaSection = `<div class="feed-img">${createVideoPlayerHTML("/images/" + escText(img.name))}</div>`;
-            } else {
-                mediaSection = `<div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>`;
-            }
+function feedCardHTML(img) {
+    const liked = likedImages.has(img.name);
+    const likes = img.likes || 0;
+    const comments = img.comments || 0;
+    const isText = img.post_type === "text";
+    const isVideo = img.post_type === "video";
+    const isMulti = img.media && img.media.length > 1;
+    const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
+
+    let mediaSection = "";
+    if (!isText) {
+        if (isMulti) {
+            const slides = img.media.map((m, i) => {
+                if (m.media_type === "video") {
+                    return `<div class="feed-carousel-slide">${createVideoPlayerHTML("/images/" + escText(m.name))}</div>`;
+                }
+                const loadLazy = i > 0 ? ' loading="lazy"' : '';
+                return `<div class="feed-carousel-slide"><img src="/images/${escText(m.name)}" alt=""${loadLazy} decoding="async" class="${nsfwClass.trim()}"></div>`;
+            }).join("");
+            const dots = img.media.map((_, i) => `<span class="feed-carousel-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`).join("");
+            mediaSection = `<div class="feed-carousel" data-post="${escText(img.post_id)}">${slides}<div class="feed-carousel-dots">${dots}</div></div>`;
+        } else if (isVideo) {
+            mediaSection = `<div class="feed-img">${createVideoPlayerHTML("/images/" + escText(img.name))}</div>`;
+        } else {
+            mediaSection = `<div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>`;
         }
+    }
 
-        const downloadBtn = isText ? "" : `<button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar"><img src="/static/svg/download.svg" alt="download"></button>`;
-        return `
-        <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
-            <div class="feed-owner">
-                <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
-                <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
-                <div class="feed-owner-flags">
-                    ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
-                    ${img.eleicao ? '<span class="feed-eleicao-badge">Eleição</span>' : ''}
-                    ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
-                </div>
+    const downloadBtn = isText ? "" : `<button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar"><img src="/static/svg/download.svg" alt="download"></button>`;
+    return `
+    <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
+        <div class="feed-owner">
+            <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
+            <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
+            <div class="feed-owner-flags">
+                ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
+                ${img.eleicao ? '<span class="feed-eleicao-badge">Eleição</span>' : ''}
+                ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
-            <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
-            ${mediaSection}
-            <div class="feed-actions">
-                <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
-                    <img src="${liked ? "/static/svg/upvote-filled.svg" : "/static/svg/upvote.svg"}" alt="like">
-                </button>
-                <span class="feed-likes" data-name="${escText(img.name)}" role="button">${likes > 0 ? likes : ""}</span>
-                <button class="feed-comment-toggle" data-name="${escText(img.name)}" type="button">
-                    <img src="/static/svg/comments.svg" alt="comment">
-                </button>
-                <span class="feed-comment-count">${comments > 0 ? comments : ""}</span>
-                ${downloadBtn}
-            </div>
-            <div class="feed-likers"></div>
-            <div class="feed-comments" hidden>
-                <div class="feed-comments-list"></div>
-                <div class="feed-reply-indicator"><span class="feed-reply-text"></span><button type="button" class="feed-reply-cancel">&times;</button></div>
-                <form class="comment-form feed-comment-form">
-                    <textarea class="comment-textarea" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
-                    <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-                </form>
-            </div>
-        </article>`;
-    }).join("");
+        </div>
+        <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
+        ${mediaSection}
+        <div class="feed-actions">
+            <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
+                <img src="${liked ? "/static/svg/upvote-filled.svg" : "/static/svg/upvote.svg"}" alt="like">
+            </button>
+            <span class="feed-likes" data-name="${escText(img.name)}" role="button">${likes > 0 ? likes : ""}</span>
+            <button class="feed-comment-toggle" data-name="${escText(img.name)}" type="button">
+                <img src="/static/svg/comments.svg" alt="comment">
+            </button>
+            <span class="feed-comment-count">${comments > 0 ? comments : ""}</span>
+            ${downloadBtn}
+        </div>
+        <div class="feed-likers"></div>
+        <div class="feed-comments" hidden>
+            <div class="feed-comments-list"></div>
+            <div class="feed-reply-indicator"><span class="feed-reply-text"></span><button type="button" class="feed-reply-cancel">&times;</button></div>
+            <form class="comment-form feed-comment-form">
+                <textarea class="comment-textarea" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
+                <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+            </form>
+        </div>
+    </article>`;
+}
 
-    feed.querySelectorAll(".feed-carousel").forEach(initFeedCarousel);
-    feed.querySelectorAll(".video-player").forEach(initVideoPlayer);
+function initFeedMedia(root) {
+    root.querySelectorAll(".feed-carousel").forEach(initFeedCarousel);
+    root.querySelectorAll(".video-player").forEach(initVideoPlayer);
 }
 
 async function toggleFeedLike(btn) {
@@ -603,7 +576,7 @@ function toggleFeedComments(btn) {
     }
 }
 
-document.getElementById("feedView")?.addEventListener("click", e => {
+function onFeedClick(e) {
     if (e.target.closest(".video-player")) return;
 
     const ownerEl = e.target.closest("[data-owner]");
@@ -691,6 +664,7 @@ document.getElementById("feedView")?.addEventListener("click", e => {
                 .then(data => {
                     if (data.ok) {
                         allImages = allImages.filter(x => x.name !== name);
+                        postDeleteBtn.closest(".feed-card")?.remove();
                         renderFeed();
                         renderGrid();
                     }
@@ -707,7 +681,7 @@ document.getElementById("feedView")?.addEventListener("click", e => {
     if (commentBtn) { toggleFeedComments(commentBtn); return; }
     const dlBtn = e.target.closest(".feed-download");
     if (dlBtn) { downloadFeedImage(dlBtn.dataset.name); return; }
-});
+}
 
 function downloadFeedImage(name) {
     if (!name) return;
@@ -721,7 +695,7 @@ function downloadFeedImage(name) {
 
 let feedReplyParentId = null;
 
-document.getElementById("feedView")?.addEventListener("submit", async e => {
+async function onFeedSubmit(e) {
     if (!e.target.matches(".feed-comment-form")) return;
     e.preventDefault();
     if (typeof mentionDropdown !== "undefined" && mentionDropdown && typeof mentionUsers !== "undefined" && mentionUsers.length) return;
@@ -756,18 +730,18 @@ document.getElementById("feedView")?.addEventListener("submit", async e => {
         }
     } catch { /* ignore */ }
     if (typeof hideMentionDropdown === "function") hideMentionDropdown();
-});
+}
 
-document.getElementById("feedView")?.addEventListener("input", e => {
+function onFeedInput(e) {
     if (e.target.matches(".feed-comment-form textarea") && typeof handleMentionInput === "function") {
         handleMentionInput(e);
     }
     if (e.target.matches(".feed-comment-form textarea")) {
         autoResizeFeed(e.target);
     }
-});
+}
 
-document.getElementById("feedView")?.addEventListener("keydown", e => {
+function onFeedKeydown(e) {
     if (e.target.matches(".feed-comment-form textarea") && typeof handleMentionKeydown === "function") {
         const wasOpen = typeof mentionDropdown !== "undefined" && mentionDropdown !== null;
         handleMentionKeydown(e);
@@ -778,14 +752,24 @@ document.getElementById("feedView")?.addEventListener("keydown", e => {
         e.preventDefault();
         e.target.closest("form").requestSubmit();
     }
-});
+}
+
+function bindFeedEvents(root) {
+    root.addEventListener("click", onFeedClick);
+    root.addEventListener("submit", onFeedSubmit);
+    root.addEventListener("input", onFeedInput);
+    root.addEventListener("keydown", onFeedKeydown);
+}
+
+const feedRootEl = document.getElementById("feedView");
+if (feedRootEl) bindFeedEvents(feedRootEl);
 
 function autoResizeFeed(el) {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 120) + "px";
 }
 
-loadCarousel();
+if (document.getElementById("feedView")) loadCarousel();
 
 /* === Real-time new posts polling === */
 let lastPostTimestamp = "";
