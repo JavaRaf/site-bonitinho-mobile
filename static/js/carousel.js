@@ -778,7 +778,8 @@ if (document.getElementById("feedView")) loadCarousel();
     if (!navUp || !navDown) return;
 
     function getCards() {
-        return Array.from(document.querySelectorAll("#feedView .feed-card"));
+        const container = document.getElementById("feedView") || document.getElementById("postsGrid");
+        return container ? Array.from(container.querySelectorAll(".feed-card")) : [];
     }
 
     function currentCardIndex() {
