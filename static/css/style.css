@@ -1277,7 +1277,9 @@ header.hidden {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.5rem;
+  padding-top: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   font-size: 0.8rem;
   font-weight: 600;
   min-width: 0;
@@ -1285,8 +1287,8 @@ header.hidden {
 }
 
 .feed-avatar {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: cover;
   background: var(--surface-2);
