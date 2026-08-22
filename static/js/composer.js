@@ -231,7 +231,14 @@ composerPost.addEventListener("click", async () => {
             composerText.value = "";
             closeComposer();
             if (typeof loadCarousel === "function") {
-                await loadCarousel();
+                // Remove visual highlighting parameter from search params to avoid scrolling
+                const url = new URL(location.href);
+                if (url.searchParams.has("img") || url.searchParams.has("image")) {
+                    url.searchParams.delete("img");
+                    url.searchParams.delete("image");
+                    history.replaceState(null, "", url.pathname + url.search);
+                }
+                await loadCarousel(true);
             } else {
                 location.reload();
             }

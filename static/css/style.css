@@ -139,11 +139,17 @@ header.hidden {
   cursor: pointer;
   font-weight: 500;
   color: var(--text-muted);
+  transition: color 0.2s ease, border-color 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.header-section:hover {
+  color: var(--text-soft);
 }
 
 .header-section.active {
   color: var(--text);
-  border-bottom: 2px solid var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .header-section-sort {
@@ -189,6 +195,7 @@ header.hidden {
   font-size: 0.85rem;
   color: var(--text);
   white-space: nowrap;
+  transition: background 0.15s ease;
 }
 
 .header-sort-menu button:hover {
@@ -1564,6 +1571,17 @@ header.hidden {
 .feed-download img {
   width: 20px;
   height: 20px;
+  transition: transform 0.15s ease;
+}
+
+.feed-like.liked img {
+  animation: like-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
 }
 
 .feed-owner .feed-delete img {
@@ -2296,6 +2314,31 @@ header.hidden {
 .vp-big-play:hover { background: rgba(0,0,0,0.7); transform: translate(-50%, -50%) scale(1.08); }
 .vp-big-play:active { transform: translate(-50%, -50%) scale(0.95); }
 .vp-big-play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+.vp-tap-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+}
+.vp-tap-indicator.show {
+  animation: vp-tap-fade 0.5s ease-out forwards;
+}
+@keyframes vp-tap-fade {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.4); }
+}
 
 /* Progress bar */
 .vp-progress-wrap {

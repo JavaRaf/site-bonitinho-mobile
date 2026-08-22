@@ -21,6 +21,10 @@ function initVideoPlayer(wrapper) {
     const bigPlay = wrapper.querySelector(".vp-big-play");
     const tooltip = wrapper.querySelector(".vp-tooltip");
 
+    const tapIndicator = document.createElement("div");
+    tapIndicator.className = "vp-tap-indicator";
+    wrapper.appendChild(tapIndicator);
+
     let hideTimer = null;
     let seekDragging = false;
     let lastVol = 1;
@@ -33,9 +37,23 @@ function initVideoPlayer(wrapper) {
     }
 
     /* Play / Pause */
+    function showTapIndicator(paused) {
+        tapIndicator.innerHTML = paused
+            ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>'
+            : '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>';
+        tapIndicator.classList.remove("show");
+        void tapIndicator.offsetWidth;
+        tapIndicator.classList.add("show");
+    }
+
     function togglePlay() {
-        if (video.paused || video.ended) video.play().catch(() => {});
-        else video.pause();
+        if (video.paused || video.ended) {
+            showTapIndicator(false);
+            video.play().catch(() => {});
+        } else {
+            showTapIndicator(true);
+            video.pause();
+        }
     }
 
     function updatePlayIcon() {

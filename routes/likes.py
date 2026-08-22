@@ -148,7 +148,10 @@ def _ranking_payload(eleicao_only=False):
         p["likers"] = [{"username": lr.username, "id": lr.user_id} for lr in likers]
 
     img_dir = Config.BASE_DIR / "images"
-    result = [x for x in result if any((img_dir / m["name"]).exists() for m in x["media"])]
+    result = [
+        x for x in result
+        if x.get("post_type") == "text" or any((img_dir / m["name"]).exists() for m in x["media"])
+    ]
     return result
 
 

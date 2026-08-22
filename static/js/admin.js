@@ -71,8 +71,8 @@ function renderPosts() {
             ${body}
             <input type="checkbox" class="admin-select">
             ${typeBadge}
-            ${img.nsfw ? '<span class="admin-nsfw-badge">18+</span>' : ''}
-            <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar +18">18+</button>
+            ${img.nsfw ? '<span class="admin-nsfw-badge">NSFW</span>' : ''}
+            <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar NSFW">NSFW</button>
             ${img.eleicao ? '<span class="admin-eleicao-badge">Eleição</span>' : ''}
             ${captionPreview}
             <div class="admin-card-info">
@@ -122,7 +122,7 @@ function renderPosts() {
                 if (!badge) {
                     badge = document.createElement("span");
                     badge.className = "admin-nsfw-badge";
-                    badge.textContent = "18+";
+                    badge.textContent = "NSFW";
                     nsfwBtn.closest(".admin-card")?.querySelector("img, video")?.insertAdjacentElement("afterend", badge);
                 }
             } else {
@@ -130,7 +130,7 @@ function renderPosts() {
             }
             try {
                 await api("POST", "/api/admin/nsfw", { name, nsfw: !isActive });
-                showStatus(isActive ? "NSFW removido" : "Marcado como +18");
+                showStatus(isActive ? "NSFW removido" : "Marcado como NSFW");
             } catch { nsfwBtn.classList.toggle("active"); }
         });
     });
@@ -303,15 +303,18 @@ function renderUsers(filter = "") {
             input.focus();
             input.select();
 
+            let isSaving = false;
             const restore = () => {
                 const el = card.querySelector(".user-card-rename-input");
                 if (el) el.replaceWith(nameEl);
             };
 
             const save = async () => {
+                if (isSaving) return;
                 const newName = input.value.trim();
                 if (newName.length < 3) { showStatus("Mínimo 3 caracteres"); restore(); return; }
                 if (newName === currentName) { restore(); return; }
+                isSaving = true;
                 const res = await api("PUT", `/api/admin/users/${btn.dataset.rename}/rename`, { username: newName });
                 const data = await res.json().catch(() => null);
                 if (res.ok) {
@@ -319,6 +322,7 @@ function renderUsers(filter = "") {
                     loadUsers();
                 } else {
                     showStatus(data?.error || "Erro ao renomear");
+                    isSaving = false;
                     restore();
                 }
             };

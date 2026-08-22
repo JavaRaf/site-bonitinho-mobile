@@ -38,9 +38,10 @@ def admin_delete_images():
             legacy_thumb.unlink()
 
         Like.query.filter_by(image_name=safe_name).delete()
-        from db.models import Comment
+        from db.models import Comment, PushNotification
         Comment.query.filter_by(image_name=safe_name).delete()
         Upload.query.filter_by(image_name=safe_name).delete()
+        PushNotification.query.filter_by(image_name=safe_name).delete()
 
     db.session.commit()
     return jsonify({"ok": True, "deleted": len(names)})
@@ -244,14 +245,22 @@ def admin_turnos_advance():
     eliminated = names[cutoff:]
 
     img_dir = Config.BASE_DIR / "images"
+    thumb_dir = Config.THUMB_DIR
     for name in eliminated:
         filepath = img_dir / name
         if filepath.exists():
             filepath.unlink()
+        thumb_path = thumb_dir / (name + ".webp")
+        if thumb_path.exists():
+            thumb_path.unlink()
+        legacy_thumb = thumb_dir / (name + ".jpg")
+        if legacy_thumb.exists():
+            legacy_thumb.unlink()
 
     Upload.query.filter(Upload.image_name.in_(eliminated)).delete(synchronize_session=False)
-    from db.models import Comment
+    from db.models import Comment, PushNotification
     Comment.query.filter(Comment.image_name.in_(eliminated)).delete(synchronize_session=False)
+    PushNotification.query.filter(PushNotification.image_name.in_(eliminated)).delete(synchronize_session=False)
 
     Like.query.filter(Like.image_name.in_(names)).delete(synchronize_session=False)
 
