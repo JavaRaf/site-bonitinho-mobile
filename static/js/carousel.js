@@ -771,6 +771,40 @@ function autoResizeFeed(el) {
 
 if (document.getElementById("feedView")) loadCarousel();
 
+/* === Feed card navigation (desktop) === */
+(function () {
+    const navUp = document.getElementById("feedNavUp");
+    const navDown = document.getElementById("feedNavDown");
+    if (!navUp || !navDown) return;
+
+    function getCards() {
+        return Array.from(document.querySelectorAll("#feedView .feed-card"));
+    }
+
+    function currentCardIndex() {
+        const cards = getCards();
+        const scrollY = window.scrollY + window.innerHeight * 0.3;
+        for (let i = cards.length - 1; i >= 0; i--) {
+            if (cards[i].getBoundingClientRect().top + window.scrollY <= scrollY) return i;
+        }
+        return 0;
+    }
+
+    navUp.addEventListener("click", () => {
+        const cards = getCards();
+        if (!cards.length) return;
+        const idx = Math.max(0, currentCardIndex() - 1);
+        cards[idx].scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    navDown.addEventListener("click", () => {
+        const cards = getCards();
+        if (!cards.length) return;
+        const idx = Math.min(cards.length - 1, currentCardIndex() + 1);
+        cards[idx].scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+})();
+
 /* === Real-time new posts polling === */
 let lastPostTimestamp = "";
 let pendingNewPosts = [];
