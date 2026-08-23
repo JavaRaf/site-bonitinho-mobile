@@ -43,12 +43,3 @@ jobs:
           echo "O script não gerou o arquivo de resultados." >> $GITHUB_STEP_SUMMARY
         fi
 
-    - name: Upload Screenshot
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: screenshots
-        path: |
-          success_dashboard.png
-          failure.png
-        if-no-files-found: ignore

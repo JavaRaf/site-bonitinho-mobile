@@ -35,7 +35,6 @@ def renew():
             # Verifica se logou com sucesso
             if "login" in page.url:
                 print("Falha ao logar. Verifique o usuário e a senha.")
-                page.screenshot(path="failure.png")
                 sys.exit(1)
 
             print(f"Login efetuado com sucesso para: {USERNAME}")
@@ -69,21 +68,12 @@ def renew():
                 else:
                     msg = "Não foi possível encontrar o botão de renovação. O site pode já estar renovado ou o layout mudou."
                     print(msg)
-                    page.screenshot(path="failure.png")
                     with open("renew_result.txt", "w") as f:
                         f.write(f"WARNING: {msg}")
-
-            # Tira um print final do status do painel
-            page.screenshot(path="success_dashboard.png")
-            print("Processo finalizado. Print do painel salvo em success_dashboard.png.")
 
         except Exception as e:
             msg = f"Ocorreu um erro durante a execução: {e}"
             print(msg)
-            try:
-                page.screenshot(path="failure.png")
-            except Exception:
-                pass
             with open("renew_result.txt", "w") as f:
                 f.write(f"FAILED: {msg}")
             sys.exit(1)
