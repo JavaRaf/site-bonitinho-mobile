@@ -715,7 +715,8 @@ header.hidden {
   background: var(--surface-2);
 }
 
-.comment-menu-item.comment-delete {
+.comment-menu-item.comment-delete,
+.comment-menu-item.feed-delete {
   color: var(--danger);
   font-weight: 600;
 }
