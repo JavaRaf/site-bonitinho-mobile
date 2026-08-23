@@ -687,8 +687,8 @@ header.hidden {
   min-width: 130px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -699,15 +699,16 @@ header.hidden {
 .comment-menu-item {
   display: block;
   width: 100%;
-  padding: 0.5rem 0.85rem;
+  padding: 0.5rem 1rem;
   border: none;
   background: none;
   text-align: left;
-  font-size: 0.8125rem;
   font-family: inherit;
+  font-size: 0.85rem;
   color: var(--text);
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.15s ease;
 }
 
 .comment-menu-item:hover {
