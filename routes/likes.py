@@ -134,7 +134,7 @@ def _ranking_payload(eleicao_only=False):
                 "caption": r.caption or "",
                 "nsfw": bool(r.nsfw),
                 "eleicao": bool(r.eleicao),
-                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "created_at": r.created_at.isoformat() if hasattr(r.created_at, "isoformat") else r.created_at,
                 "media": [media],
             }
         else:
