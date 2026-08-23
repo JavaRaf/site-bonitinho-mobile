@@ -120,6 +120,8 @@ def _ranking_payload(eleicao_only=False):
     post_map = {}
     for r in rows:
         pid = r.post_id or r.image_name
+        if r.eleicao:
+            pid = r.image_name
         media = {"name": r.image_name, "media_type": r.media_type}
         if pid not in post_map:
             post_map[pid] = {
@@ -143,6 +145,7 @@ def _ranking_payload(eleicao_only=False):
             db.session.query(User.username, Like.user_id)
             .join(User, Like.user_id == User.id)
             .filter(Like.image_name.in_([m["name"] for m in p["media"]]))
+            .distinct()
             .all()
         )
         p["likers"] = [{"username": lr.username, "id": lr.user_id} for lr in likers]
