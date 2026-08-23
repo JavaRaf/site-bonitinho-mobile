@@ -634,6 +634,12 @@ async function loadFeedComments(card) {
     try {
         const res = await fetch(`/api/comments/${encodeURIComponent(name)}`);
         const comments = await res.json();
+
+        const img = allImages.find(x => x.name === name);
+        if (img) img.comments = comments.length;
+        const countEl = card.querySelector(".feed-comment-count");
+        if (countEl) countEl.textContent = comments.length > 0 ? comments.length : "";
+
         if (!comments.length) {
             list.innerHTML = `<div class="comment"><div class="comment-main"><div class="comment-body"><span class="comment-text" style="color:var(--text-muted)">Nenhum comentário ainda</span></div></div></div>`;
             return;
@@ -1141,10 +1147,6 @@ async function onFeedSubmit(e) {
             textarea.value = "";
             autoResizeFeed(textarea);
             await loadFeedComments(card);
-            const img = allImages.find(x => x.name === name);
-            if (img) img.comments = (img.comments || 0) + 1;
-            const countEl = card.querySelector(".feed-comment-count");
-            if (countEl) countEl.textContent = img.comments > 0 ? img.comments : "";
         }
     } catch { /* ignore */ }
     if (typeof hideMentionDropdown === "function") hideMentionDropdown();
