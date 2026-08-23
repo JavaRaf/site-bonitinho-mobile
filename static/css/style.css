@@ -2611,3 +2611,64 @@ header.hidden {
     transform: scale(0.95);
   }
 }
+
+/* === Edit post modal === */
+.edit-post-modal {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 0.65rem 0.75rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.edit-post-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.15rem 0.15rem 0;
+}
+
+.edit-post-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.edit-post-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edit-post-close:hover {
+  background: var(--surface-3);
+}
+
+.edit-post-toolbar {
+  margin-top: auto;
+}
+
+.edit-icon-nsfw.active {
+  background: var(--danger);
+}
+
+.edit-icon-eleicao.active {
+  background: var(--btn-bg);
+}
+
+.edit-icon-nsfw.active img,
+.edit-icon-eleicao.active img {
+  filter: brightness(0) invert(1);
+}

@@ -850,35 +850,31 @@ function onFeedClick(e) {
         const modal = document.createElement("div");
         modal.className = "confirm-overlay";
         modal.style.cssText = "position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;";
-        
-        modal.innerHTML = `
-            <div class="confirm-box" style="width: 100%; max-width: 480px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: 90vh; overflow-y: auto;">
-                <h3 style="margin: 0; font-size: 1.125rem; color: var(--text);">Editar Postagem</h3>
-                
-                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Legenda</label>
-                    <textarea id="editPostCaption" rows="3" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); resize: none; font-family: inherit;">${currentCaption}</textarea>
-                </div>
 
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Mídias do Post</label>
-                    <div id="editMediaPreviews" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 60px; padding: 0.5rem; border: 1.5px dashed var(--border); border-radius: 6px; background: var(--surface-2);"></div>
-                    <button id="editAddMediaBtn" type="button" style="align-self: flex-start; background: var(--surface); border: 1.5px solid var(--border); color: var(--text); padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Adicionar Imagem/Vídeo
-                    </button>
-                    <input type="file" id="editFileInput" multiple accept="image/*,video/*" style="display: none;">
+        modal.innerHTML = `
+            <div class="edit-post-modal" role="dialog" aria-label="Editar postagem">
+                <div class="edit-post-header">
+                    <span class="edit-post-title">Editar postagem</span>
+                    <button type="button" class="edit-post-close" title="Fechar">&times;</button>
                 </div>
-                
-                <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem;">
-                    <button id="editNsfwToggle" type="button" class="feed-create-nsfw ${editNsfwActive ? 'active visible' : 'visible'}" style="margin: 0; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 700; height: auto; border-radius: 6px;">18+</button>
-                    <button id="editEleicaoToggle" type="button" style="background: ${editEleicaoActive ? 'var(--btn-bg)' : 'var(--surface-2)'}; color: ${editEleicaoActive ? '#fff' : 'var(--text-soft)'}; border: 1.5px solid ${editEleicaoActive ? 'var(--btn-bg)' : 'var(--border)'}; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; transition: background 0.15s, color 0.15s;">
-                        <img src="/static/svg/eleicao.svg" alt="" style="width: 14px; height: 14px; filter: ${editEleicaoActive ? 'brightness(0) invert(1)' : 'none'};"> Eleição
+                <textarea id="editPostCaption" class="composer-text" rows="3" maxlength="400" placeholder="No que voce esta pensando?">${currentCaption}</textarea>
+                <div id="editMediaPreviews" class="composer-media-previews"></div>
+                <div class="feed-create-toolbar edit-post-toolbar">
+                    <input type="file" id="editFileInput" multiple accept="image/*,video/mp4,video/webm,video/quicktime" hidden>
+                    <button type="button" class="feed-create-icon" id="editAddMediaBtn" title="Adicionar midia" aria-label="Adicionar midia">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 20H4V6h9V4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zm-7.79-3.17l-1.96-2.36L5.5 18h11l-3.54-4.71zM20 4V1h-2v3h-3c.01.01 0 2 0 2h3v2.99c.01.01 2 0 2 0V6h3V4h-3z"/></svg>
                     </button>
-                </div>
-                
-                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; border-top: 1.5px solid var(--border); padding-top: 0.75rem;">
-                    <button id="editPostCancel" class="confirm-btn confirm-no" style="padding: 0.5rem 1rem; border-radius: 6px;">Cancelar</button>
-                    <button id="editPostSave" class="confirm-btn confirm-yes" style="padding: 0.5rem 1rem; border-radius: 6px; background: var(--btn-bg); color: #fff;">Salvar</button>
+                    <div class="feed-create-divider"></div>
+                    <button type="button" class="feed-create-icon edit-icon-nsfw${currentNsfw ? " active" : ""}" id="editNsfwToggle" title="Marcar como NSFW" aria-label="Marcar como NSFW">
+                        <img src="/static/svg/NSFW.svg" alt="" width="20" height="20">
+                    </button>
+                    <div class="feed-create-divider"></div>
+                    <button type="button" class="feed-create-icon edit-icon-eleicao${currentEleicao ? " active" : ""}" id="editEleicaoToggle" title="Marcar como Eleicao" aria-label="Marcar como Eleicao">
+                        <img src="/static/svg/eleicao.svg" alt="" width="30" height="15">
+                    </button>
+                    <button type="button" class="feed-create-send" id="editPostSave" title="Salvar" aria-label="Salvar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
                 </div>
             </div>
         `;
@@ -886,20 +882,18 @@ function onFeedClick(e) {
 
         const previewsContainer = modal.querySelector("#editMediaPreviews");
         const fileInput = modal.querySelector("#editFileInput");
-        const nsfwToggle = modal.querySelector("#editNsfwToggle");
-        const eleicaoToggle = modal.querySelector("#editEleicaoToggle");
+        const saveBtn = modal.querySelector("#editPostSave");
 
-        nsfwToggle.onclick = () => {
+        modal.querySelector(".edit-post-close").onclick = () => modal.remove();
+
+        modal.querySelector("#editNsfwToggle").onclick = e => {
             editNsfwActive = !editNsfwActive;
-            nsfwToggle.classList.toggle("active", editNsfwActive);
+            e.currentTarget.classList.toggle("active", editNsfwActive);
         };
 
-        eleicaoToggle.onclick = () => {
+        modal.querySelector("#editEleicaoToggle").onclick = e => {
             editEleicaoActive = !editEleicaoActive;
-            eleicaoToggle.style.background = editEleicaoActive ? 'var(--btn-bg)' : 'var(--surface-2)';
-            eleicaoToggle.style.color = editEleicaoActive ? '#fff' : 'var(--text-soft)';
-            eleicaoToggle.style.borderColor = editEleicaoActive ? 'var(--btn-bg)' : 'var(--border)';
-            eleicaoToggle.querySelector("img").style.filter = editEleicaoActive ? 'brightness(0) invert(1)' : 'none';
+            e.currentTarget.classList.toggle("active", editEleicaoActive);
         };
 
         modal.querySelector("#editAddMediaBtn").onclick = () => fileInput.click();
@@ -997,11 +991,9 @@ function onFeedClick(e) {
 
         modal.querySelector("#editPostCancel").onclick = () => modal.remove();
         
-        modal.querySelector("#editPostSave").onclick = async () => {
+        saveBtn.addEventListener("click", async () => {
             const caption = modal.querySelector("#editPostCaption").value.trim();
-            const saveBtn = modal.querySelector("#editPostSave");
             saveBtn.disabled = true;
-            saveBtn.textContent = "Salvando...";
 
             // mediaList já exclui os itens marcados para remoção
             const textMediaItem = (postData.media || []).find(m => m.media_type === "text");
@@ -1012,7 +1004,6 @@ function onFeedClick(e) {
             if (finalMediaCount === 0 && !caption) {
                 alert("O post precisa de pelo menos uma mídia ou um texto.");
                 saveBtn.disabled = false;
-                saveBtn.textContent = "Salvar";
                 return;
             }
 
@@ -1128,9 +1119,8 @@ function onFeedClick(e) {
             } catch (err) {
                 console.error("Erro ao salvar post:", err);
                 saveBtn.disabled = false;
-                saveBtn.textContent = "Salvar";
             }
-        };
+        });
         return;
     }
 
