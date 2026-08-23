@@ -1514,7 +1514,7 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
 /* === Comment 3-dot menu (fixed portal to escape overflow clipping) === */
 const commentMenuLayer = document.createElement("div");
 commentMenuLayer.className = "comment-menu";
-commentMenuLayer.style.cssText = "position: fixed;";
+commentMenuLayer.style.cssText = "position: fixed; right: auto; bottom: auto;";
 commentMenuLayer.hidden = true;
 document.body.appendChild(commentMenuLayer);
 
