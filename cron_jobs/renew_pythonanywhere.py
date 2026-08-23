@@ -61,14 +61,14 @@ def should_renew():
 def renew():
     if not USERNAME or not PASSWORD:
         print("PYTHONANYWHERE_USER e PYTHONANYWHERE_PASS devem estar no .env")
-        sys.exit(1)
+        return
 
-    session = requests.Session()
+    s = requests.Session()
 
-    login_page = session.get(LOGIN_URL)
-    csrf_token = session.cookies.get("csrftoken")
+    s.get(LOGIN_URL)
+    csrf_token = s.cookies.get("csrftoken")
 
-    response = session.post(LOGIN_URL, data={
+    response = s.post(LOGIN_URL, data={
         "auth-username": USERNAME,
         "auth-password": PASSWORD,
         "csrfmiddlewaretoken": csrf_token,
@@ -77,11 +77,11 @@ def renew():
 
     if response.status_code != 200 or "Log out" not in response.text:
         print("Falha no login")
-        sys.exit(1)
+        return
     print(f"Login realizado como {USERNAME}")
 
-    webapp_page = session.get(WEBAPP_URL)
-    csrf_token = session.cookies.get("csrftoken")
+    webapp_page = s.get(WEBAPP_URL)
+    csrf_token = s.cookies.get("csrftoken")
 
     date_before = extract_expiry_date(webapp_page.text)
     print(f"Data de expiracao antes: {date_before}")
@@ -89,15 +89,15 @@ def renew():
     domain = f"{USERNAME}.pythonanywhere.com"
     reload_url = f"https://www.pythonanywhere.com/user/{USERNAME}/webapps/{domain}/reload"
 
-    response = session.post(reload_url, data={
+    response = s.post(reload_url, data={
         "csrfmiddlewaretoken": csrf_token,
     }, headers={"Referer": WEBAPP_URL})
 
     if response.status_code != 200:
         print(f"Erro ao renovar: {response.status_code}")
-        sys.exit(1)
+        return
 
-    webapp_page = session.get(WEBAPP_URL)
+    webapp_page = s.get(WEBAPP_URL)
     date_after = extract_expiry_date(webapp_page.text)
     print(f"Data de expiracao depois: {date_after}")
 

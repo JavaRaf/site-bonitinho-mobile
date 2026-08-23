@@ -84,14 +84,18 @@ def register_service_worker(app):
 
 
 def start_scheduler():
+    import threading
     from cron_jobs.renew_pythonanywhere import should_renew, renew
     def job():
-        if should_renew():
-            renew()
+        try:
+            if should_renew():
+                renew()
+        except Exception as e:
+            print(f"Erro no scheduler de renovacao: {e}")
     scheduler = BackgroundScheduler()
     scheduler.add_job(job, "interval", days=1)
     scheduler.start()
-    job()
+    threading.Thread(target=job, daemon=True).start()
 
 
 app = create_app()
