@@ -176,24 +176,41 @@
   white-space: nowrap;
 }
 
-.admin-nsfw-badge {
+.admin-card-actions {
   position: absolute;
   top: 0.35rem;
   left: 0.35rem;
-  padding: 0.1rem 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  z-index: 3;
+}
+
+.admin-nsfw-badge,
+.admin-eleicao-badge,
+.admin-type-badge {
+  position: static;
+  padding: 0.12rem 0.35rem;
   border-radius: 4px;
-  background: var(--danger);
   color: #fff;
   font-size: 0.625rem;
   font-weight: 700;
-  z-index: 2;
   pointer-events: none;
+  display: inline-block;
+  white-space: nowrap;
 }
 
-.admin-nsfw-btn {
-  position: absolute;
-  top: 0.35rem;
-  left: 0.35rem;
+.admin-nsfw-badge {
+  background: var(--danger);
+}
+
+.admin-eleicao-badge {
+  background: var(--btn-bg);
+}
+
+.admin-nsfw-btn,
+.admin-eleicao-btn {
+  position: static;
   padding: 0.15rem 0.4rem;
   border: none;
   border-radius: 4px;
@@ -203,8 +220,8 @@
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  z-index: 3;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  display: inline-block;
 }
 
 .admin-nsfw-btn.active {
@@ -212,37 +229,22 @@
   color: #fff;
 }
 
-.admin-type-video ~ .admin-nsfw-btn,
-.admin-type-video ~ .admin-nsfw-badge {
-  left: 3.5rem;
-}
-
-.admin-eleicao-badge {
-  position: absolute;
-  top: 0.35rem;
-  left: 3.5rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
+.admin-eleicao-btn.active {
   background: var(--btn-bg);
   color: #fff;
-  font-size: 0.625rem;
-  font-weight: 700;
-  z-index: 3;
-  pointer-events: none;
 }
 
-.admin-type-video ~ .admin-eleicao-badge {
-  left: 6.75rem;
-}
-
-.admin-nsfw-btn.active ~ .admin-eleicao-badge,
-.admin-nsfw-badge ~ .admin-eleicao-badge {
-  left: 6.75rem;
-}
-
-.admin-type-video ~ .admin-nsfw-btn.active ~ .admin-eleicao-badge,
-.admin-type-video ~ .admin-nsfw-badge ~ .admin-eleicao-badge {
-  left: 9.75rem;
+@media (hover: hover) {
+  .admin-nsfw-btn:not(.active),
+  .admin-eleicao-btn:not(.active) {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .admin-card:hover .admin-nsfw-btn,
+  .admin-card:hover .admin-eleicao-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .admin-card-likes {
@@ -822,18 +824,7 @@
 }
 
 /* Posts tab */
-.admin-type-badge {
-  position: absolute;
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  font-size: 0.625rem;
-  font-weight: 700;
-  z-index: 2;
-  pointer-events: none;
-}
 .admin-type-video {
-  top: 0.35rem;
-  left: 0.35rem;
   background: var(--accent);
   color: #fff;
 }

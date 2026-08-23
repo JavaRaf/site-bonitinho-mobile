@@ -70,10 +70,13 @@ function renderPosts() {
         <div class="admin-card" data-name="${esc(img.name)}">
             ${body}
             <input type="checkbox" class="admin-select">
-            ${typeBadge}
-            ${img.nsfw ? '<span class="admin-nsfw-badge">NSFW</span>' : ''}
-            <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar NSFW">NSFW</button>
-            ${img.eleicao ? '<span class="admin-eleicao-badge">Eleição</span>' : ''}
+            <div class="admin-card-actions">
+                ${typeBadge}
+                ${img.nsfw ? '<span class="admin-nsfw-badge">NSFW</span>' : ''}
+                ${img.eleicao ? '<span class="admin-eleicao-badge">Eleição</span>' : ''}
+                <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar NSFW">NSFW</button>
+                <button class="admin-eleicao-btn${img.eleicao ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar Eleição">Eleição</button>
+            </div>
             ${captionPreview}
             <div class="admin-card-info">
                 <span>${esc(img.owner || "\u2014")}</span>
@@ -91,7 +94,7 @@ function renderPosts() {
 
     document.querySelectorAll(".admin-card").forEach(card => {
         card.addEventListener("click", e => {
-            if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select") || e.target.closest(".admin-nsfw-btn")) return;
+            if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select") || e.target.closest(".admin-nsfw-btn") || e.target.closest(".admin-eleicao-btn")) return;
             card.classList.toggle("expanded");
         });
 
@@ -123,7 +126,10 @@ function renderPosts() {
                     badge = document.createElement("span");
                     badge.className = "admin-nsfw-badge";
                     badge.textContent = "NSFW";
-                    nsfwBtn.closest(".admin-card")?.querySelector("img, video")?.insertAdjacentElement("afterend", badge);
+                    const actions = nsfwBtn.closest(".admin-card-actions");
+                    if (actions) {
+                        actions.insertBefore(badge, actions.firstChild);
+                    }
                 }
             } else {
                 if (badge) badge.remove();
@@ -132,6 +138,33 @@ function renderPosts() {
                 await api("POST", "/api/admin/nsfw", { name, nsfw: !isActive });
                 showStatus(isActive ? "NSFW removido" : "Marcado como NSFW");
             } catch { nsfwBtn.classList.toggle("active"); }
+        });
+    });
+
+    document.querySelectorAll(".admin-eleicao-btn").forEach(eleicaoBtn => {
+        eleicaoBtn.addEventListener("click", async e => {
+            e.stopPropagation();
+            const name = eleicaoBtn.dataset.name;
+            const isActive = eleicaoBtn.classList.contains("active");
+            eleicaoBtn.classList.toggle("active");
+            let badge = eleicaoBtn.closest(".admin-card")?.querySelector(".admin-eleicao-badge");
+            if (!isActive) {
+                if (!badge) {
+                    badge = document.createElement("span");
+                    badge.className = "admin-eleicao-badge";
+                    badge.textContent = "Eleição";
+                    const actions = eleicaoBtn.closest(".admin-card-actions");
+                    if (actions) {
+                        actions.insertBefore(badge, actions.firstChild);
+                    }
+                }
+            } else {
+                if (badge) badge.remove();
+            }
+            try {
+                await api("POST", "/api/admin/eleicao", { name, eleicao: !isActive });
+                showStatus(isActive ? "Eleição removida" : "Marcada como Eleição");
+            } catch { eleicaoBtn.classList.toggle("active"); }
         });
     });
 

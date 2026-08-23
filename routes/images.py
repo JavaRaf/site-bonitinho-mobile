@@ -355,6 +355,29 @@ def upload_images():
     return jsonify({"saved": saved, "post_id": post_id}), 201
 
 
+@images_bp.route("/api/my-posts/<path:image_name>", methods=["PUT"])
+@login_required
+def edit_my_post(image_name):
+    safe_name = Path(image_name).name
+    upload = Upload.query.filter_by(image_name=safe_name).first()
+    if not upload or upload.user_id != session["user_id"]:
+        return jsonify({"error": "not found or not owner"}), 403
+
+    data = request.get_json() or {}
+    caption = data.get("caption")
+    eleicao = data.get("eleicao")
+
+    siblings = Upload.query.filter_by(post_id=upload.post_id, active=1).all()
+    for sib in siblings:
+        if caption is not None:
+            sib.caption = caption
+        if eleicao is not None:
+            sib.eleicao = 1 if eleicao else 0
+
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @images_bp.route("/api/my-images/<path:image_name>", methods=["DELETE"])
 @login_required
 def delete_my_image(image_name):

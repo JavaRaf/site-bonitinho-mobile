@@ -84,6 +84,22 @@ def admin_toggle_nsfw():
     return jsonify({"ok": True, "nsfw": bool(nsfw)})
 
 
+@admin_bp.route("/api/admin/eleicao", methods=["POST"])
+@admin_required
+def admin_toggle_eleicao():
+    data = request.get_json()
+    name = data.get("name")
+    eleicao = data.get("eleicao", False)
+    if not name:
+        return jsonify({"error": "name required"}), 400
+
+    upload = Upload.query.filter_by(image_name=name).first()
+    if upload:
+        upload.eleicao = 1 if eleicao else 0
+        db.session.commit()
+    return jsonify({"ok": True, "eleicao": bool(eleicao)})
+
+
 @admin_bp.route("/api/admin/users", methods=["GET"])
 @admin_required
 def admin_list_users():

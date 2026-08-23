@@ -107,6 +107,31 @@ def handle_comments(image_name):
     }), 201
 
 
+@comments_bp.route("/api/comments/id/<int:comment_id>", methods=["PUT"])
+@login_required
+def edit_comment(comment_id):
+    comment = Comment.query.get(comment_id)
+    if not comment:
+        return jsonify({"error": "not found"}), 404
+
+    if comment.user_id != session["user_id"]:
+        return jsonify({"error": "forbidden"}), 403
+
+    data = request.get_json() or {}
+    text = (data.get("text") or "").strip()
+    if not text:
+        return jsonify({"error": "text is required"}), 400
+
+    comment.text = text
+    db.session.commit()
+    return jsonify({
+        "id": comment.id,
+        "text": comment.text,
+        "created_at": comment.created_at,
+        "parent_id": comment.parent_id
+    })
+
+
 @comments_bp.route("/api/comments/id/<int:comment_id>", methods=["DELETE"])
 @login_required
 def delete_comment(comment_id):

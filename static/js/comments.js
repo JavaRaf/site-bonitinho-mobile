@@ -126,8 +126,21 @@ function renderNode(c, depth) {
         html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${esc(c.username)}">Responder</button>`;
     }
     html += `</div></div>`;
-    if (canDelete) {
-        html += `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>`;
+    const canEdit = currentUserId === c.user_id;
+    if (canEdit || canDelete) {
+        html += `<div class="comment-owner-actions" style="display:flex; gap:0.25rem; align-items:center;">`;
+        if (canEdit) {
+            html += `<button class="comment-edit" data-id="${c.id}" data-text="${esc(c.text)}" style="background:none;border:none;cursor:pointer;padding:4px;display:inline-flex;align-items:center;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.65; color: var(--text);">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>`;
+        }
+        if (canDelete) {
+            html += `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>`;
+        }
+        html += `</div>`;
     }
     html += `</div>`;
 
@@ -348,6 +361,59 @@ document.addEventListener("click", async e => {
             input.placeholder = `Responder @${username}...`;
             input.focus();
         }
+        return;
+    }
+
+    /* === Edit === */
+    const editBtn = e.target.closest(".comment-edit");
+    if (editBtn) {
+        e.stopPropagation();
+        const id = editBtn.dataset.id;
+        const currentText = editBtn.dataset.text || "";
+
+        const modal = document.createElement("div");
+        modal.className = "confirm-overlay";
+        modal.style.zIndex = "1000";
+        modal.style.display = "flex";
+        modal.innerHTML = `
+            <div class="confirm-box" style="width: 90%; max-width: 400px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                <h3 style="margin: 0; font-size: 1.125rem; color: var(--text);">Editar Comentário</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <textarea id="editCommentText" rows="3" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); resize: none; font-family: inherit;">${currentText}</textarea>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                    <button id="editCommentCancel" class="confirm-btn confirm-no" style="padding: 0.5rem 1rem; border-radius: 6px;">Cancelar</button>
+                    <button id="editCommentSave" class="confirm-btn confirm-yes" style="padding: 0.5rem 1rem; border-radius: 6px; background: var(--btn-bg); color: #fff;">Salvar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector("#editCommentCancel").onclick = () => modal.remove();
+        modal.querySelector("#editCommentSave").onclick = async () => {
+            const text = modal.querySelector("#editCommentText").value.trim();
+            modal.remove();
+            if (!text) return;
+
+            try {
+                const res = await fetch(`/api/comments/id/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text }),
+                    credentials: "include"
+                });
+                const data = await res.json();
+                if (data.id) {
+                    const imgName = currentImageName();
+                    commentsCache.delete(imgName);
+                    await loadComments(true);
+                }
+            } catch (err) {
+                console.error("Erro ao editar comentário:", err);
+            }
+        };
         return;
     }
 
