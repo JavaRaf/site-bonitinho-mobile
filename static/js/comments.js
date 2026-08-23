@@ -371,29 +371,49 @@ document.addEventListener("click", async e => {
         const id = editBtn.dataset.id;
         const currentText = editBtn.dataset.text || "";
 
-        const modal = document.createElement("div");
-        modal.className = "confirm-overlay";
-        modal.style.cssText = "position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;";
-        modal.innerHTML = `
-            <div class="confirm-box" style="width: 90%; max-width: 400px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
-                <h3 style="margin: 0; font-size: 1.125rem; color: var(--text);">Editar Comentário</h3>
-                
-                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                    <textarea id="editCommentText" rows="3" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); resize: none; font-family: inherit;">${currentText}</textarea>
-                </div>
-                
-                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button id="editCommentCancel" class="confirm-btn confirm-no" style="padding: 0.5rem 1rem; border-radius: 6px;">Cancelar</button>
-                    <button id="editCommentSave" class="confirm-btn confirm-yes" style="padding: 0.5rem 1rem; border-radius: 6px; background: var(--btn-bg); color: #fff;">Salvar</button>
-                </div>
+        const commentEl = editBtn.closest(".comment");
+        const bubble = commentEl?.querySelector(".comment-bubble");
+        if (!bubble || bubble.dataset.editing === "1") return;
+
+        const originalHTML = bubble.innerHTML;
+        bubble.dataset.editing = "1";
+
+        bubble.innerHTML = `
+            <textarea class="comment-edit-textarea" style="width: 100%; padding: 0.4rem 0.5rem; border-radius: 6px; border: 1.5px solid var(--btn-bg); background: var(--surface); color: var(--text); resize: none; font-family: inherit; font-size: 0.8125rem; box-sizing: border-box;">${currentText}</textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 0.35rem; margin-top: 0.35rem;">
+                <button class="comment-edit-cancel" style="padding: 0.25rem 0.6rem; border-radius: 5px; border: none; background: var(--surface-2); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button class="comment-edit-save" style="padding: 0.25rem 0.6rem; border-radius: 5px; border: none; background: var(--btn-bg); color: #fff; font-size: 0.7rem; font-weight: 600; cursor: pointer;">Salvar</button>
             </div>
         `;
-        document.body.appendChild(modal);
 
-        modal.querySelector("#editCommentCancel").onclick = () => modal.remove();
-        modal.querySelector("#editCommentSave").onclick = async () => {
-            const text = modal.querySelector("#editCommentText").value.trim();
-            modal.remove();
+        const textarea = bubble.querySelector(".comment-edit-textarea");
+
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+        function adjustHeight() {
+            textarea.style.height = "auto";
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+        }
+        adjustHeight();
+        textarea.addEventListener("input", adjustHeight);
+
+        textarea.addEventListener("keydown", ev => {
+            if (ev.key === "Enter" && !ev.shiftKey) {
+                ev.preventDefault();
+                bubble.querySelector(".comment-edit-save").click();
+            }
+        });
+
+        function restore() {
+            bubble.dataset.editing = "0";
+            bubble.innerHTML = originalHTML;
+        }
+
+        bubble.querySelector(".comment-edit-cancel").onclick = restore;
+
+        bubble.querySelector(".comment-edit-save").onclick = async () => {
+            const text = textarea.value.trim();
             if (!text) return;
 
             try {
