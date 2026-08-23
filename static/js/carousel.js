@@ -909,6 +909,8 @@ function onFeedClick(e) {
             
             // Renderiza mídias atuais
             mediaList.forEach(m => {
+                // Posts de texto não têm mídia para pré-visualizar (o texto é editado no textarea)
+                if (m.media_type === "text") return;
                 const div = document.createElement("div");
                 div.className = "composer-preview-item";
                 div.style.cssText = "position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #000;";
@@ -1002,7 +1004,10 @@ function onFeedClick(e) {
             saveBtn.textContent = "Salvando...";
 
             // mediaList já exclui os itens marcados para remoção
-            const finalMediaCount = mediaList.length + newFiles.length;
+            const textMediaItem = (postData.media || []).find(m => m.media_type === "text");
+            const wasTextPost = !!textMediaItem;
+            const realMediaCount = mediaList.filter(m => m.media_type !== "text").length;
+            const finalMediaCount = realMediaCount + newFiles.length;
 
             if (finalMediaCount === 0 && !caption) {
                 alert("O post precisa de pelo menos uma mídia ou um texto.");
@@ -1012,7 +1017,7 @@ function onFeedClick(e) {
             }
 
             try {
-                if (finalMediaCount === 0) {
+                if (finalMediaCount === 0 && !wasTextPost) {
                     // Sem mídias restantes: converte o post em post de texto
                     const res = await fetch(`/api/my-posts/${encodeURIComponent(name)}`, {
                         method: "PUT",
@@ -1072,7 +1077,15 @@ function onFeedClick(e) {
                     });
                 }
 
-                // 2. Remove mídias deletadas
+                // 2. Post de texto promovido a post com mídia: remove a linha de texto
+                if (wasTextPost && textMediaItem && newFiles.length > 0) {
+                    await fetch(`/api/my-images/${encodeURIComponent(textMediaItem.name)}/single`, {
+                        method: "DELETE",
+                        credentials: "include"
+                    });
+                }
+
+                // 3. Remove mídias deletadas
                 if (mediaToRemove.length > 0) {
                     await Promise.all(mediaToRemove.map(imgName =>
                         fetch(`/api/my-images/${encodeURIComponent(imgName)}/single`, {
