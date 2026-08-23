@@ -574,19 +574,16 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     html += `</div></div>`;
     const canEdit = currentUserId === c.user_id;
     if (canEdit || canDelete) {
-        html += `<div class="comment-owner-actions" style="display:flex; gap:0.25rem; align-items:center;">`;
+        html += `<div class="comment-owner-actions">`;
+        html += `<button type="button" class="comment-menu-btn" title="Opções"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
+        html += `<div class="comment-menu" hidden>`;
         if (canEdit) {
-            html += `<button class="comment-edit" data-id="${c.id}" data-text="${escText(c.text)}" style="background:none;border:none;cursor:pointer;padding:4px;display:inline-flex;align-items:center;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.65; color: var(--text);">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-            </button>`;
+            html += `<button type="button" class="comment-menu-item comment-edit" data-id="${c.id}" data-text="${escText(c.text)}">Editar</button>`;
         }
         if (canDelete) {
-            html += `<button class="comment-delete" data-id="${c.id}"><img src="/static/svg/trash.svg" alt="del"></button>`;
+            html += `<button type="button" class="comment-menu-item comment-delete" data-id="${c.id}">Excluir</button>`;
         }
-        html += `</div>`;
+        html += `</div></div>`;
     }
     html += `</div>`;
 
@@ -724,6 +721,7 @@ function onFeedClick(e) {
         const originalHTML = bubble.innerHTML;
         bubble.dataset.editing = "1";
         bubble.classList.add("editing");
+        commentEl.classList.add("editing");
 
         bubble.innerHTML = `
             <div class="comment-edit-form">
@@ -731,7 +729,7 @@ function onFeedClick(e) {
                     <textarea class="comment-edit-textarea">${currentText}</textarea>
                     <button type="button" class="comment-edit-btn" title="Salvar"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
                 </div>
-                <span class="comment-edit-hint">Pressione Esc para cancelar</span>
+                <span class="comment-edit-hint">Pressione Esc para <a href="#" class="comment-edit-cancel-link">cancelar</a></span>
             </div>
         `;
 
@@ -750,6 +748,7 @@ function onFeedClick(e) {
         function restore() {
             document.removeEventListener("keydown", onKey);
             bubble.classList.remove("editing");
+            commentEl.classList.remove("editing");
             bubble.dataset.editing = "0";
             bubble.innerHTML = originalHTML;
         }
@@ -786,6 +785,10 @@ function onFeedClick(e) {
         document.addEventListener("keydown", onKey);
 
         bubble.querySelector(".comment-edit-btn").onclick = save;
+        bubble.querySelector(".comment-edit-cancel-link").onclick = ev => {
+            ev.preventDefault();
+            restore();
+        };
         return;
     }
 
@@ -1499,6 +1502,30 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
         }
     } catch { /* ignore */ }
 })();
+
+/* === Comment 3-dot menu === */
+document.addEventListener("click", e => {
+    const menuItem = e.target.closest(".comment-menu-item");
+    if (menuItem) {
+        menuItem.closest(".comment-menu")?.setAttribute("hidden", "");
+        return;
+    }
+
+    const menuBtn = e.target.closest(".comment-menu-btn");
+    if (menuBtn) {
+        const menu = menuBtn.closest(".comment-owner-actions")?.querySelector(".comment-menu");
+        if (!menu) return;
+        document.querySelectorAll(".comment-menu").forEach(m => {
+            if (m !== menu) m.hidden = true;
+        });
+        menu.hidden = !menu.hidden;
+        return;
+    }
+
+    if (!e.target.closest(".comment-owner-actions")) {
+        document.querySelectorAll(".comment-menu").forEach(m => { m.hidden = true; });
+    }
+});
 
 
 
