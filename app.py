@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from flask import Flask, jsonify, redirect, render_template, session, send_from_directory
 from config import Config
@@ -15,8 +16,17 @@ def create_app():
 
     register_page_routes(app)
     register_service_worker(app)
+    register_asset_version(app)
 
     return app
+
+
+def register_asset_version(app):
+    version = str(int(time.time()))
+
+    @app.context_processor
+    def _asset_version():
+        return {"asset_v": version}
 
 
 def register_page_routes(app):
