@@ -521,23 +521,25 @@
 
 /* Posts actions bar */
 #actionsPosts {
-  position: static;
-  transform: none;
-  margin-bottom: 1rem;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  background: transparent;
-  border: none;
-  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.posts-search-wrap {
+  position: relative;
+  width: 90%;
+  display: flex;
+  align-items: center;
 }
 
 .posts-search {
-  width: 90%;
+  width: 100%;
   height: 40px;
-  padding: 0 1rem;
+  padding: 0 2.8rem 0 1rem;
   border: 1.5px solid var(--border);
   border-radius: 12px;
   font-size: 0.875rem;
@@ -560,13 +562,15 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
+  width: 100%;
 }
 
 .admin-filter {
   padding: 0.4rem 0.8rem;
   border: 1.5px solid var(--border);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--text-secondary);
   font-size: 0.75rem;
@@ -583,34 +587,28 @@
   color: #fff;
 }
 
-.admin-sort {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.admin-sort .header-section-arrow {
-  width: 32px;
-  height: 32px;
+.posts-search-wrap .header-section-arrow {
+  position: absolute;
+  right: 6px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   justify-content: center;
   color: var(--text-secondary);
   transition: background 0.15s, color 0.15s;
 }
 
-.admin-sort .header-section-arrow:hover {
+.posts-search-wrap .header-section-arrow:hover {
   background: var(--surface-2);
   color: var(--text);
 }
 
-.admin-post-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+.posts-search-wrap .header-sort-menu {
+  top: calc(100% + 4px);
+  right: 0;
 }
 
 .admin-post-actions-row .admin-btn {
-  border-radius: 999px;
   flex-shrink: 0;
 }
 

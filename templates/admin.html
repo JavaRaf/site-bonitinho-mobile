@@ -22,8 +22,17 @@
     <button class="admin-tab" data-tab="turnos">Turnos</button>
   </div>
 
-  <div class="admin-actions" id="actionsPosts">
-    <input type="text" class="posts-search" id="postsSearch" placeholder="Buscar por @usuario ou legenda...">
+  <div id="actionsPosts">
+    <div class="posts-search-wrap" id="postsSort">
+      <input type="text" class="posts-search" id="postsSearch" placeholder="Buscar por @usuario ou legenda...">
+      <button type="button" class="header-section-arrow" id="postsSortBtn" title="Ordenar" aria-label="Ordenar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="header-sort-menu" id="postsSortMenu" hidden>
+        <button type="button" class="active" data-sort="recent">Mais recentes</button>
+        <button type="button" data-sort="popular">Mais populares</button>
+      </div>
+    </div>
     <div class="admin-scrollrow">
       <div class="admin-post-filters">
         <button class="admin-filter active" data-filter="all">Todos</button>
@@ -31,15 +40,6 @@
         <button class="admin-filter" data-filter="video">Videos</button>
         <button class="admin-filter" data-filter="text">Textos</button>
         <button class="admin-filter" data-filter="eleicao">Eleição</button>
-      </div>
-      <div class="admin-sort">
-        <button type="button" class="header-section-arrow" id="postsSortBtn" title="Ordenar" aria-label="Ordenar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="header-sort-menu" id="postsSortMenu" hidden>
-          <button type="button" class="active" data-sort="recent">Mais recentes</button>
-          <button type="button" data-sort="popular">Mais populares</button>
-        </div>
       </div>
     </div>
     <div class="admin-scrollrow admin-post-actions-row">
