@@ -23,19 +23,22 @@
   </div>
 
   <div class="admin-actions" id="actionsPosts">
-    <div class="admin-post-filters">
-      <button class="admin-filter active" data-filter="all">Todos</button>
-      <button class="admin-filter" data-filter="image">Imagens</button>
-      <button class="admin-filter" data-filter="video">Videos</button>
-      <button class="admin-filter" data-filter="text">Textos</button>
-      <button class="admin-filter" data-filter="eleicao">Eleição</button>
+    <input type="text" class="posts-search" id="postsSearch" placeholder="Buscar por @usuario ou legenda...">
+    <div class="admin-scrollrow">
+      <div class="admin-post-filters">
+        <button class="admin-filter active" data-filter="all">Todos</button>
+        <button class="admin-filter" data-filter="image">Imagens</button>
+        <button class="admin-filter" data-filter="video">Videos</button>
+        <button class="admin-filter" data-filter="text">Textos</button>
+        <button class="admin-filter" data-filter="eleicao">Eleição</button>
+      </div>
+      <span class="admin-toolbar-divider"></span>
+      <div class="admin-sortseg">
+        <button class="admin-sortbtn active" data-sort="recent">Recentes</button>
+        <button class="admin-sortbtn" data-sort="popular">Populares</button>
+      </div>
     </div>
-    <div class="admin-posts-tools">
-      <input type="text" class="posts-search" id="postsSearch" placeholder="Buscar por @usuario ou texto da legenda...">
-      <button class="admin-sortbtn active" data-sort="recent">Recentes</button>
-      <button class="admin-sortbtn" data-sort="popular">Populares</button>
-    </div>
-    <div class="admin-post-actions-row">
+    <div class="admin-scrollrow admin-post-actions-row">
       <button class="admin-btn outline" id="adminSelectAll">Selecionar todas</button>
       <button class="admin-btn danger" id="adminDeleteSelected">Excluir</button>
       <button class="admin-btn outline" id="adminRemoveLikes">Remover likes</button>
