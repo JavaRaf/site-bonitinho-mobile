@@ -368,7 +368,7 @@ document.addEventListener("click", async e => {
         const id = editBtn.dataset.id;
         const currentText = editBtn.dataset.text || "";
 
-        const commentEl = editBtn.closest(".comment");
+        const commentEl = editBtn.closest(".comment") || document.querySelector(`.comment[data-id="${id}"]`);
         const bubble = commentEl?.querySelector(".comment-bubble");
         if (!bubble || bubble.dataset.editing === "1") return;
 

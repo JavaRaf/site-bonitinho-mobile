@@ -714,7 +714,7 @@ function onFeedClick(e) {
         const id = commentEditBtn.dataset.id;
         const currentText = commentEditBtn.dataset.text || "";
 
-        const commentEl = commentEditBtn.closest(".comment");
+        const commentEl = commentEditBtn.closest(".comment") || document.querySelector(`.comment[data-id="${id}"]`);
         const bubble = commentEl?.querySelector(".comment-bubble");
         if (!bubble || bubble.dataset.editing === "1") return;
 
@@ -765,7 +765,7 @@ function onFeedClick(e) {
                 .then(res => res.json())
                 .then(data => {
                     if (data.id) {
-                        const feedCard = commentEditBtn.closest(".feed-card");
+                        const feedCard = commentEl.closest(".feed-card");
                         if (feedCard) loadFeedComments(feedCard);
                     }
                 })
@@ -795,9 +795,11 @@ function onFeedClick(e) {
     const feedDeleteBtn = e.target.closest(".comment-delete");
     if (feedDeleteBtn) {
         e.stopPropagation();
-        fetch(`/api/comments/id/${feedDeleteBtn.dataset.id}`, { method: "DELETE" })
+        const delId = feedDeleteBtn.dataset.id;
+        fetch(`/api/comments/id/${delId}`, { method: "DELETE" })
             .then(() => {
-                const feedCard = feedDeleteBtn.closest(".feed-card");
+                const commentEl = feedDeleteBtn.closest(".comment") || document.querySelector(`.comment[data-id="${delId}"]`);
+                const feedCard = commentEl?.closest(".feed-card");
                 if (feedCard) loadFeedComments(feedCard);
             });
         return;
@@ -1503,29 +1505,55 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
     } catch { /* ignore */ }
 })();
 
-/* === Comment 3-dot menu === */
+/* === Comment 3-dot menu (fixed portal to escape overflow clipping) === */
+const commentMenuLayer = document.createElement("div");
+commentMenuLayer.className = "comment-menu";
+commentMenuLayer.style.cssText = "position: fixed;";
+commentMenuLayer.hidden = true;
+document.body.appendChild(commentMenuLayer);
+
+function closeCommentMenu() {
+    commentMenuLayer.hidden = true;
+    commentMenuLayer.innerHTML = "";
+}
+
 document.addEventListener("click", e => {
     const menuItem = e.target.closest(".comment-menu-item");
-    if (menuItem) {
-        menuItem.closest(".comment-menu")?.setAttribute("hidden", "");
+    if (menuItem && commentMenuLayer.contains(menuItem)) {
+        closeCommentMenu();
         return;
     }
 
     const menuBtn = e.target.closest(".comment-menu-btn");
     if (menuBtn) {
-        const menu = menuBtn.closest(".comment-owner-actions")?.querySelector(".comment-menu");
-        if (!menu) return;
-        document.querySelectorAll(".comment-menu").forEach(m => {
-            if (m !== menu) m.hidden = true;
-        });
-        menu.hidden = !menu.hidden;
+        const wasOpen = !commentMenuLayer.hidden && commentMenuLayer._sourceBtn === menuBtn;
+        closeCommentMenu();
+        if (wasOpen) return;
+
+        const inlineMenu = menuBtn.closest(".comment-owner-actions")?.querySelector(":scope > .comment-menu");
+        if (!inlineMenu) return;
+
+        [...inlineMenu.children].forEach(child => commentMenuLayer.appendChild(child.cloneNode(true)));
+        commentMenuLayer._sourceBtn = menuBtn;
+        commentMenuLayer.hidden = false;
+
+        const r = menuBtn.getBoundingClientRect();
+        const mw = commentMenuLayer.offsetWidth || 130;
+        const mh = commentMenuLayer.offsetHeight || 96;
+        let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+        if (left < 8) left = 8;
+        let top = r.bottom + 4;
+        if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+        commentMenuLayer.style.left = left + "px";
+        commentMenuLayer.style.top = top + "px";
         return;
     }
 
-    if (!e.target.closest(".comment-owner-actions")) {
-        document.querySelectorAll(".comment-menu").forEach(m => { m.hidden = true; });
-    }
+    closeCommentMenu();
 });
+
+window.addEventListener("scroll", closeCommentMenu, true);
+window.addEventListener("resize", closeCommentMenu);
 
 
 
