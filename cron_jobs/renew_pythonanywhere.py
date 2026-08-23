@@ -1,10 +1,7 @@
 import os
-import re
-import json
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
-import requests
+from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -13,115 +10,74 @@ load_dotenv(env_path)
 USERNAME = os.getenv("PYTHONANYWHERE_USER")
 PASSWORD = os.getenv("PYTHONANYWHERE_PASS")
 
-LOGIN_URL = "https://www.pythonanywhere.com/login/"
-WEBAPP_URL = f"https://www.pythonanywhere.com/user/{USERNAME}/webapps/"
-LOG_FILE = Path(__file__).resolve().parent / "renew_log.json"
-
-
-def load_log():
-    if LOG_FILE.exists():
-        with open(LOG_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-
-def save_log(data):
-    with open(LOG_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-def extract_expiry_date(html):
-    match = re.search(
-        r"This site will be disabled on\s+(\w+ \d+ \w+ \d+)", html
-    )
-    if match:
-        return match.group(1)
-    return None
-
-
-def parse_expiry_date(date_str):
-    if not date_str:
-        return None
-    try:
-        return datetime.strptime(date_str, "%A %d %B %Y")
-    except ValueError:
-        return None
-
-
-def should_renew():
-    log = load_log()
-    expiry_str = log.get("expiry_date")
-    expiry = parse_expiry_date(expiry_str)
-    if not expiry:
-        return True
-    days_left = (expiry - datetime.now()).days
-    return days_left <= 25
-
 
 def renew():
     if not USERNAME or not PASSWORD:
-        print("PYTHONANYWHERE_USER e PYTHONANYWHERE_PASS devem estar no .env")
-        return
+        print("PYTHONANYWHERE_USER e PYTHONANYWHERE_PASS devem estar definidos.")
+        sys.exit(1)
 
-    s = requests.Session()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-    s.get(LOGIN_URL)
-    csrf_token = s.cookies.get("csrftoken")
+        try:
+            print("Acessando a página de login...")
+            page.goto("https://www.pythonanywhere.com/login/")
 
-    response = s.post(LOGIN_URL, data={
-        "auth-username": USERNAME,
-        "auth-password": PASSWORD,
-        "csrfmiddlewaretoken": csrf_token,
-        "login_view-current_step": "auth",
-    }, headers={"Referer": LOGIN_URL})
+            print("Preenchendo credenciais...")
+            page.fill("input[name='auth-username']", USERNAME)
+            page.fill("input[name='auth-password']", PASSWORD)
 
-    if response.status_code != 200 or "Log out" not in response.text:
-        print("Falha no login")
-        return
-    print(f"Login realizado como {USERNAME}")
+            print("Enviando login...")
+            page.click("button#id_next")
+            page.wait_for_load_state("networkidle")
 
-    webapp_page = s.get(WEBAPP_URL)
-    csrf_token = s.cookies.get("csrftoken")
+            # Verifica se logou com sucesso
+            if "login" in page.url:
+                print("Falha ao logar. Verifique o usuário e a senha.")
+                page.screenshot(path="failure.png")
+                sys.exit(1)
 
-    date_before = extract_expiry_date(webapp_page.text)
-    print(f"Data de expiracao antes: {date_before}")
+            print(f"Login efetuado com sucesso para: {USERNAME}")
 
-    domain = f"{USERNAME}.pythonanywhere.com"
-    reload_url = f"https://www.pythonanywhere.com/user/{USERNAME}/webapps/{domain}/reload"
+            print("Navegando para a página da Webapp...")
+            page.goto(f"https://www.pythonanywhere.com/user/{USERNAME}/webapps/")
+            page.wait_for_load_state("networkidle")
 
-    response = s.post(reload_url, data={
-        "csrfmiddlewaretoken": csrf_token,
-    }, headers={"Referer": WEBAPP_URL})
+            # Procura pelo formulário ou botão de renovação
+            # O texto padrão do botão é "Run until 3 months from today"
+            renew_button = page.locator("form[action*='extend'] input[type='submit'], form[action*='extend'] button, input[value*='Run until']")
+            
+            if renew_button.count() > 0:
+                print("Botão de renovação encontrado! Clicando...")
+                renew_button.first.click()
+                page.wait_for_load_state("networkidle")
+                print("Botão clicado com sucesso.")
+            else:
+                print("Botão de renovação padrão não encontrado. Tentando XPath alternativo...")
+                xpath_btn = page.locator("xpath=/html/body/div[1]/div[2]/div/div[2]/div/div/div[6]/div/div/div/form/input[2]")
+                if xpath_btn.count() > 0:
+                    xpath_btn.click()
+                    page.wait_for_load_state("networkidle")
+                    print("Botão clicado via XPath.")
+                else:
+                    print("Não foi possível encontrar o botão de renovação. O site pode já estar renovado ou o layout mudou.")
+                    page.screenshot(path="failure.png")
 
-    if response.status_code != 200:
-        print(f"Erro ao renovar: {response.status_code}")
-        return
+            # Tira um print final do status do painel
+            page.screenshot(path="success_dashboard.png")
+            print("Processo finalizado. Print do painel salvo em success_dashboard.png.")
 
-    webapp_page = s.get(WEBAPP_URL)
-    date_after = extract_expiry_date(webapp_page.text)
-    print(f"Data de expiracao depois: {date_after}")
-
-    log = load_log()
-    previous_date = log.get("expiry_date")
-
-    updated = date_after != previous_date
-    log["previous_expiry_date"] = previous_date
-    log["expiry_date"] = date_after
-    log["last_run"] = datetime.now().isoformat()
-    log["updated"] = updated
-    save_log(log)
-
-    if updated:
-        print(f"Data atualizada! {previous_date} -> {date_after}")
-    else:
-        print(f"Data nao mudou: {date_after}")
+        except Exception as e:
+            print(f"Ocorreu um erro durante a execução: {e}")
+            try:
+                page.screenshot(path="failure.png")
+            except Exception:
+                pass
+            sys.exit(1)
+        finally:
+            browser.close()
 
 
 if __name__ == "__main__":
-    if not should_renew():
-        log = load_log()
-        expiry = parse_expiry_date(log.get("expiry_date"))
-        days_left = (expiry - datetime.now()).days
-        print(f"Faltam {days_left} dias para expirar. Renovacao nao necessaria ainda.")
-        sys.exit(0)
     renew()
