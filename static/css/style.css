@@ -157,7 +157,7 @@ header.hidden {
 
 .header-section.active {
   color: var(--text);
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--btn-bg);
 }
 
 .header-section-sort {
@@ -252,7 +252,7 @@ header.hidden {
 #logo-name {
   font-family: "Neues Bauen", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 1.1rem;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--text);
   letter-spacing: 0.5px;
 }
@@ -363,7 +363,7 @@ header.hidden {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #f43f5e;
+  background: #FA8128;
   color: #fff;
   font-size: 0.5625rem;
   font-weight: 700;
@@ -1726,7 +1726,7 @@ header.hidden {
 }
 
 .new-posts-inner {
-  background: #378ee9;
+  background: var(--btn-bg);
   color: #fff;
   text-align: center;
   padding: 0.4rem 0.75rem;
@@ -1736,10 +1736,8 @@ header.hidden {
   transition: background 0.2s;
 }
 .new-posts-banner:hover .new-posts-inner {
-  background: #2a7ad4;
+  background: var(--btn-hover);
 }
-.new-posts-banner:hover .new-posts-inner {
-  background: #4f46e5;
 }
 
 .feed-likers {
