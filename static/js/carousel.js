@@ -373,18 +373,14 @@ function feedCardHTML(img) {
             <img src="/static/svg/eleicao.svg" alt="" style="width: 12px; height: 12px; filter: brightness(0) invert(1);"> Eleição
         </span>` : '';
 
-    const tagsContainerHtml = (img.nsfw || img.eleicao) ? `
-        <div class="feed-post-tags" style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; margin-bottom: 0.15rem; padding: 0 0.75rem;">
-            ${tagNsfwHtml}
-            ${tagEleicaoHtml}
-        </div>` : '';
-
     return `
     <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
         <div class="feed-owner">
             <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
             <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
             <div class="feed-owner-flags">
+                ${tagNsfwHtml}
+                ${tagEleicaoHtml}
                 ${myUserId && img.owner_id === myUserId ? `
                     <div class="comment-owner-actions feed-owner-actions">
                         <button type="button" class="comment-menu-btn feed-menu-btn" title="Opções"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
@@ -396,7 +392,6 @@ function feedCardHTML(img) {
                 ` : ""}
             </div>
         </div>
-        ${tagsContainerHtml}
         <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
         ${mediaSection}
         <div class="feed-actions">
