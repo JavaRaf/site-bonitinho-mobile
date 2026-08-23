@@ -158,14 +158,15 @@
 
 .admin-card-info {
   min-width: 0;
-  padding: 0.4rem 0.5rem;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0.35rem 0.5rem;
   font-size: 0.6875rem;
   color: var(--text-secondary);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   background: var(--surface);
-  gap: 0.25rem;
   border-bottom: 1px solid var(--border);
 }
 
@@ -830,14 +831,13 @@
 }
 
 .admin-card-caption {
-  padding: 0.35rem 0.5rem;
-  font-size: 0.6875rem;
+  font-size: 0.65rem;
   color: var(--text-secondary);
-  border-bottom: 1px solid var(--border);
-  max-height: 2.6em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-top: 0.15rem;
+  width: 100%;
 }
 
 .admin-text-list {

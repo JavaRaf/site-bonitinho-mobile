@@ -60,7 +60,6 @@ function renderPosts() {
     grid.innerHTML = posts.map(img => {
         const type = getPostType(img);
         const typeBadge = type === "video" ? '<span class="admin-type-badge admin-type-video">Video</span>' : "";
-        const captionPreview = img.caption && type !== "text" ? `<div class="admin-card-caption">${esc(img.caption)}</div>` : "";
         const body = type === "text"
             ? `<div class="admin-text-thumb">${esc(img.caption || "")}</div>`
             : type === "video"
@@ -69,9 +68,11 @@ function renderPosts() {
         return `
         <div class="admin-card" data-name="${esc(img.name)}">
             <div class="admin-card-info">
-                <span>@${esc(img.owner || "\u2014")}</span>
+                <span style="font-weight: 700; font-size: 0.75rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">@${esc(img.owner || "\u2014")}</span>
+                <div class="admin-card-caption">
+                    ${img.caption ? esc(img.caption) : '<span style="color: var(--text-muted); font-style: italic;">Sem legenda</span>'}
+                </div>
             </div>
-            ${captionPreview}
             ${body}
             <input type="checkbox" class="admin-select">
             <div class="admin-card-tags">
