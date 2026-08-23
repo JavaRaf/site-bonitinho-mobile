@@ -256,7 +256,16 @@ def upload_images():
     img_dir = Config.BASE_DIR / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    post_id = request.form.get("post_id") or uuid.uuid4().hex[:12]
+    requested_post_id = (request.form.get("post_id") or "").strip()
+    post_id = uuid.uuid4().hex[:12]
+    is_edit_addition = False
+    if requested_post_id:
+        existing = Upload.query.filter_by(
+            post_id=requested_post_id, user_id=session["user_id"]
+        ).first()
+        if existing:
+            post_id = requested_post_id
+            is_edit_addition = True
     saved = []
 
     def save_file(data, filename, post_id, caption_override=None):
@@ -327,7 +336,7 @@ def upload_images():
         db.session.rollback()
         raise
 
-    if saved:
+    if saved and not is_edit_addition:
         link_image = saved[0]
         uploader_name = user.username
         uploader_id = user.id
@@ -367,6 +376,7 @@ def edit_my_post(image_name):
     caption = data.get("caption")
     eleicao = data.get("eleicao")
     nsfw = data.get("nsfw")
+    convert_to_text = bool(data.get("convert_to_text"))
 
     siblings = Upload.query.filter_by(post_id=upload.post_id, active=1).all()
     for sib in siblings:
@@ -376,6 +386,40 @@ def edit_my_post(image_name):
             sib.eleicao = 1 if eleicao else 0
         if nsfw is not None:
             sib.nsfw = 1 if nsfw else 0
+
+    if convert_to_text:
+        ordered = Upload.query.filter_by(
+            post_id=upload.post_id, active=1
+        ).order_by(Upload.id).all()
+        img_dir = Config.BASE_DIR / "images"
+
+        def _remove_media_files(image_name):
+            fpath = img_dir / image_name
+            if fpath.exists():
+                fpath.unlink()
+            for ext in (".webp", ".jpg"):
+                tp = Config.THUMB_DIR / (image_name + ext)
+                if tp.exists():
+                    tp.unlink()
+
+        from db.models import PushNotification
+
+        if ordered:
+            keep = ordered[0]
+            _remove_media_files(keep.image_name)
+            keep.media_type = "text"
+            keep.post_type = "text"
+            keep.original_name = ""
+            Like.query.filter_by(image_name=keep.image_name).delete()
+            Comment.query.filter_by(image_name=keep.image_name).delete()
+            PushNotification.query.filter_by(image_name=keep.image_name).delete()
+
+        for sib in ordered[1:]:
+            _remove_media_files(sib.image_name)
+            Like.query.filter_by(image_name=sib.image_name).delete()
+            Comment.query.filter_by(image_name=sib.image_name).delete()
+            PushNotification.query.filter_by(image_name=sib.image_name).delete()
+            db.session.delete(sib)
 
     db.session.commit()
     return jsonify({"ok": True})

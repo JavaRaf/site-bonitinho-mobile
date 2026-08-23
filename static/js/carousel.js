@@ -1001,18 +1001,43 @@ function onFeedClick(e) {
             saveBtn.disabled = true;
             saveBtn.textContent = "Salvando...";
 
+            // mediaList já exclui os itens marcados para remoção
+            const finalMediaCount = mediaList.length + newFiles.length;
+
+            if (finalMediaCount === 0 && !caption) {
+                alert("O post precisa de pelo menos uma mídia ou um texto.");
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Salvar";
+                return;
+            }
+
             try {
-                // 1. Remove mídias deletadas
-                if (mediaToRemove.length > 0) {
-                    await Promise.all(mediaToRemove.map(imgName => 
-                        fetch(`/api/my-images/${encodeURIComponent(imgName)}/single`, {
-                            method: "DELETE",
-                            credentials: "include"
-                        })
-                    ));
+                if (finalMediaCount === 0) {
+                    // Sem mídias restantes: converte o post em post de texto
+                    const res = await fetch(`/api/my-posts/${encodeURIComponent(name)}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            caption,
+                            nsfw: editNsfwActive,
+                            eleicao: editEleicaoActive,
+                            convert_to_text: true
+                        }),
+                        credentials: "include"
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        modal.remove();
+                        if (typeof loadCarousel === "function") {
+                            await loadCarousel(true);
+                        } else {
+                            location.reload();
+                        }
+                    }
+                    return;
                 }
 
-                // 2. Upload de novas mídias
+                // 1. Upload de novas mídias primeiro (evita bloqueio de "última mídia" nas remoções)
                 if (newFiles.length > 0) {
                     const form = new FormData();
                     form.append("post_id", postData.post_id);
@@ -1045,6 +1070,16 @@ function onFeedClick(e) {
                         body: form,
                         credentials: "include"
                     });
+                }
+
+                // 2. Remove mídias deletadas
+                if (mediaToRemove.length > 0) {
+                    await Promise.all(mediaToRemove.map(imgName =>
+                        fetch(`/api/my-images/${encodeURIComponent(imgName)}/single`, {
+                            method: "DELETE",
+                            credentials: "include"
+                        })
+                    ));
                 }
 
                 // 3. Atualiza dados do post (caption, nsfw, eleicao)
