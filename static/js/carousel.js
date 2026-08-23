@@ -386,13 +386,13 @@ function feedCardHTML(img) {
             <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
             <div class="feed-owner-flags">
                 ${myUserId && img.owner_id === myUserId ? `
-                    <button class="feed-edit" data-name="${escText(img.name)}" data-caption="${escText(img.caption || "")}" data-nsfw="${img.nsfw ? "1" : "0"}" data-eleicao="${img.eleicao ? "1" : "0"}" type="button" title="Editar post" style="background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;padding:4px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.65; color: var(--text);">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                        </svg>
-                    </button>
-                    <button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>
+                    <div class="comment-owner-actions feed-owner-actions">
+                        <button type="button" class="comment-menu-btn feed-menu-btn" title="Opções"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+                        <div class="comment-menu" hidden>
+                            <button type="button" class="comment-menu-item feed-edit" data-name="${escText(img.name)}" data-caption="${escText(img.caption || "")}" data-nsfw="${img.nsfw ? "1" : "0"}" data-eleicao="${img.eleicao ? "1" : "0"}">Editar</button>
+                            <button type="button" class="comment-menu-item feed-delete" data-name="${escText(img.name)}">Excluir</button>
+                        </div>
+                    </div>
                 ` : ""}
             </div>
         </div>
@@ -827,7 +827,13 @@ function onFeedClick(e) {
         
         const card = postEditBtn.closest(".feed-card");
         const postId = card?.dataset.postId;
-        const postData = allImages.find(x => x.post_id === postId || x.name === name) || { media: [{ name, media_type: "image" }], post_id: postId || name };
+        let postData = card ? allImages.find(x => x.post_id === postId || x.name === name) : null;
+        if (!postData) {
+            postData = allImages.find(x => x.name === name || (x.media || []).some(m => m.name === name));
+        }
+        if (!postData) {
+            postData = { media: [{ name, media_type: "image" }], post_id: postId || name };
+        }
 
         let mediaList = [...postData.media];
         let mediaToRemove = [];
@@ -1524,7 +1530,7 @@ document.addEventListener("click", e => {
         return;
     }
 
-    const menuBtn = e.target.closest(".comment-menu-btn");
+    const menuBtn = e.target.closest(".comment-menu-btn, .feed-menu-btn");
     if (menuBtn) {
         const wasOpen = !commentMenuLayer.hidden && commentMenuLayer._sourceBtn === menuBtn;
         closeCommentMenu();

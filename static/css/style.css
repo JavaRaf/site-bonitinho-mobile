@@ -659,7 +659,8 @@ header.hidden {
   flex-shrink: 0;
 }
 
-.comment-menu-btn {
+.comment-menu-btn,
+.feed-menu-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -672,7 +673,8 @@ header.hidden {
   transition: background 0.15s;
 }
 
-.comment-menu-btn:hover {
+.comment-menu-btn:hover,
+.feed-menu-btn:hover {
   background: var(--surface-2);
   color: var(--text);
 }
