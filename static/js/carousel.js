@@ -723,12 +723,15 @@ function onFeedClick(e) {
 
         const originalHTML = bubble.innerHTML;
         bubble.dataset.editing = "1";
+        bubble.classList.add("editing");
 
         bubble.innerHTML = `
-            <textarea class="comment-edit-textarea" style="width: 100%; padding: 0.4rem 0.5rem; border-radius: 6px; border: 1.5px solid var(--btn-bg); background: var(--surface); color: var(--text); resize: none; font-family: inherit; font-size: 0.8125rem; box-sizing: border-box;">${currentText}</textarea>
-            <div style="display: flex; justify-content: flex-end; gap: 0.35rem; margin-top: 0.35rem;">
-                <button class="comment-edit-cancel" style="padding: 0.25rem 0.6rem; border-radius: 5px; border: none; background: var(--surface-2); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; cursor: pointer;">Cancelar</button>
-                <button class="comment-edit-save" style="padding: 0.25rem 0.6rem; border-radius: 5px; border: none; background: var(--btn-bg); color: #fff; font-size: 0.7rem; font-weight: 600; cursor: pointer;">Salvar</button>
+            <div class="comment-edit-form">
+                <div class="comment-edit-row">
+                    <textarea class="comment-edit-textarea">${currentText}</textarea>
+                    <button type="button" class="comment-edit-btn" title="Salvar"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                </div>
+                <span class="comment-edit-hint">Pressione Esc para cancelar</span>
             </div>
         `;
 
@@ -739,45 +742,50 @@ function onFeedClick(e) {
 
         function adjustHeight() {
             textarea.style.height = "auto";
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
         }
         adjustHeight();
         textarea.addEventListener("input", adjustHeight);
 
-        textarea.addEventListener("keydown", ev => {
-            if (ev.key === "Enter" && !ev.shiftKey) {
-                ev.preventDefault();
-                bubble.querySelector(".comment-edit-save").click();
-            }
-        });
-
         function restore() {
+            document.removeEventListener("keydown", onKey);
+            bubble.classList.remove("editing");
             bubble.dataset.editing = "0";
             bubble.innerHTML = originalHTML;
         }
 
-        bubble.querySelector(".comment-edit-cancel").onclick = restore;
-
-        bubble.querySelector(".comment-edit-save").onclick = async () => {
+        function save() {
             const text = textarea.value.trim();
             if (!text) return;
+            fetch(`/api/comments/id/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text }),
+                credentials: "include"
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.id) {
+                        const feedCard = commentEditBtn.closest(".feed-card");
+                        if (feedCard) loadFeedComments(feedCard);
+                    }
+                })
+                .catch(err => console.error("Erro ao editar comentário:", err));
+        }
 
-            try {
-                const res = await fetch(`/api/comments/id/${id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text }),
-                    credentials: "include"
-                });
-                const data = await res.json();
-                if (data.id) {
-                    const feedCard = commentEditBtn.closest(".feed-card");
-                    if (feedCard) loadFeedComments(feedCard);
-                }
-            } catch (err) {
-                console.error("Erro ao editar comentário:", err);
+        function onKey(ev) {
+            if (ev.key === "Escape") {
+                ev.preventDefault();
+                restore();
+            } else if (ev.key === "Enter" && !ev.shiftKey && document.activeElement === textarea) {
+                ev.preventDefault();
+                save();
             }
-        };
+        }
+
+        document.addEventListener("keydown", onKey);
+
+        bubble.querySelector(".comment-edit-btn").onclick = save;
         return;
     }
 
