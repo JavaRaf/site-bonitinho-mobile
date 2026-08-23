@@ -29,9 +29,9 @@ html::-webkit-scrollbar {
   --text-soft: #374151;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
-  --btn-bg: #378ee9;
+  --btn-bg: #FA8128;
   --btn-text: #ffffff;
-  --btn-hover: #2a7ad4;
+  --btn-hover: #dc7123;
   --danger: #ef4444;
   --danger-soft: #fef2f2;
   --accent: #1877f2;
@@ -51,9 +51,9 @@ html::-webkit-scrollbar {
   --text-soft: #e0e0e0;
   --text-secondary: #a8a8a8;
   --text-muted: #8e8e8e;
-  --btn-bg: #378ee9;
+  --btn-bg: #FA8128;
   --btn-text: #ffffff;
-  --btn-hover: #2a7ad4;
+  --btn-hover: #dc7123;
   --danger: #ed4956;
   --danger-soft: #2a1a1a;
   --accent: #4599ff;

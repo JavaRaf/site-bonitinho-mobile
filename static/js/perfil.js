@@ -84,7 +84,7 @@ async function loadProfile() {
     }
 
     profile = data;
-    document.title = data.username + " — ArteBonitinha";
+    document.title = data.username + " — MikanNet";
 
     setAvatar(document.getElementById("avatarImg"), data.avatar);
     setCover(document.getElementById("coverImg"), data.cover);

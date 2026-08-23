@@ -55,7 +55,7 @@ export async function requestPushPermission() {
     });
 
     onMessage(messaging, (payload) => {
-      const title = payload.data?.title || "ArteBonitinha";
+      const title = payload.data?.title || "MikanNet";
       const body = payload.data?.body || "";
       new Notification(title, { body, icon: "/static/svg/default-avatar.svg" });
       if (typeof refreshNotificationBadge === "function") refreshNotificationBadge();

@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.data?.title || "ArteBonitinha";
+  const title = payload.data?.title || "MikanNet";
   const body = payload.data?.body || "";
   self.registration.showNotification(title, {
     body,

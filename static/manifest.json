@@ -1,11 +1,11 @@
 {
-  "name": "ArteBonitinha",
-  "short_name": "ArteBonitinha",
+  "name": "MikanNet",
+  "short_name": "MikanNet",
   "description": "Rede social de imagens",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fae884",
-  "theme_color": "#a8a8a8",
+  "theme_color": "#FA8128",
   "orientation": "portrait-primary",
   "icons": [
     {
