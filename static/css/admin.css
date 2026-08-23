@@ -527,6 +527,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.6rem;
   background: transparent;
   border: none;
@@ -582,38 +583,24 @@
   color: #fff;
 }
 
-.admin-sortseg {
+.admin-sort {
+  position: relative;
   display: flex;
-  border: 1.5px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--surface);
+  align-items: center;
 }
 
-.admin-sortbtn {
-  padding: 0.4rem 0.85rem;
-  border: none;
-  background: transparent;
+.admin-sort .header-section-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  justify-content: center;
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  white-space: nowrap;
   transition: background 0.15s, color 0.15s;
 }
 
-.admin-sortbtn + .admin-sortbtn {
-  border-left: 1.5px solid var(--border);
-}
-
-.admin-sortbtn:hover {
+.admin-sort .header-section-arrow:hover {
+  background: var(--surface-2);
   color: var(--text);
-}
-
-.admin-sortbtn.active {
-  background: var(--btn-bg);
-  color: #fff;
 }
 
 .admin-post-actions-row {

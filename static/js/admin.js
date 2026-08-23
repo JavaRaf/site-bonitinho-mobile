@@ -183,15 +183,30 @@ document.querySelectorAll(".admin-filter").forEach(btn => {
     });
 });
 
-/* Sort + search */
-document.querySelectorAll(".admin-sortbtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".admin-sortbtn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        postSort = btn.dataset.sort;
-        renderPosts();
+/* Sort dropdown + search */
+const postsSortWrap = document.getElementById("postsSort");
+if (postsSortWrap) {
+    const sortBtn = document.getElementById("postsSortBtn");
+    const sortMenu = document.getElementById("postsSortMenu");
+
+    sortBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        sortMenu.hidden = !sortMenu.hidden;
     });
-});
+
+    sortMenu.querySelectorAll("button").forEach(b => {
+        b.addEventListener("click", () => {
+            postSort = b.dataset.sort;
+            sortMenu.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+            sortMenu.hidden = true;
+            renderPosts();
+        });
+    });
+
+    document.addEventListener("click", e => {
+        if (!postsSortWrap.contains(e.target)) sortMenu.hidden = true;
+    });
+}
 
 document.getElementById("postsSearch")?.addEventListener("input", e => {
     postQuery = e.target.value;
