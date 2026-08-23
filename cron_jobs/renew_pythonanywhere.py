@@ -52,28 +52,40 @@ def renew():
                 print("Botão de renovação encontrado! Clicando...")
                 renew_button.first.click()
                 page.wait_for_load_state("networkidle")
-                print("Botão clicado com sucesso.")
+                msg = "Botão clicado com sucesso e renovado."
+                print(msg)
+                with open("renew_result.txt", "w") as f:
+                    f.write(f"SUCCESS: {msg}")
             else:
                 print("Botão de renovação padrão não encontrado. Tentando XPath alternativo...")
                 xpath_btn = page.locator("xpath=/html/body/div[1]/div[2]/div/div[2]/div/div/div[6]/div/div/div/form/input[2]")
                 if xpath_btn.count() > 0:
                     xpath_btn.click()
                     page.wait_for_load_state("networkidle")
-                    print("Botão clicado via XPath.")
+                    msg = "Botão clicado via XPath e renovado."
+                    print(msg)
+                    with open("renew_result.txt", "w") as f:
+                        f.write(f"SUCCESS: {msg}")
                 else:
-                    print("Não foi possível encontrar o botão de renovação. O site pode já estar renovado ou o layout mudou.")
+                    msg = "Não foi possível encontrar o botão de renovação. O site pode já estar renovado ou o layout mudou."
+                    print(msg)
                     page.screenshot(path="failure.png")
+                    with open("renew_result.txt", "w") as f:
+                        f.write(f"WARNING: {msg}")
 
             # Tira um print final do status do painel
             page.screenshot(path="success_dashboard.png")
             print("Processo finalizado. Print do painel salvo em success_dashboard.png.")
 
         except Exception as e:
-            print(f"Ocorreu um erro durante a execução: {e}")
+            msg = f"Ocorreu um erro durante a execução: {e}"
+            print(msg)
             try:
                 page.screenshot(path="failure.png")
             except Exception:
                 pass
+            with open("renew_result.txt", "w") as f:
+                f.write(f"FAILED: {msg}")
             sys.exit(1)
         finally:
             browser.close()

@@ -31,9 +31,24 @@ jobs:
         PYTHONANYWHERE_PASS: ${{ secrets.PYTHONANYWHERE_PASS }}
       run: python cron_jobs/renew_pythonanywhere.py
 
-    - name: Upload screenshot if failed
-      if: failure()
+    - name: Publish Step Summary
+      if: always()
+      run: |
+        if [ -f renew_result.txt ]; then
+          echo "### 🚀 Status da Renovação" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat renew_result.txt >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Falha Crítica" >> $GITHUB_STEP_SUMMARY
+          echo "O script não gerou o arquivo de resultados." >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload Screenshot
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: failure-screenshot
-        path: failure.png
+        name: screenshots
+        path: |
+          success_dashboard.png
+          failure.png
+        if-no-files-found: ignore
