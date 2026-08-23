@@ -1043,6 +1043,7 @@ function onFeedClick(e) {
                 }
 
                 // 1. Upload de novas mídias primeiro (evita bloqueio de "última mídia" nas remoções)
+                let uploadedFirstName = null;
                 if (newFiles.length > 0) {
                     const form = new FormData();
                     form.append("post_id", postData.post_id);
@@ -1070,15 +1071,20 @@ function onFeedClick(e) {
                             }
                         }
                     }
-                    await fetch("/api/upload", {
+                    const upRes = await fetch("/api/upload", {
                         method: "POST",
                         body: form,
                         credentials: "include"
                     });
+                    const upData = await upRes.json();
+                    if (Array.isArray(upData.saved) && upData.saved.length > 0) {
+                        uploadedFirstName = upData.saved[0];
+                    }
                 }
 
                 // 2. Post de texto promovido a post com mídia: remove a linha de texto
-                if (wasTextPost && textMediaItem && newFiles.length > 0) {
+                //    (apenas se o upload realmente criou as novas linhas)
+                if (wasTextPost && textMediaItem && uploadedFirstName) {
                     await fetch(`/api/my-images/${encodeURIComponent(textMediaItem.name)}/single`, {
                         method: "DELETE",
                         credentials: "include"
@@ -1095,8 +1101,11 @@ function onFeedClick(e) {
                     ));
                 }
 
-                // 3. Atualiza dados do post (caption, nsfw, eleicao)
-                const res = await fetch(`/api/my-posts/${encodeURIComponent(name)}`, {
+                // 4. Atualiza dados do post (caption, nsfw, eleicao)
+                //    Se a linha original era de texto e foi removida na promoção,
+                //    o PUT passa a mirar a primeira mídia recém-enviada.
+                const putTarget = uploadedFirstName || name;
+                const res = await fetch(`/api/my-posts/${encodeURIComponent(putTarget)}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
