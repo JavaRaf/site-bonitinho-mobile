@@ -256,7 +256,7 @@ def upload_images():
     img_dir = Config.BASE_DIR / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    post_id = uuid.uuid4().hex[:12]
+    post_id = request.form.get("post_id") or uuid.uuid4().hex[:12]
     saved = []
 
     def save_file(data, filename, post_id, caption_override=None):
@@ -366,6 +366,7 @@ def edit_my_post(image_name):
     data = request.get_json() or {}
     caption = data.get("caption")
     eleicao = data.get("eleicao")
+    nsfw = data.get("nsfw")
 
     siblings = Upload.query.filter_by(post_id=upload.post_id, active=1).all()
     for sib in siblings:
@@ -373,7 +374,41 @@ def edit_my_post(image_name):
             sib.caption = caption
         if eleicao is not None:
             sib.eleicao = 1 if eleicao else 0
+        if nsfw is not None:
+            sib.nsfw = 1 if nsfw else 0
 
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@images_bp.route("/api/my-images/<path:image_name>/single", methods=["DELETE"])
+@login_required
+def delete_single_image(image_name):
+    safe_name = Path(image_name).name
+    upload = Upload.query.filter_by(image_name=safe_name).first()
+    if not upload or upload.user_id != session["user_id"]:
+        return jsonify({"error": "not found or not owner"}), 403
+
+    siblings_count = Upload.query.filter_by(post_id=upload.post_id, active=1).count()
+    if siblings_count <= 1:
+        return jsonify({"error": "cannot delete the last media of a post, delete the post instead"}), 400
+
+    img_dir = Config.BASE_DIR / "images"
+    filepath = img_dir / upload.image_name
+    if filepath.exists():
+        filepath.unlink()
+    thumb_path = Config.THUMB_DIR / (upload.image_name + ".webp")
+    if thumb_path.exists():
+        thumb_path.unlink()
+    legacy_thumb = Config.THUMB_DIR / (upload.image_name + ".jpg")
+    if legacy_thumb.exists():
+        legacy_thumb.unlink()
+    
+    Like.query.filter_by(image_name=upload.image_name).delete()
+    Comment.query.filter_by(image_name=upload.image_name).delete()
+    from db.models import PushNotification
+    PushNotification.query.filter_by(image_name=upload.image_name).delete()
+    db.session.delete(upload)
     db.session.commit()
     return jsonify({"ok": True})
 

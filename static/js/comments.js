@@ -373,8 +373,7 @@ document.addEventListener("click", async e => {
 
         const modal = document.createElement("div");
         modal.className = "confirm-overlay";
-        modal.style.zIndex = "1000";
-        modal.style.display = "flex";
+        modal.style.cssText = "position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;";
         modal.innerHTML = `
             <div class="confirm-box" style="width: 90%; max-width: 400px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
                 <h3 style="margin: 0; font-size: 1.125rem; color: var(--text);">Editar Comentário</h3>

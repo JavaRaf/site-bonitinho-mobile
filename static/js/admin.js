@@ -71,11 +71,13 @@ function renderPosts() {
             ${body}
             <input type="checkbox" class="admin-select">
             <div class="admin-card-actions">
-                ${typeBadge}
-                ${img.nsfw ? '<span class="admin-nsfw-badge">NSFW</span>' : ''}
-                ${img.eleicao ? '<span class="admin-eleicao-badge">Eleição</span>' : ''}
                 <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar NSFW">NSFW</button>
                 <button class="admin-eleicao-btn${img.eleicao ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar Eleição">Eleição</button>
+            </div>
+            <div class="admin-card-tags" style="display:flex; flex-wrap:wrap; gap:0.25rem; padding:0.35rem 0.5rem 0 0.5rem;">
+                ${typeBadge}
+                ${img.nsfw ? '<span class="admin-nsfw-badge" style="display:inline-flex; align-items:center; gap:0.2rem; padding: 0.1rem 0.3rem;"><img src="/static/svg/NSFW.svg" style="width:10px;height:10px;filter:brightness(0) invert(1);"> NSFW</span>' : ''}
+                ${img.eleicao ? '<span class="admin-eleicao-badge" style="display:inline-flex; align-items:center; gap:0.2rem; padding: 0.1rem 0.3rem;"><img src="/static/svg/eleicao.svg" style="width:10px;height:10px;filter:brightness(0) invert(1);"> Eleição</span>' : ''}
             </div>
             ${captionPreview}
             <div class="admin-card-info">
@@ -125,10 +127,11 @@ function renderPosts() {
                 if (!badge) {
                     badge = document.createElement("span");
                     badge.className = "admin-nsfw-badge";
-                    badge.textContent = "NSFW";
-                    const actions = nsfwBtn.closest(".admin-card-actions");
-                    if (actions) {
-                        actions.insertBefore(badge, actions.firstChild);
+                    badge.style.cssText = "display:inline-flex; align-items:center; gap:0.2rem; padding: 0.1rem 0.3rem;";
+                    badge.innerHTML = `<img src="/static/svg/NSFW.svg" style="width:10px;height:10px;filter:brightness(0) invert(1);"> NSFW`;
+                    const tags = nsfwBtn.closest(".admin-card")?.querySelector(".admin-card-tags");
+                    if (tags) {
+                        tags.appendChild(badge);
                     }
                 }
             } else {
@@ -152,10 +155,11 @@ function renderPosts() {
                 if (!badge) {
                     badge = document.createElement("span");
                     badge.className = "admin-eleicao-badge";
-                    badge.textContent = "Eleição";
-                    const actions = eleicaoBtn.closest(".admin-card-actions");
-                    if (actions) {
-                        actions.insertBefore(badge, actions.firstChild);
+                    badge.style.cssText = "display:inline-flex; align-items:center; gap:0.2rem; padding: 0.1rem 0.3rem;";
+                    badge.innerHTML = `<img src="/static/svg/eleicao.svg" style="width:10px;height:10px;filter:brightness(0) invert(1);"> Eleição`;
+                    const tags = eleicaoBtn.closest(".admin-card")?.querySelector(".admin-card-tags");
+                    if (tags) {
+                        tags.appendChild(badge);
                     }
                 }
             } else {

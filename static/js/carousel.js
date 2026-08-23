@@ -362,16 +362,31 @@ function feedCardHTML(img) {
     }
 
     const downloadBtn = isText ? "" : `<button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar"><img src="/static/svg/download.svg" alt="download"></button>`;
+    
+    const tagNsfwHtml = img.nsfw ? `
+        <span class="feed-nsfw-badge" style="display: inline-flex; align-items: center; gap: 0.25rem; background: var(--danger); color: #fff; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">
+            <img src="/static/svg/NSFW.svg" alt="" style="width: 12px; height: 12px; filter: brightness(0) invert(1);"> NSFW
+        </span>` : '';
+        
+    const tagEleicaoHtml = img.eleicao ? `
+        <span class="feed-eleicao-badge" style="display: inline-flex; align-items: center; gap: 0.25rem; background: var(--btn-bg); color: #fff; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">
+            <img src="/static/svg/eleicao.svg" alt="" style="width: 12px; height: 12px; filter: brightness(0) invert(1);"> Eleição
+        </span>` : '';
+
+    const tagsContainerHtml = (img.nsfw || img.eleicao) ? `
+        <div class="feed-post-tags" style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; margin-bottom: 0.15rem; padding: 0 0.75rem;">
+            ${tagNsfwHtml}
+            ${tagEleicaoHtml}
+        </div>` : '';
+
     return `
     <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
         <div class="feed-owner">
             <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
             <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
             <div class="feed-owner-flags">
-                ${img.nsfw ? '<span class="feed-nsfw-badge">NSFW</span>' : ''}
-                ${img.eleicao ? '<span class="feed-eleicao-badge">Eleição</span>' : ''}
                 ${myUserId && img.owner_id === myUserId ? `
-                    <button class="feed-edit" data-name="${escText(img.name)}" data-caption="${escText(img.caption || "")}" data-eleicao="${img.eleicao ? "1" : "0"}" type="button" title="Editar post" style="background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;padding:4px;">
+                    <button class="feed-edit" data-name="${escText(img.name)}" data-caption="${escText(img.caption || "")}" data-nsfw="${img.nsfw ? "1" : "0"}" data-eleicao="${img.eleicao ? "1" : "0"}" type="button" title="Editar post" style="background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;padding:4px;">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.65; color: var(--text);">
                             <path d="M12 20h9"></path>
                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -381,6 +396,7 @@ function feedCardHTML(img) {
                 ` : ""}
             </div>
         </div>
+        ${tagsContainerHtml}
         <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
         ${mediaSection}
         <div class="feed-actions">
@@ -703,8 +719,7 @@ function onFeedClick(e) {
 
         const modal = document.createElement("div");
         modal.className = "confirm-overlay";
-        modal.style.zIndex = "1000";
-        modal.style.display = "flex";
+        modal.style.cssText = "position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;";
         modal.innerHTML = `
             <div class="confirm-box" style="width: 90%; max-width: 400px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
                 <h3 style="margin: 0; font-size: 1.125rem; color: var(--text);">Editar Comentário</h3>
@@ -774,27 +789,49 @@ function onFeedClick(e) {
         e.stopPropagation();
         const name = postEditBtn.dataset.name;
         const currentCaption = postEditBtn.dataset.caption || "";
+        const currentNsfw = postEditBtn.dataset.nsfw === "1";
         const currentEleicao = postEditBtn.dataset.eleicao === "1";
+        
+        const card = postEditBtn.closest(".feed-card");
+        const postId = card?.dataset.postId;
+        const postData = allImages.find(x => x.post_id === postId || x.name === name) || { media: [{ name, media_type: "image" }], post_id: postId || name };
+
+        let mediaList = [...postData.media];
+        let mediaToRemove = [];
+        let newFiles = [];
+        let editNsfwActive = currentNsfw;
+        let editEleicaoActive = currentEleicao;
 
         const modal = document.createElement("div");
         modal.className = "confirm-overlay";
-        modal.style.zIndex = "1000";
-        modal.style.display = "flex";
+        modal.style.cssText = "position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;";
+        
         modal.innerHTML = `
-            <div class="confirm-box" style="width: 90%; max-width: 400px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div class="confirm-box" style="width: 100%; max-width: 480px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: 90vh; overflow-y: auto;">
                 <h3 style="margin: 0; font-size: 1.125rem; color: var(--text);">Editar Postagem</h3>
                 
                 <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                    <label style="font-size: 0.8rem; color: var(--text-secondary);">Legenda</label>
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Legenda</label>
                     <textarea id="editPostCaption" rows="3" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); resize: none; font-family: inherit;">${currentCaption}</textarea>
                 </div>
-                
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" id="editPostEleicao" ${currentEleicao ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--btn-bg);">
-                    <label for="editPostEleicao" style="font-size: 0.9rem; color: var(--text); cursor: pointer; user-select: none;">Tag Eleição</label>
+
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Mídias do Post</label>
+                    <div id="editMediaPreviews" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 60px; padding: 0.5rem; border: 1.5px dashed var(--border); border-radius: 6px; background: var(--surface-2);"></div>
+                    <button id="editAddMediaBtn" type="button" style="align-self: flex-start; background: var(--surface); border: 1.5px solid var(--border); color: var(--text); padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Adicionar Imagem/Vídeo
+                    </button>
+                    <input type="file" id="editFileInput" multiple accept="image/*,video/*" style="display: none;">
                 </div>
                 
-                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem;">
+                    <button id="editNsfwToggle" type="button" class="feed-create-nsfw ${editNsfwActive ? 'active visible' : 'visible'}" style="margin: 0; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 700; height: auto; border-radius: 6px;">18+</button>
+                    <button id="editEleicaoToggle" type="button" style="background: ${editEleicaoActive ? 'var(--btn-bg)' : 'var(--surface-2)'}; color: ${editEleicaoActive ? '#fff' : 'var(--text-soft)'}; border: 1.5px solid ${editEleicaoActive ? 'var(--btn-bg)' : 'var(--border)'}; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; transition: background 0.15s, color 0.15s;">
+                        <img src="/static/svg/eleicao.svg" alt="" style="width: 14px; height: 14px; filter: ${editEleicaoActive ? 'brightness(0) invert(1)' : 'none'};"> Eleição
+                    </button>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; border-top: 1.5px solid var(--border); padding-top: 0.75rem;">
                     <button id="editPostCancel" class="confirm-btn confirm-no" style="padding: 0.5rem 1rem; border-radius: 6px;">Cancelar</button>
                     <button id="editPostSave" class="confirm-btn confirm-yes" style="padding: 0.5rem 1rem; border-radius: 6px; background: var(--btn-bg); color: #fff;">Salvar</button>
                 </div>
@@ -802,45 +839,194 @@ function onFeedClick(e) {
         `;
         document.body.appendChild(modal);
 
+        const previewsContainer = modal.querySelector("#editMediaPreviews");
+        const fileInput = modal.querySelector("#editFileInput");
+        const nsfwToggle = modal.querySelector("#editNsfwToggle");
+        const eleicaoToggle = modal.querySelector("#editEleicaoToggle");
+
+        nsfwToggle.onclick = () => {
+            editNsfwActive = !editNsfwActive;
+            nsfwToggle.classList.toggle("active", editNsfwActive);
+        };
+
+        eleicaoToggle.onclick = () => {
+            editEleicaoActive = !editEleicaoActive;
+            eleicaoToggle.style.background = editEleicaoActive ? 'var(--btn-bg)' : 'var(--surface-2)';
+            eleicaoToggle.style.color = editEleicaoActive ? '#fff' : 'var(--text-soft)';
+            eleicaoToggle.style.borderColor = editEleicaoActive ? 'var(--btn-bg)' : 'var(--border)';
+            eleicaoToggle.querySelector("img").style.filter = editEleicaoActive ? 'brightness(0) invert(1)' : 'none';
+        };
+
+        modal.querySelector("#editAddMediaBtn").onclick = () => fileInput.click();
+
+        function renderEditPreviews() {
+            previewsContainer.innerHTML = "";
+            
+            // Renderiza mídias atuais
+            mediaList.forEach(m => {
+                const div = document.createElement("div");
+                div.className = "composer-preview-item";
+                div.style.cssText = "position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #000;";
+                if (m.media_type === "video") {
+                    const vid = document.createElement("video");
+                    vid.src = `/images/${m.name}`;
+                    vid.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+                    div.appendChild(vid);
+                } else {
+                    const img = document.createElement("img");
+                    img.src = `/images/${m.name}`;
+                    img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+                    div.appendChild(img);
+                }
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "composer-remove";
+                removeBtn.type = "button";
+                removeBtn.innerHTML = "&times;";
+                removeBtn.onclick = () => {
+                    mediaToRemove.push(m.name);
+                    mediaList = mediaList.filter(x => x.name !== m.name);
+                    renderEditPreviews();
+                };
+                div.appendChild(removeBtn);
+                previewsContainer.appendChild(div);
+            });
+
+            // Renderiza novas mídias adicionadas
+            newFiles.forEach((file, idx) => {
+                const div = document.createElement("div");
+                div.className = "composer-preview-item";
+                div.style.cssText = "position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #000;";
+                const isVideo = file.type.startsWith("video/");
+                if (isVideo) {
+                    const vid = document.createElement("video");
+                    vid.src = URL.createObjectURL(file);
+                    vid.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+                    div.appendChild(vid);
+                } else {
+                    const img = document.createElement("img");
+                    img.src = URL.createObjectURL(file);
+                    img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+                    div.appendChild(img);
+                }
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "composer-remove";
+                removeBtn.type = "button";
+                removeBtn.innerHTML = "&times;";
+                removeBtn.onclick = () => {
+                    newFiles.splice(idx, 1);
+                    renderEditPreviews();
+                };
+                div.appendChild(removeBtn);
+                previewsContainer.appendChild(div);
+            });
+        }
+
+        fileInput.onchange = () => {
+            const files = Array.from(fileInput.files);
+            if (!files.length) return;
+            for (const file of files) {
+                if (file.type.startsWith("video/")) {
+                    const vid = document.createElement("video");
+                    vid.preload = "metadata";
+                    vid.src = URL.createObjectURL(file);
+                    vid.onloadedmetadata = () => {
+                        if (vid.duration > 60) {
+                            alert("Vídeo muito longo (máximo 1 minuto).");
+                            URL.revokeObjectURL(vid.src);
+                            return;
+                        }
+                        newFiles.push(file);
+                        renderEditPreviews();
+                    };
+                } else {
+                    newFiles.push(file);
+                }
+            }
+            renderEditPreviews();
+            fileInput.value = "";
+        };
+
+        renderEditPreviews();
+
         modal.querySelector("#editPostCancel").onclick = () => modal.remove();
+        
         modal.querySelector("#editPostSave").onclick = async () => {
-            const caption = modal.querySelector("#editPostCaption").value;
-            const eleicao = modal.querySelector("#editPostEleicao").checked;
-            modal.remove();
+            const caption = modal.querySelector("#editPostCaption").value.trim();
+            const saveBtn = modal.querySelector("#editPostSave");
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Salvando...";
 
             try {
+                // 1. Remove mídias deletadas
+                if (mediaToRemove.length > 0) {
+                    await Promise.all(mediaToRemove.map(imgName => 
+                        fetch(`/api/my-images/${encodeURIComponent(imgName)}/single`, {
+                            method: "DELETE",
+                            credentials: "include"
+                        })
+                    ));
+                }
+
+                // 2. Upload de novas mídias
+                if (newFiles.length > 0) {
+                    const form = new FormData();
+                    form.append("post_id", postData.post_id);
+                    form.append("caption", caption);
+                    form.append("nsfw", editNsfwActive ? "1" : "0");
+                    form.append("eleicao", editEleicaoActive ? "1" : "0");
+                    
+                    // Reaproveita função de compressão se disponível
+                    const compressor = typeof compressImage === "function" ? compressImage : async (f) => f;
+                    
+                    for (const file of newFiles) {
+                        if (file.type.startsWith("video/")) {
+                            form.append("images", file, file.name);
+                        } else {
+                            try {
+                                const compressed = await compressor(file);
+                                let name = file.name;
+                                if (compressed !== file) {
+                                    const ext = file.type === "image/png" ? ".png" : ".jpg";
+                                    name = file.name.replace(/\.[^.]+$/, "") + ext;
+                                }
+                                form.append("images", compressed, name);
+                            } catch {
+                                form.append("images", file, file.name);
+                            }
+                        }
+                    }
+                    await fetch("/api/upload", {
+                        method: "POST",
+                        body: form,
+                        credentials: "include"
+                    });
+                }
+
+                // 3. Atualiza dados do post (caption, nsfw, eleicao)
                 const res = await fetch(`/api/my-posts/${encodeURIComponent(name)}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ caption, eleicao }),
+                    body: JSON.stringify({
+                        caption,
+                        nsfw: editNsfwActive,
+                        eleicao: editEleicaoActive
+                    }),
                     credentials: "include"
                 });
                 const data = await res.json();
+                
                 if (data.ok) {
-                    // Atualiza localmente
-                    postEditBtn.dataset.caption = caption;
-                    postEditBtn.dataset.eleicao = eleicao ? "1" : "0";
-                    
-                    const card = postEditBtn.closest(".feed-card");
-                    if (card) {
-                        const capEl = card.querySelector(".feed-caption");
-                        if (capEl) capEl.textContent = caption;
-
-                        let badge = card.querySelector(".feed-eleicao-badge");
-                        if (eleicao) {
-                            if (!badge) {
-                                badge = document.createElement("span");
-                                badge.className = "feed-eleicao-badge";
-                                badge.textContent = "Eleição";
-                                card.querySelector(".feed-owner-flags")?.insertBefore(badge, postEditBtn);
-                            }
-                        } else {
-                            if (badge) badge.remove();
-                        }
+                    modal.remove();
+                    if (typeof loadCarousel === "function") {
+                        await loadCarousel(true);
+                    } else {
+                        location.reload();
                     }
                 }
             } catch (err) {
-                console.error("Erro ao editar post:", err);
+                console.error("Erro ao salvar post:", err);
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Salvar";
             }
         };
         return;
