@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-from threading import Thread
 
 from flask import Blueprint, request, jsonify, session
 from db import db
