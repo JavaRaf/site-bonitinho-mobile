@@ -223,7 +223,7 @@
   left: 3.5rem;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  background: #8b5cf6;
+  background: var(--btn-bg);
   color: #fff;
   font-size: 0.625rem;
   font-weight: 700;
@@ -834,7 +834,7 @@
 .admin-type-video {
   top: 0.35rem;
   left: 0.35rem;
-  background: #8b5cf6;
+  background: var(--accent);
   color: #fff;
 }
 
