@@ -2662,13 +2662,10 @@ header.hidden {
 
 .edit-icon-nsfw.active {
   background: var(--danger);
+  color: #fff;
 }
 
 .edit-icon-eleicao.active {
   background: var(--btn-bg);
-}
-
-.edit-icon-nsfw.active img,
-.edit-icon-eleicao.active img {
-  filter: brightness(0) invert(1);
+  color: #fff;
 }
