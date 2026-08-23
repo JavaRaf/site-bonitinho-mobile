@@ -1,6 +1,8 @@
 let selected = new Set();
 let allPosts = [];
 let postFilter = "all";
+let postSort = "recent";
+let postQuery = "";
 const status = document.getElementById("adminStatus");
 
 function showStatus(msg) {
@@ -37,9 +39,27 @@ function getPostType(post) {
 }
 
 function getFilteredPosts() {
-    if (postFilter === "all") return allPosts;
-    if (postFilter === "eleicao") return allPosts.filter(p => p.eleicao);
-    return allPosts.filter(p => getPostType(p) === postFilter);
+    let posts = allPosts;
+    if (postFilter === "eleicao") posts = posts.filter(p => p.eleicao);
+    else if (postFilter !== "all") posts = posts.filter(p => getPostType(p) === postFilter);
+
+    const q = postQuery.trim().toLowerCase();
+    if (q) {
+        posts = posts.filter(p =>
+            (p.owner || "").toLowerCase().includes(q) ||
+            (p.caption || "").toLowerCase().includes(q)
+        );
+    }
+
+    return [...posts].sort((a, b) => {
+        if (postSort === "popular") {
+            const la = a.likes || 0, lb = b.likes || 0;
+            if (la !== lb) return lb - la;
+        }
+        const da = new Date(a.created_at || 0).getTime() || 0;
+        const dbb = new Date(b.created_at || 0).getTime() || 0;
+        return dbb - da;
+    });
 }
 
 async function loadPosts() {
@@ -161,6 +181,21 @@ document.querySelectorAll(".admin-filter").forEach(btn => {
         selected.clear();
         renderPosts();
     });
+});
+
+/* Sort + search */
+document.querySelectorAll(".admin-sortbtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".admin-sortbtn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        postSort = btn.dataset.sort;
+        renderPosts();
+    });
+});
+
+document.getElementById("postsSearch")?.addEventListener("input", e => {
+    postQuery = e.target.value;
+    renderPosts();
 });
 
 /* Select all */

@@ -103,6 +103,7 @@ def _ranking_payload(eleicao_only=False):
             Upload.media_type,
             Upload.eleicao,
             Upload.user_id,
+            Upload.created_at,
             User.username.label("owner"),
             db.func.count(Like.id).label("likes"),
         )
@@ -133,6 +134,7 @@ def _ranking_payload(eleicao_only=False):
                 "caption": r.caption or "",
                 "nsfw": bool(r.nsfw),
                 "eleicao": bool(r.eleicao),
+                "created_at": r.created_at.isoformat() if r.created_at else None,
                 "media": [media],
             }
         else:
