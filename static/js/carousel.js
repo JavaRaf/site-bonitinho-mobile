@@ -1540,6 +1540,12 @@ document.addEventListener("click", e => {
         if (!inlineMenu) return;
 
         [...inlineMenu.children].forEach(child => commentMenuLayer.appendChild(child.cloneNode(true)));
+
+        // Mount inside #feedView so item clicks bubble to the delegated
+        // edit/delete handlers (position:fixed keeps visuals unchanged)
+        const host = document.getElementById("feedView") || document.body;
+        if (commentMenuLayer.parentElement !== host) host.appendChild(commentMenuLayer);
+
         commentMenuLayer._sourceBtn = menuBtn;
         commentMenuLayer.hidden = false;
 
