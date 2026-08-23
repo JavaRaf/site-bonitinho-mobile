@@ -70,7 +70,6 @@ function renderPosts() {
         <div class="admin-card" data-name="${esc(img.name)}">
             <div class="admin-card-info">
                 <span>@${esc(img.owner || "\u2014")}</span>
-                <span class="admin-card-likes"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
             </div>
             ${captionPreview}
             ${body}
@@ -79,6 +78,7 @@ function renderPosts() {
                 ${typeBadge}
                 <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar NSFW">NSFW</button>
                 <button class="admin-eleicao-btn${img.eleicao ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar Eleição">Eleição</button>
+                <span class="admin-card-likes" style="margin-left: auto;"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
             </div>
             <div class="admin-likers">
                 ${img.likers && img.likers.length
