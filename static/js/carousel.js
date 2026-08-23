@@ -368,7 +368,7 @@ function feedCardHTML(img) {
             <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
             <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
             <div class="feed-owner-flags">
-                ${img.nsfw ? '<span class="feed-nsfw-badge">+18</span>' : ''}
+                ${img.nsfw ? '<span class="feed-nsfw-badge">NSFW</span>' : ''}
                 ${img.eleicao ? '<span class="feed-eleicao-badge">Eleição</span>' : ''}
                 ${myUserId && img.owner_id === myUserId ? `<button class="feed-delete" data-name="${escText(img.name)}" type="button" title="Apagar post"><img src="/static/svg/trash.svg" alt="delete"></button>` : ""}
             </div>
