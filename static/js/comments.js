@@ -4,7 +4,7 @@ const commentsCache = new Map();
 let myCommentLikes = new Set();
 let replyParentId = null;
 
-const commentColors = ["#f43f5e", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
+const commentColors = ["#FA8128", "#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#ec4899", "#84cc16"];
 
 function userColor(username) {
     let hash = 0;
@@ -120,7 +120,7 @@ function renderNode(c, depth) {
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${timeAgo(c.created_at)}</span>`;
     if (currentUserId) {
-        html += `<button class="comment-like-btn${liked ? " liked" : ""}" data-id="${c.id}"><svg width="12" height="12" viewBox="0 0 20 20" fill="${liked ? "#f43f5e" : "none"}" stroke="${liked ? "#f43f5e" : "currentColor"}" stroke-width="2"><path d="M10 19a3.966 3.966 0 01-3.96-3.962V10.98H2.838a1.731 1.731 0 01-1.605-1.073 1.734 1.734 0 01.377-1.895L9.364.254a.925.925 0 011.272 0l7.754 7.759c.498.499.646 1.242.376 1.894-.27.652-.9 1.073-1.605 1.073h-3.202v4.058A3.965 3.965 0 019.999 19H10z"/></svg></button>`;
+        html += `<button class="comment-like-btn${liked ? " liked" : ""}" data-id="${c.id}"><svg width="12" height="12" viewBox="0 0 20 20" fill="${liked ? "#FA8128" : "none"}" stroke="${liked ? "#FA8128" : "currentColor"}" stroke-width="2"><path d="M10 19a3.966 3.966 0 01-3.96-3.962V10.98H2.838a1.731 1.731 0 01-1.605-1.073 1.734 1.734 0 01.377-1.895L9.364.254a.925.925 0 011.272 0l7.754 7.759c.498.499.646 1.242.376 1.894-.27.652-.9 1.073-1.605 1.073h-3.202v4.058A3.965 3.965 0 019.999 19H10z"/></svg></button>`;
         html += `<span class="comment-like-count" data-id="${c.id}"${likes > 0 ? "" : " style='display:none'"}>${likes || ""}</span>`;
         html += `<div class="comment-likers" data-id="${c.id}" hidden></div>`;
         html += `<button class="comment-reply-btn" data-id="${c.id}" data-user="${esc(c.username)}">Responder</button>`;
@@ -319,8 +319,8 @@ document.addEventListener("click", async e => {
         const svg = likeBtn.querySelector("svg");
         const countEl = likeBtn.parentElement.querySelector(`.comment-like-count[data-id="${id}"]`);
         const count = (parseInt(countEl?.textContent) || 0) + delta;
-        svg.setAttribute("fill", !wasLiked ? "#f43f5e" : "none");
-        svg.setAttribute("stroke", !wasLiked ? "#f43f5e" : "currentColor");
+        svg.setAttribute("fill", !wasLiked ? "#FA8128" : "none");
+        svg.setAttribute("stroke", !wasLiked ? "#FA8128" : "currentColor");
         if (countEl) {
             countEl.textContent = count > 0 ? count : "";
             countEl.style.display = count > 0 ? "" : "none";
@@ -333,8 +333,8 @@ document.addEventListener("click", async e => {
         } catch {
             if (wasLiked) myCommentLikes.add(id);
             else myCommentLikes.delete(id);
-            svg.setAttribute("fill", wasLiked ? "#f43f5e" : "none");
-            svg.setAttribute("stroke", wasLiked ? "#f43f5e" : "currentColor");
+            svg.setAttribute("fill", wasLiked ? "#FA8128" : "none");
+            svg.setAttribute("stroke", wasLiked ? "#FA8128" : "currentColor");
             const newCount = (parseInt(countEl?.textContent) || 0) - delta;
             if (countEl) {
                 countEl.textContent = newCount > 0 ? newCount : "";

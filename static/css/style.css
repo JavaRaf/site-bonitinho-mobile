@@ -615,7 +615,7 @@ header.hidden {
 }
 
 .comment-like-btn.liked {
-  color: var(--danger);
+  color: var(--btn-bg);
 }
 
 .comment-like-count {
