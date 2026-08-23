@@ -176,18 +176,6 @@
   white-space: nowrap;
 }
 
-.admin-card-actions {
-  position: absolute;
-  top: 0.35rem;
-  left: 0.35rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  z-index: 3;
-}
-
-.admin-nsfw-badge,
-.admin-eleicao-badge,
 .admin-type-badge {
   position: static;
   padding: 0.12rem 0.35rem;
@@ -200,51 +188,32 @@
   white-space: nowrap;
 }
 
-.admin-nsfw-badge {
-  background: var(--danger);
-}
-
-.admin-eleicao-badge {
-  background: var(--btn-bg);
-}
-
 .admin-nsfw-btn,
 .admin-eleicao-btn {
   position: static;
   padding: 0.15rem 0.4rem;
-  border: none;
+  border: 1.5px solid var(--border);
   border-radius: 4px;
-  background: rgba(0,0,0,0.45);
-  color: rgba(255,255,255,0.7);
+  background: var(--surface-2);
+  color: var(--text-soft);
   font-size: 0.625rem;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   display: inline-block;
 }
 
 .admin-nsfw-btn.active {
   background: var(--danger);
   color: #fff;
+  border-color: var(--danger);
 }
 
 .admin-eleicao-btn.active {
   background: var(--btn-bg);
   color: #fff;
-}
-
-@media (hover: hover) {
-  .admin-nsfw-btn:not(.active),
-  .admin-eleicao-btn:not(.active) {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .admin-card:hover .admin-nsfw-btn,
-  .admin-card:hover .admin-eleicao-btn {
-    opacity: 1;
-    pointer-events: auto;
-  }
+  border-color: var(--btn-bg);
 }
 
 .admin-card-likes {
