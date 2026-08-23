@@ -8,18 +8,20 @@ function showStatus(msg) {
     setTimeout(() => { status.textContent = ""; }, 3000);
 }
 
-function askConfirm(msg) {
+function askConfirm(msg, confirmLabel = "Excluir") {
     return new Promise(resolve => {
         document.getElementById("confirmMsg").textContent = msg;
+        const yesBtn = document.getElementById("confirmYes");
+        yesBtn.textContent = confirmLabel;
         const modal = document.getElementById("confirmModal");
         modal.classList.add("open");
         const cleanup = (val) => {
             modal.classList.remove("open");
-            document.getElementById("confirmYes").onclick = null;
+            yesBtn.onclick = null;
             document.getElementById("confirmNo").onclick = null;
             resolve(val);
         };
-        document.getElementById("confirmYes").onclick = () => cleanup(true);
+        yesBtn.onclick = () => cleanup(true);
         document.getElementById("confirmNo").onclick = () => cleanup(false);
     });
 }
@@ -282,7 +284,7 @@ function renderUsers(filter = "") {
     list.querySelectorAll("[data-promote]").forEach(btn => {
         btn.addEventListener("click", async (e) => {
             e.stopPropagation();
-            if (!await askConfirm("Tornar este usuário admin?")) return;
+            if (!await askConfirm("Tornar este usuário admin?", "Promover")) return;
             await api("PUT", `/api/admin/users/${btn.dataset.promote}/promote`);
             showStatus("Usuário promovido a admin");
             loadUsers();
@@ -400,7 +402,7 @@ document.getElementById("turnoAdvance").addEventListener("click", async () => {
         showStatus("Informe um número válido");
         return;
     }
-    if (!await askConfirm(`Avançar turno mantendo as ${cutoff} mais curtidas?`)) return;
+    if (!await askConfirm(`Avançar turno mantendo as ${cutoff} mais curtidas?`, "Confirmar")) return;
     const res = await api("POST", "/api/admin/turnos/advance", { cutoff });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
@@ -418,7 +420,7 @@ document.getElementById("turnoSingleVote").addEventListener("change", async e =>
 });
 
 document.getElementById("turnoReset").addEventListener("click", async () => {
-    if (!await askConfirm("Resetar turnos? Limpa apenas o histórico.")) return;
+    if (!await askConfirm("Resetar turnos? Limpa apenas o histórico.", "Resetar")) return;
     await api("POST", "/api/admin/turnos/reset");
     showStatus("Turnos resetados");
     loadTurnos();

@@ -2311,10 +2311,32 @@ header.hidden {
   gap: 0.5rem;
   justify-content: flex-end;
 }
-.confirm-actions .admin-btn {
+.confirm-btn {
   min-width: 72px;
-  justify-content: center;
   padding: 0.5rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text-soft);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.confirm-btn:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+.confirm-btn:active {
+  transform: scale(0.97);
+}
+.confirm-btn.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.confirm-btn.danger:hover {
+  background: var(--danger-soft);
 }
 
 /* === Video Player === */

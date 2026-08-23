@@ -7,12 +7,14 @@ let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
 let myUserId = null;
 let followingIds = [];
 
-function askConfirm(msg) {
+function askConfirm(msg, confirmLabel = "Excluir") {
     return new Promise(resolve => {
         const el = document.getElementById("confirmMsg");
         const modal = document.getElementById("confirmModal");
         if (!el || !modal) { resolve(false); return; }
         el.textContent = msg;
+        const yesBtn = document.getElementById("confirmYes");
+        if (yesBtn) yesBtn.textContent = confirmLabel;
         modal.classList.add("open");
         const cleanup = (val) => {
             modal.classList.remove("open");
