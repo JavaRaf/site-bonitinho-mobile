@@ -2708,6 +2708,9 @@ header.hidden {
 }
 
 .feed-caption-toggle {
+  display: block;
+  width: fit-content;
+  margin-left: auto;
   background: none;
   border: none;
   padding: 0.2rem 0.75rem 0;
@@ -2716,7 +2719,7 @@ header.hidden {
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  text-align: left;
+  text-align: right;
   transition: color 0.15s;
 }
 
