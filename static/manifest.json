@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/static/png/logo-128x128.png",
+      "src": "/static/png/logo-128x128-manifest.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
