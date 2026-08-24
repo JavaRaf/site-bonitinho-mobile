@@ -1040,8 +1040,6 @@ function onFeedClick(e) {
 
         renderEditPreviews();
 
-        modal.querySelector("#editPostCancel").onclick = () => modal.remove();
-        
         saveBtn.addEventListener("click", async () => {
             const caption = modal.querySelector("#editPostCaption").value.trim();
             saveBtn.disabled = true;
