@@ -13,6 +13,12 @@
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/static/png/logo-512x512-manifest.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "categories": ["social", "photo"]
