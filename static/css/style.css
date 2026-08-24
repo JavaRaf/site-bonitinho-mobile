@@ -429,7 +429,7 @@ header.hidden {
 }
 
 .notif-push-toggle.active {
-  color: #f43f5e;
+  color: var(--btn-bg);
 }
 
 .notif-list {
@@ -499,7 +499,7 @@ header.hidden {
 }
 
 .notif-clear:hover {
-  color: #f43f5e;
+  color: var(--btn-bg);
 }
 
 /* === Comments === */
