@@ -253,7 +253,7 @@ header.hidden {
   font-family: "Neues Bauen", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--btn-bg);
   letter-spacing: 0.5px;
 }
 
