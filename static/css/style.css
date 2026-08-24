@@ -42,8 +42,8 @@ html::-webkit-scrollbar {
   --btn-hover: #dc7123;
   --danger: #FA8128;
   --danger-soft: #fdeee2;
-  --accent: #1877f2;
-  --accent-soft: #e4f0ff;
+  --accent: #FA8128;
+  --accent-soft: #fdeee2;
   --button-secondary: #e5e7eb;
 }
 
@@ -64,8 +64,8 @@ html::-webkit-scrollbar {
   --btn-hover: #dc7123;
   --danger: #FA8128;
   --danger-soft: #2b1d10;
-  --accent: #4599ff;
-  --accent-soft: #1a2a3a;
+  --accent: #FA8128;
+  --accent-soft: #2b1d10;
   --button-secondary: #2a2a2a;
 }
 
