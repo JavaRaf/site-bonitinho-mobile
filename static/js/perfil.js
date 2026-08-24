@@ -450,6 +450,9 @@ function openEditModal() {
     document.getElementById("bioCounter").textContent = (profile.bio || "").length + "/110";
     selectedColor = profile.color || "";
     buildEditColors();
+    const savedNsfw = localStorage.getItem("nsfwFilter") || "blur";
+    const radio = document.querySelector(`input[name="nsfw"][value="${savedNsfw}"]`);
+    if (radio) radio.checked = true;
     document.getElementById("editOverlay").classList.add("open");
 }
 
@@ -511,6 +514,11 @@ document.getElementById("editSave").addEventListener("click", async () => {
         marital_status: document.getElementById("editMarital").value,
         color: selectedColor,
     };
+
+    const nsfwRadio = document.querySelector('input[name="nsfw"]:checked');
+    if (nsfwRadio) {
+        localStorage.setItem("nsfwFilter", nsfwRadio.value);
+    }
 
     const res = await fetch("/api/auth/profile", {
         method: "PUT",

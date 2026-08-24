@@ -132,6 +132,32 @@
             <label>Cor do nome</label>
             <div class="edit-colors" id="editColors"></div>
           </div>
+          <div class="edit-field">
+            <label>Filtro +18</label>
+            <div class="nsfw-options" id="nsfwOptions">
+              <label class="nsfw-option">
+                <input type="radio" name="nsfw" value="all">
+                <div class="nsfw-option-body">
+                  <span class="nsfw-option-label">Ver tudo</span>
+                  <span class="nsfw-option-desc">Mostrar todas as imagens sem filtro</span>
+                </div>
+              </label>
+              <label class="nsfw-option">
+                <input type="radio" name="nsfw" value="blur">
+                <div class="nsfw-option-body">
+                  <span class="nsfw-option-label">Borrar +18</span>
+                  <span class="nsfw-option-desc">Imagens impróprias aparecem borradas</span>
+                </div>
+              </label>
+              <label class="nsfw-option">
+                <input type="radio" name="nsfw" value="hide">
+                <div class="nsfw-option-body">
+                  <span class="nsfw-option-label">Ocultar +18</span>
+                  <span class="nsfw-option-desc">Imagens impróprias não aparecem</span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
         <div class="edit-footer">
           <button class="edit-cancel" id="editCancel">Cancelar</button>
