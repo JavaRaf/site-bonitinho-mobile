@@ -176,7 +176,7 @@ function renderGrid() {
         const media = isVideo
             ? `<video src="/images/${escText(img.name)}" muted preload="metadata" playsinline></video>`
             : `<img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">`;
-        return `
+    return `
         <button class="grid-thumb" data-name="${escText(img.name)}">
             ${media}
         </button>`;
@@ -364,6 +364,13 @@ function feedCardHTML(img) {
     }
 
     const downloadBtn = isText ? "" : `<button class="feed-download" data-name="${escText(img.name)}" type="button" title="Baixar"><img src="/static/svg/download.svg" alt="download"></button>`;
+
+    const capText = img.caption || "";
+    const capLong = capText.length > 300;
+    const captionHtml = `
+        <div class="feed-caption${isText ? ' feed-caption-text' : ''}${capLong ? ' clamped' : ''}">${escText(capText)}</div>
+        ${capLong ? '<button class="feed-caption-toggle" type="button">Ver mais</button>' : ""}
+    `;
     
     const tagNsfwHtml = img.nsfw ? `
         <span class="feed-nsfw-badge" style="display: inline-flex; align-items: center; gap: 0.25rem; background: var(--danger); color: #fff; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">
@@ -394,7 +401,7 @@ function feedCardHTML(img) {
                 ` : ""}
             </div>
         </div>
-        <div class="feed-caption${isText ? ' feed-caption-text' : ''}">${escText(img.caption || "")}</div>
+        ${captionHtml}
         ${mediaSection}
         <div class="feed-actions">
             <button class="feed-like ${liked ? "liked" : ""}" data-name="${escText(img.name)}" type="button">
@@ -855,7 +862,7 @@ function onFeedClick(e) {
                     <span class="edit-post-title">Editar postagem</span>
                     <button type="button" class="edit-post-close" title="Fechar">&times;</button>
                 </div>
-                <textarea id="editPostCaption" class="composer-text" rows="3" maxlength="400" placeholder="No que voce esta pensando?">${currentCaption}</textarea>
+                <textarea id="editPostCaption" class="composer-text" rows="4" maxlength="2000" placeholder="No que voce esta pensando?">${currentCaption}</textarea>
                 <div id="editMediaPreviews" class="composer-media-previews"></div>
                 <div class="feed-create-toolbar edit-post-toolbar">
                     <input type="file" id="editFileInput" multiple accept="image/*,video/mp4,video/webm,video/quicktime" hidden>
@@ -1168,6 +1175,16 @@ function onFeedClick(e) {
                 saveBtn.disabled = false;
             }
         });
+        return;
+    }
+
+    const capToggle = e.target.closest(".feed-caption-toggle");
+    if (capToggle) {
+        e.stopPropagation();
+        const cap = capToggle.closest(".feed-card")?.querySelector(".feed-caption");
+        if (!cap) return;
+        const nowClamped = cap.classList.toggle("clamped");
+        capToggle.textContent = nowClamped ? "Ver mais" : "Ver menos";
         return;
     }
 

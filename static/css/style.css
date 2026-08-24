@@ -1738,7 +1738,6 @@ header.hidden {
 .new-posts-banner:hover .new-posts-inner {
   background: var(--btn-hover);
 }
-}
 
 .feed-likers {
   display: none;
@@ -2697,4 +2696,30 @@ header.hidden {
 .edit-icon-eleicao.active {
   background: var(--btn-bg);
   color: #fff;
+}
+
+/* === Long caption expand/collapse === */
+.feed-caption.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.feed-caption-toggle {
+  background: none;
+  border: none;
+  padding: 0.2rem 0.75rem 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.feed-caption-toggle:hover {
+  color: var(--text-secondary);
 }

@@ -231,8 +231,8 @@ def upload_images():
     zip_file = request.files.get("zip")
     has_files = any(f and f.filename for f in files)
     has_zip = bool(zip_file and zip_file.filename)
-    caption = (request.form.get("caption") or "").strip()[:400]
-    caption_template = (request.form.get("caption_template") or "").strip()[:400]
+    caption = (request.form.get("caption") or "").strip()[:2000]
+    caption_template = (request.form.get("caption_template") or "").strip()[:2000]
     nsfw = 1 if request.form.get("nsfw") == "1" else 0
     eleicao = 1 if request.form.get("eleicao") == "1" else 0
 
