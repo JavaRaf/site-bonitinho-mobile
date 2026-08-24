@@ -1176,13 +1176,20 @@ function onFeedClick(e) {
         return;
     }
 
-    const capToggle = e.target.closest(".feed-caption-toggle");
-    if (capToggle) {
+    const capClick = e.target.closest(".feed-caption-toggle, .feed-caption");
+    if (capClick) {
         e.stopPropagation();
-        const cap = capToggle.closest(".feed-card")?.querySelector(".feed-caption");
-        if (!cap) return;
+        // não alterna se o usuário estava selecionando texto
+        if (window.getSelection && String(window.getSelection()).length) return;
+
+        const card = capClick.closest(".feed-card");
+        const cap = card?.querySelector(".feed-caption");
+        const btn = card?.querySelector(".feed-caption-toggle");
+        // só alterna se o post tiver legenda longa (possui botão de toggle)
+        if (!cap || !btn) return;
+
         const nowClamped = cap.classList.toggle("clamped");
-        capToggle.textContent = nowClamped ? "Ver mais" : "Ver menos";
+        btn.textContent = nowClamped ? "Ver mais" : "Ver menos";
         return;
     }
 
