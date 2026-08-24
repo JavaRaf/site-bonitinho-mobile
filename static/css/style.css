@@ -1709,7 +1709,7 @@ header.hidden {
 }
 
 .feed-card-text {
-  border-left: 3px solid #0d0e41;
+  border-left: 3px solid var(--btn-bg);
 }
 
 .feed-card-text .feed-caption-text {
