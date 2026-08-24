@@ -2699,6 +2699,10 @@ header.hidden {
 }
 
 /* === Long caption expand/collapse === */
+.feed-caption.has-toggle {
+  cursor: pointer;
+}
+
 .feed-caption.clamped {
   display: -webkit-box;
   -webkit-line-clamp: 6;

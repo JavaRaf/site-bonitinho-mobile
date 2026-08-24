@@ -368,7 +368,7 @@ function feedCardHTML(img) {
     const capText = img.caption || "";
     const capLong = capText.length > 300;
     const captionHtml = `
-        <div class="feed-caption${isText ? ' feed-caption-text' : ''}${capLong ? ' clamped' : ''}">${escText(capText)}</div>
+        <div class="feed-caption${isText ? ' feed-caption-text' : ''}${capLong ? ' has-toggle clamped' : ''}">${escText(capText)}</div>
         ${capLong ? '<button class="feed-caption-toggle" type="button">Ver mais</button>' : ""}
     `;
     
