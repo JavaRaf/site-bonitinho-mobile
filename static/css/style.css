@@ -2713,7 +2713,7 @@ header.hidden {
   margin-left: auto;
   background: none;
   border: none;
-  padding: 0.2rem 0.75rem 0;
+  padding: 0.2rem 0.75rem 0.6rem;
   color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 600;
