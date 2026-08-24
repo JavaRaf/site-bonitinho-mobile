@@ -1044,6 +1044,8 @@ header.hidden {
   gap: 0.75rem;
   padding: 0.625rem 1rem 0;
   background: var(--surface);
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
 .feed-create-avatar {
@@ -1368,6 +1370,7 @@ header.hidden {
   background: var(--surface);
   border: 1px solid var(--border);
   overflow: hidden;
+  border-radius: 10px;
 }
 
 .feed-owner {
@@ -1375,6 +1378,7 @@ header.hidden {
   align-items: center;
   gap: 0.25rem;
   padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   font-size: 0.8rem;
