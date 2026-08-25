@@ -139,6 +139,7 @@ def get_profile_posts(username):
             "post_id": upload.image_name if upload.eleicao else pid,
             "name": upload.image_name,
             "owner": user.username,
+            "owner_display_name": user.display_name or user.username,
             "owner_id": user.id,
             "likes": likes,
             "comments": comments,
