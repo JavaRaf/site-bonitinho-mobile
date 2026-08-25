@@ -89,11 +89,12 @@ async function loadProfile() {
     setAvatar(document.getElementById("avatarImg"), data.avatar);
     setCover(document.getElementById("coverImg"), data.cover);
 
+    const display = data.display_name || data.username;
     const nameEl = document.getElementById("profileName");
-    nameEl.textContent = data.username;
+    nameEl.textContent = display;
     if (data.color) nameEl.style.color = data.color;
 
-    document.getElementById("topbarName").textContent = data.username;
+    document.getElementById("topbarName").textContent = display;
     document.getElementById("topbarCount").textContent = data.posts_count + " posts";
     document.getElementById("profileHandle").textContent = "@" + data.username;
 
@@ -199,7 +200,7 @@ async function openUserList(type) {
         body.innerHTML = res.map(u =>
             '<div class="list-user">' +
                 '<img class="list-user-avatar" src="' + avatarSrc(u.avatar) + '" alt="" onerror="this.src=\'' + AVATAR_DEFAULT + '\'">' +
-                '<span class="list-user-name">@' + esc(u.username) + '</span>' +
+                '<span class="list-user-name" title="@' + esc(u.username) + '">' + esc(u.display_name || u.username) + ' <small style="color:var(--text-muted)">@' + esc(u.username) + '</small></span>' +
                 '<button class="list-unblock" data-username="' + esc(u.username) + '">Desbloquear</button>' +
             '</div>'
         ).join("");
@@ -218,7 +219,7 @@ async function openUserList(type) {
     body.innerHTML = res.map(u =>
         '<a class="list-user" href="/perfil/' + esc(u.username) + '">' +
             '<img class="list-user-avatar" src="' + avatarSrc(u.avatar) + '" alt="" onerror="this.src=\'' + AVATAR_DEFAULT + '\'">' +
-            '<span class="list-user-name" style="color:' + esc(u.color || 'var(--text)') + '">@' + esc(u.username) + '</span>' +
+            '<span class="list-user-name" style="color:' + esc(u.color || 'var(--text)') + '">' + esc(u.display_name || u.username) + ' <small style="color:var(--text-muted)">@' + esc(u.username) + '</small></span>' +
         '</a>'
     ).join("");
 }
@@ -442,6 +443,7 @@ document.getElementById("btnBack").addEventListener("click", () => {
 
 function openEditModal() {
     if (!profile) return;
+    document.getElementById("editDisplayName").value = profile.display_name || profile.username || "";
     document.getElementById("editUsername").value = profile.username;
     document.getElementById("editBio").value = profile.bio || "";
     document.getElementById("editLocation").value = profile.location || "";
@@ -505,9 +507,11 @@ document.getElementById("editBio").addEventListener("input", (e) => {
 document.getElementById("editSave").addEventListener("click", async () => {
     const username = document.getElementById("editUsername").value.trim();
     if (username.length < 3) return alert("Nome de usuário mínimo 3 caracteres");
+    const display_name = document.getElementById("editDisplayName").value.trim().slice(0, 30);
 
     const body = {
         username,
+        display_name,
         bio: document.getElementById("editBio").value.trim(),
         location: document.getElementById("editLocation").value.trim(),
         birthday: document.getElementById("editBirthday").value,

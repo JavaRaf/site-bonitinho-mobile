@@ -21,8 +21,12 @@
 
     <form id="registerForm" class="auth-form">
       <div class="field">
-        <label for="username">Usuário</label>
-        <input type="text" id="username" name="username" placeholder="escolha um nome" autocomplete="username" required minlength="3">
+        <label for="username">Usuário (@)</label>
+        <input type="text" id="username" name="username" placeholder="ex: joao123" autocomplete="username" required minlength="3">
+      </div>
+      <div class="field">
+        <label for="display_name">Nome</label>
+        <input type="text" id="display_name" name="display_name" placeholder="ex: João Silva" maxlength="30" autocomplete="name">
       </div>
 
       <div class="field">

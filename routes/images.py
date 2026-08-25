@@ -61,6 +61,7 @@ def list_images():
         db.session.query(
             Upload,
             User.username,
+            User.display_name,
             User.avatar.label("owner_avatar"),
             like_count.label("likes"),
             comment_count.label("comments"),
@@ -79,7 +80,7 @@ def list_images():
     blocked = _blocked_ids()
     result = []
     post_index = {}
-    for upload, username, owner_avatar, likes, comments in uploads:
+    for upload, username, display_name, owner_avatar, likes, comments in uploads:
         if upload.user_id and upload.user_id in blocked:
             continue
         if upload.post_type == "text" or upload.image_name in disk_files:
@@ -92,6 +93,7 @@ def list_images():
                 "post_id": pid,
                 "name": upload.image_name,
                 "owner": username,
+                "owner_display_name": display_name or username,
                 "owner_id": upload.user_id,
                 "likes": likes,
                 "comments": comments,
@@ -120,7 +122,7 @@ def list_images():
     }
     for fname in sorted(orphan_names, reverse=True):
         result.append({
-            "post_id": fname, "name": fname, "owner": None, "likes": 0,
+            "post_id": fname, "name": fname, "owner": None, "owner_display_name": None, "likes": 0,
             "comments": 0, "created_at": "", "owner_avatar": "default-avatar.svg",
             "caption": "", "post_type": "image", "nsfw": False,
             "media": [{"name": fname, "media_type": "image"}],
@@ -154,6 +156,7 @@ def list_images_since():
         db.session.query(
             Upload,
             User.username,
+            User.display_name,
             User.avatar.label("owner_avatar"),
             like_count.label("likes"),
             comment_count.label("comments"),
@@ -172,7 +175,7 @@ def list_images_since():
     blocked = _blocked_ids()
     result = []
     post_index = {}
-    for upload, username, owner_avatar, likes, comments in uploads:
+    for upload, username, display_name, owner_avatar, likes, comments in uploads:
         if upload.user_id and upload.user_id in blocked:
             continue
         if upload.post_type == "text" or upload.image_name in disk_files:
@@ -185,6 +188,7 @@ def list_images_since():
                 "post_id": pid,
                 "name": upload.image_name,
                 "owner": username,
+                "owner_display_name": display_name or username,
                 "owner_id": upload.user_id,
                 "likes": likes,
                 "comments": comments,
@@ -217,9 +221,9 @@ def search_users():
     if len(q) < 1:
         return jsonify([])
     users = User.query.filter(
-        User.username.like(f"%{q}%")
+        db.or_(User.username.like(f"%{q}%"), User.display_name.like(f"%{q}%"))
     ).order_by(User.username).limit(8).all()
-    return jsonify([{"id": u.id, "username": u.username, "avatar": u.avatar} for u in users])
+    return jsonify([{"id": u.id, "username": u.username, "display_name": u.display_name or u.username, "avatar": u.avatar} for u in users])
 
 
 @images_bp.route("/api/upload", methods=["POST"])

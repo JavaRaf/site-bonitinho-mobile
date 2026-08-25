@@ -22,13 +22,13 @@ def get_likes():
 @likes_bp.route("/api/likers/<path:image_name>", methods=["GET"])
 def get_likers(image_name):
     rows = (
-        db.session.query(User.username, User.id.label("user_id"))
+        db.session.query(User.username, User.display_name, User.id.label("user_id"))
         .join(Like, Like.user_id == User.id)
         .filter(Like.image_name == image_name)
         .order_by(Like.created_at.asc())
         .all()
     )
-    return jsonify([{"username": r.username, "id": r.user_id} for r in rows])
+    return jsonify([{"username": r.username, "display_name": r.display_name or r.username, "id": r.user_id} for r in rows])
 
 
 @likes_bp.route("/api/likes/<path:image_name>", methods=["POST"])
@@ -107,6 +107,7 @@ def _ranking_payload(eleicao_only=False):
             Upload.user_id,
             Upload.created_at,
             User.username.label("owner"),
+            User.display_name.label("owner_display_name"),
             db.func.count(Like.id).label("likes"),
         )
         .outerjoin(User, Upload.user_id == User.id)
@@ -131,6 +132,7 @@ def _ranking_payload(eleicao_only=False):
                 "post_id": pid,
                 "name": r.image_name,
                 "owner": r.owner,
+                "owner_display_name": r.owner_display_name or r.owner,
                 "likes": r.likes,
                 "post_type": r.post_type,
                 "caption": r.caption or "",
@@ -146,13 +148,13 @@ def _ranking_payload(eleicao_only=False):
 
     for p in result:
         likers = (
-            db.session.query(User.username, Like.user_id)
+            db.session.query(User.username, User.display_name, Like.user_id)
             .join(User, Like.user_id == User.id)
             .filter(Like.image_name.in_([m["name"] for m in p["media"]]))
             .distinct()
             .all()
         )
-        p["likers"] = [{"username": lr.username, "id": lr.user_id} for lr in likers]
+        p["likers"] = [{"username": lr.username, "display_name": lr.display_name or lr.username, "id": lr.user_id} for lr in likers]
 
     img_dir = Config.BASE_DIR / "images"
     result = [

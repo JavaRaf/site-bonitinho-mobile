@@ -386,7 +386,7 @@ function feedCardHTML(img) {
     <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
         <div class="feed-owner">
             <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
-            <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
+            <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">${escText(img.owner_display_name || img.owner || "\u2014")}</span><span class="feed-owner-handle" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
             <div class="feed-owner-flags">
                 ${tagNsfwHtml}
                 ${tagEleicaoHtml}
@@ -564,7 +564,7 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     html += `<div class="comment-avatar"><img src="${feedAvatarUrl(c.avatar)}" alt=""></div>`;
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
-    html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.username)}</span>`;
+    html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}" title="@${escText(c.username)}">${escText(c.display_name || c.username)}</span>`;
     html += `<span class="comment-text">${escText(c.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>')}</span>`;
     html += `</div>`;
     html += `<div class="comment-meta">`;

@@ -13,7 +13,7 @@ def handle_comments(image_name):
         rows = (
             db.session.query(
                 Comment.id, Comment.text, Comment.created_at, Comment.parent_id,
-                Comment.user_id, User.username, User.color, User.avatar,
+                Comment.user_id, User.username, User.display_name, User.color, User.avatar,
                 db.func.count(CommentLike.id).label("likes"),
             )
             .join(User, Comment.user_id == User.id)
@@ -26,7 +26,7 @@ def handle_comments(image_name):
         return jsonify([
             {
                 "id": r.id, "text": r.text, "created_at": r.created_at,
-                "parent_id": r.parent_id, "username": r.username, "color": r.color,
+                "parent_id": r.parent_id, "username": r.username, "display_name": r.display_name or r.username, "color": r.color,
                 "avatar": r.avatar, "user_id": r.user_id, "likes": r.likes,
             }
             for r in rows
@@ -103,6 +103,7 @@ def handle_comments(image_name):
     return jsonify({
         "id": comment.id, "text": comment.text, "created_at": comment.created_at,
         "parent_id": comment.parent_id, "username": commenter.username if commenter else "",
+        "display_name": commenter.display_name if commenter and commenter.display_name else (commenter.username if commenter else ""),
         "color": commenter.color if commenter else "",
     }), 201
 
@@ -183,12 +184,12 @@ def toggle_comment_like(comment_id):
 @comments_bp.route("/api/comment-likers/<int:comment_id>", methods=["GET"])
 def get_comment_likers(comment_id):
     rows = (
-        db.session.query(User.username, User.avatar)
+        db.session.query(User.username, User.display_name, User.avatar)
         .join(CommentLike, CommentLike.user_id == User.id)
         .filter(CommentLike.comment_id == comment_id)
         .all()
     )
-    return jsonify([{"username": r.username, "avatar": r.avatar} for r in rows])
+    return jsonify([{"username": r.username, "display_name": r.display_name or r.username, "avatar": r.avatar} for r in rows])
 
 
 @comments_bp.route("/api/comment-likes", methods=["GET"])

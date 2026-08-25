@@ -35,6 +35,7 @@ def _run_migrations():
         ("users", "price", "TEXT NOT NULL DEFAULT ''"),
         ("users", "hours", "TEXT NOT NULL DEFAULT ''"),
         ("users", "location", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "display_name", "TEXT NOT NULL DEFAULT ''"),
     ]
     for table, column, definition in migrations:
         try:
@@ -42,6 +43,12 @@ def _run_migrations():
         except Exception:
             pass
     db.session.commit()
+    # Backfill display_name = username where empty
+    try:
+        db.session.execute(text("UPDATE users SET display_name = username WHERE display_name IS NULL OR display_name = ''"))
+        db.session.commit()
+    except Exception:
+        pass
 
 
 def _seed_default_settings():

@@ -114,7 +114,7 @@ function renderNode(c, depth) {
     html += `<div class="comment-avatar"><img src="${avatarUrl(c.avatar)}" alt=""></div>`;
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
-    html += `<span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.username)}</span>`;
+    html += `<span class="comment-user" style="color:${c.color || userColor(c.username)}" title="@${esc(c.username)}">${esc(c.display_name || c.username)}</span>`;
     html += `<span class="comment-text">${parseMentions(c.text)}</span>`;
     html += `</div>`;
     html += `<div class="comment-meta">`;

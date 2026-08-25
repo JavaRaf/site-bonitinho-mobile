@@ -6,6 +6,7 @@ class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.Text, nullable=False, unique=True)
+    display_name = db.Column(db.Text, nullable=False, default="")
     password = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Integer, nullable=False, default=0)
     avatar = db.Column(db.Text, nullable=False, default="default-avatar.svg")

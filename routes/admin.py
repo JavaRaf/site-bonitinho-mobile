@@ -105,7 +105,7 @@ def admin_toggle_eleicao():
 def admin_list_users():
     users = User.query.order_by(User.id).all()
     return jsonify([
-        {"id": u.id, "username": u.username, "is_admin": bool(u.is_admin),
+        {"id": u.id, "username": u.username, "display_name": u.display_name or u.username, "is_admin": bool(u.is_admin),
          "avatar": u.avatar, "color": u.color, "created_at": u.created_at}
         for u in users
     ])

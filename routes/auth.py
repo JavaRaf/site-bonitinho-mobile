@@ -27,6 +27,7 @@ def register():
     data = request.get_json()
     username = (data.get("username") or "").strip()
     password = (data.get("password") or "").strip()
+    display_name = (data.get("display_name") or "").strip()[:30]
 
     if not username or not password:
         return jsonify({"error": "username and password required"}), 400
@@ -39,20 +40,21 @@ def register():
     admin_count = User.query.filter_by(is_admin=1).count()
     is_admin = 1 if admin_count == 0 else 0
 
-    user = User(username=username, password=hash_password(password), is_admin=is_admin)
+    user = User(username=username, display_name=display_name or username, password=hash_password(password), is_admin=is_admin)
     db.session.add(user)
     db.session.commit()
 
     session.clear()
     session["user_id"] = user.id
     session["username"] = user.username
+    session["display_name"] = user.display_name or user.username
     session["is_admin"] = bool(user.is_admin)
     session["avatar"] = user.avatar
     session["color"] = user.color or ""
     session.permanent = True
 
     return jsonify({
-        "id": user.id, "username": user.username, "is_admin": bool(user.is_admin),
+        "id": user.id, "username": user.username, "display_name": user.display_name or user.username, "is_admin": bool(user.is_admin),
         "avatar": user.avatar, "color": user.color or "",
     }), 201
 
@@ -70,13 +72,14 @@ def login():
     session.clear()
     session["user_id"] = user.id
     session["username"] = user.username
+    session["display_name"] = user.display_name or user.username
     session["is_admin"] = bool(user.is_admin)
     session["avatar"] = user.avatar
     session["color"] = user.color or ""
     session.permanent = True
 
     return jsonify({
-        "id": user.id, "username": user.username, "is_admin": bool(user.is_admin),
+        "id": user.id, "username": user.username, "display_name": user.display_name or user.username, "is_admin": bool(user.is_admin),
         "avatar": user.avatar, "color": user.color or "",
     })
 
@@ -95,6 +98,6 @@ def me():
     if not user:
         return jsonify({"user": None})
     return jsonify({"user": {
-        "id": user.id, "username": user.username, "is_admin": bool(user.is_admin),
+        "id": user.id, "username": user.username, "display_name": user.display_name or user.username, "is_admin": bool(user.is_admin),
         "avatar": user.avatar, "color": user.color or "",
     }})

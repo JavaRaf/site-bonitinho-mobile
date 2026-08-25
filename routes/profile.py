@@ -44,6 +44,7 @@ def get_profile(username):
     return jsonify({
         "id": user.id,
         "username": user.username,
+        "display_name": user.display_name or user.username,
         "avatar": user.avatar,
         "cover": user.cover or "",
         "color": user.color or "",
@@ -148,12 +149,12 @@ def get_followers(username):
     if not user:
         return jsonify({"error": "user not found"}), 404
     rows = (
-        db.session.query(User.id, User.username, User.avatar, User.color)
+        db.session.query(User.id, User.username, User.display_name, User.avatar, User.color)
         .join(Follow, Follow.follower_id == User.id)
         .filter(Follow.following_id == user.id)
         .all()
     )
-    return jsonify([{"id": r.id, "username": r.username, "avatar": r.avatar or "", "color": r.color or ""} for r in rows])
+    return jsonify([{"id": r.id, "username": r.username, "display_name": r.display_name or r.username, "avatar": r.avatar or "", "color": r.color or ""} for r in rows])
 
 
 @profile_bp.route("/api/profile/<username>/following-list", methods=["GET"])
@@ -162,12 +163,12 @@ def get_following_list(username):
     if not user:
         return jsonify({"error": "user not found"}), 404
     rows = (
-        db.session.query(User.id, User.username, User.avatar, User.color)
+        db.session.query(User.id, User.username, User.display_name, User.avatar, User.color)
         .join(Follow, Follow.following_id == User.id)
         .filter(Follow.follower_id == user.id)
         .all()
     )
-    return jsonify([{"id": r.id, "username": r.username, "avatar": r.avatar or "", "color": r.color or ""} for r in rows])
+    return jsonify([{"id": r.id, "username": r.username, "display_name": r.display_name or r.username, "avatar": r.avatar or "", "color": r.color or ""} for r in rows])
 
 
 @profile_bp.route("/api/auth/profile", methods=["PUT"])
@@ -189,6 +190,11 @@ def update_profile():
             return jsonify({"error": "username already taken"}), 409
         user.username = username
         session["username"] = username
+
+    if "display_name" in data:
+        display_name = (data["display_name"] or "").strip()[:30]
+        user.display_name = display_name
+        session["display_name"] = display_name or user.username
 
     if "avatar" in data:
         user.avatar = data["avatar"]
@@ -358,7 +364,7 @@ def list_blocked():
     for b in blocks:
         u = User.query.get(b.blocked_id)
         if u:
-            blocked_users.append({"id": u.id, "username": u.username, "avatar": u.avatar})
+            blocked_users.append({"id": u.id, "username": u.username, "display_name": u.display_name or u.username, "avatar": u.avatar})
     return jsonify(blocked_users)
 
 
