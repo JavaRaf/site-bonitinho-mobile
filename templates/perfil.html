@@ -4,9 +4,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FA8128">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MikanNet">
+  <link rel="apple-touch-icon" href="/static/png/logo-128x128.png">
+  <link rel="icon" href="/static/png/logo-128x128.png">
   <title>Perfil — MikanNet</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/perfil.css">
+  <link rel="stylesheet" href="/static/css/modals.css">
   <script src="/static/js/theme.js"></script>
 </head>
 
@@ -93,74 +101,178 @@
 
     <!-- Edit Profile Modal -->
     <div class="edit-overlay" id="editOverlay">
-      <div class="edit-card">
+      <div class="edit-card edit-card--tabs">
         <div class="edit-header">
           <h3>Editar perfil</h3>
           <button class="edit-close" id="editClose" aria-label="Fechar">&times;</button>
         </div>
-        <div class="edit-body">
-          <div class="edit-field">
-            <label for="editDisplayName">Nome</label>
-            <input type="text" id="editDisplayName" maxlength="30" placeholder="Seu nome" autocomplete="off">
-          </div>
-          <div class="edit-field">
-            <label for="editUsername">Nome de usuário (@)</label>
-            <input type="text" id="editUsername" minlength="3" autocomplete="off">
-          </div>
-          <div class="edit-field">
-            <label for="editBio">Bio <span id="bioCounter">0/110</span></label>
-            <textarea id="editBio" maxlength="110" rows="3"></textarea>
-          </div>
-          <div class="edit-field">
-            <label for="editLocation">Localização</label>
-            <input type="text" id="editLocation" placeholder="Ex: São Paulo, SP" autocomplete="off">
-          </div>
-          <div class="edit-field">
-            <label for="editBirthday">Data de nascimento</label>
-            <input type="date" id="editBirthday">
-          </div>
-          <div class="edit-field">
-            <label for="editMarital">Estado civil</label>
-            <select id="editMarital">
-              <option value="">Não informado</option>
-              <option value="Solteiro(a)">Solteiro(a)</option>
-              <option value="Namorando">Namorando</option>
-              <option value="Noivo(a)">Noivo(a)</option>
-              <option value="Casado(a)">Casado(a)</option>
-              <option value="Divorciado(a)">Divorciado(a)</option>
-              <option value="Viúvo(a)">Viúvo(a)</option>
-              <option value="Outro">Outro</option>
-            </select>
-          </div>
-          <div class="edit-field">
-            <label>Cor do nome</label>
-            <div class="edit-colors" id="editColors"></div>
-          </div>
-          <div class="edit-field">
-            <label>Filtro +18</label>
-            <div class="nsfw-options" id="nsfwOptions">
-              <label class="nsfw-option">
-                <input type="radio" name="nsfw" value="all">
-                <div class="nsfw-option-body">
-                  <span class="nsfw-option-label">Ver tudo</span>
-                  <span class="nsfw-option-desc">Mostrar todas as imagens sem filtro</span>
+        <div class="edit-layout">
+          <nav class="edit-sidebar" aria-label="Categorias">
+            <div class="edit-sidebar-title">Sobre</div>
+            <button class="edit-tab active" data-tab="apresentacao">Apresentação</button>
+            <button class="edit-tab" data-tab="nomes">Nomes</button>
+            <button class="edit-tab" data-tab="contato">Informações de contato</button>
+            <button class="edit-tab" data-tab="pessoais">Dados pessoais</button>
+            <button class="edit-tab" data-tab="trabalho">Trabalho</button>
+            <button class="edit-tab" data-tab="aparencia">Aparência</button>
+            <button class="edit-tab" data-tab="nsfw">NSFW</button>
+            <button class="edit-tab" data-tab="seguranca">Segurança</button>
+            <span class="edit-sidebar-spacer"></span>
+            <button class="edit-tab edit-tab-muted" data-tab="educacao">Educação</button>
+            <button class="edit-tab edit-tab-muted" data-tab="hobbies">Hobbies</button>
+          </nav>
+          <div class="edit-content">
+            <!-- Apresentação -->
+            <section class="edit-panel active" data-panel="apresentacao">
+              <div class="edit-field">
+                <label for="editBio">Bio <span id="bioCounter">0/110</span></label>
+                <textarea id="editBio" maxlength="110" rows="3" placeholder="Fale sobre você"></textarea>
+              </div>
+              <div class="edit-field">
+                <label for="editLocation">Localização</label>
+                <input type="text" id="editLocation" placeholder="Ex: São Paulo, SP" autocomplete="off">
+              </div>
+              <div class="edit-preview">
+                <div class="edit-preview-label">Detalhes fixados — escolha o que aparece</div>
+                <div id="pinnedChooser" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;"></div>
+                <div class="edit-preview-box" id="pinnedPreview" style="margin-top:10px;min-height:40px;">Nenhum detalhe fixado</div>
+              </div>
+            </section>
+            <!-- Nomes -->
+            <section class="edit-panel" data-panel="nomes">
+              <div class="edit-field">
+                <label for="editDisplayName">Nome</label>
+                <input type="text" id="editDisplayName" maxlength="30" placeholder="Seu nome" autocomplete="off">
+              </div>
+              <div class="edit-field">
+                <label for="editUsername">Nome de usuário (@)</label>
+                <input type="text" id="editUsername" minlength="3" autocomplete="off">
+              </div>
+            </section>
+            <!-- Contato -->
+            <section class="edit-panel" data-panel="contato">
+              <div class="edit-field">
+                <label for="editEmail">Email</label>
+                <input type="email" id="editEmail" placeholder="seu@email.com" autocomplete="email">
+              </div>
+              <div class="edit-field">
+                <label for="editLocation2">Localização</label>
+                <input type="text" id="editLocation2" placeholder="Ex: São Paulo, SP" autocomplete="off">
+              </div>
+              <div class="edit-field">
+                <label>Links / Redes sociais</label>
+                <div id="socialLinksList" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <button type="button" class="edit-cancel" id="btnAddSocial" style="margin-top:8px;width:auto;padding:0 14px;height:32px;font-size:0.8125rem;">+ Adicionar link</button>
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-top:6px;">Ex: Instagram, Twitter, site — Nome e URL</p>
+              </div>
+            </section>
+            <!-- Pessoais -->
+            <section class="edit-panel" data-panel="pessoais">
+              <div class="edit-field">
+                <label for="editBirthday">Data de nascimento</label>
+                <input type="date" id="editBirthday">
+              </div>
+              <div class="edit-field">
+                <label for="editMarital">Estado civil</label>
+                <select id="editMarital">
+                  <option value="">Não informado</option>
+                  <option value="Solteiro(a)">Solteiro(a)</option>
+                  <option value="Namorando">Namorando</option>
+                  <option value="Noivo(a)">Noivo(a)</option>
+                  <option value="Casado(a)">Casado(a)</option>
+                  <option value="Divorciado(a)">Divorciado(a)</option>
+                  <option value="Viúvo(a)">Viúvo(a)</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+            </section>
+            <!-- Trabalho -->
+            <section class="edit-panel" data-panel="trabalho">
+              <div class="edit-field">
+                <label for="editCategory">Categoria</label>
+                <input type="text" id="editCategory" placeholder="Ex: Fotografia">
+              </div>
+              <div class="edit-field">
+                <label for="editPrice">Preço</label>
+                <input type="text" id="editPrice" placeholder="Ex: R$ 100/h">
+              </div>
+              <div class="edit-field">
+                <label for="editHours">Horário</label>
+                <input type="text" id="editHours" placeholder="Ex: 9h às 18h">
+              </div>
+            </section>
+            <!-- Aparência -->
+            <section class="edit-panel" data-panel="aparencia">
+              <div class="edit-field edit-field--collapsible">
+                <button type="button" class="edit-colors-trigger" id="editColorsTrigger" aria-expanded="false" aria-controls="editColorsWrap">
+                  <span class="edit-colors-trigger-label">Cor do nome</span>
+                  <span class="edit-colors-preview" id="editColorsPreview">
+                    <span class="edit-colors-preview-swatch" id="editColorsPreviewSwatch"></span>
+                    <span class="edit-colors-preview-text" id="editColorsPreviewText">Padrão</span>
+                  </span>
+                  <span class="edit-colors-chevron" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <div class="edit-colors-wrap" id="editColorsWrap" hidden>
+                  <div class="edit-colors" id="editColors"></div>
                 </div>
-              </label>
-              <label class="nsfw-option">
-                <input type="radio" name="nsfw" value="blur">
-                <div class="nsfw-option-body">
-                  <span class="nsfw-option-label">Borrar +18</span>
-                  <span class="nsfw-option-desc">Imagens impróprias aparecem borradas</span>
+              </div>
+            </section>
+            <!-- NSFW -->
+            <section class="edit-panel" data-panel="nsfw">
+              <div class="edit-field">
+                <label>Filtro +18</label>
+                <div class="nsfw-options" id="nsfwOptions">
+                  <label class="nsfw-option">
+                    <span class="nsfw-option-main"><input type="radio" name="nsfw" value="all"><span class="nsfw-option-title">Ver tudo</span></span>
+                    <span class="nsfw-option-desc">Mostrar todas sem filtro</span>
+                  </label>
+                  <label class="nsfw-option">
+                    <span class="nsfw-option-main"><input type="radio" name="nsfw" value="blur"><span class="nsfw-option-title">Borrar +18</span></span>
+                    <span class="nsfw-option-desc">Imagens +18 aparecem borradas</span>
+                  </label>
+                  <label class="nsfw-option">
+                    <span class="nsfw-option-main"><input type="radio" name="nsfw" value="hide"><span class="nsfw-option-title">Ocultar +18</span></span>
+                    <span class="nsfw-option-desc">Imagens +18 não aparecem</span>
+                  </label>
                 </div>
-              </label>
-              <label class="nsfw-option">
-                <input type="radio" name="nsfw" value="hide">
-                <div class="nsfw-option-body">
-                  <span class="nsfw-option-label">Ocultar +18</span>
-                  <span class="nsfw-option-desc">Imagens impróprias não aparecem</span>
-                </div>
-              </label>
-            </div>
+                <p class="nsfw-desc" id="nsfwDesc" hidden></p>
+              </div>
+            </section>
+            <!-- Segurança -->
+            <section class="edit-panel" data-panel="seguranca">
+              <div class="edit-field">
+                <label>Redefinir senha</label>
+                <input type="password" id="secCurrent" placeholder="Senha atual" autocomplete="current-password" style="margin-bottom:8px">
+                <input type="password" id="secNew" placeholder="Nova senha (mín. 4)" autocomplete="new-password" style="margin-bottom:8px">
+                <input type="password" id="secConfirm" placeholder="Confirmar nova senha" autocomplete="new-password">
+                <button type="button" class="edit-save" id="btnChangePass" style="margin-top:10px;width:auto;padding:0 18px;height:36px;">Alterar senha</button>
+                <p id="secMsg" style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;"></p>
+              </div>
+              <div class="edit-field" style="border-top:1px solid var(--border);padding-top:14px;">
+                <label>Códigos de recuperação (offline)</label>
+                <p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 8px;">Gere 8 códigos para recuperar sua conta. Cada código só funciona uma vez. Arquivo será baixado.</p>
+                <button type="button" class="edit-cancel" id="btnGenCodes" style="width:auto;padding:0 16px;height:36px;">Gerar novos códigos</button>
+                <div id="recoveryCodes" style="margin-top:10px;display:none;grid-template-columns:repeat(2,1fr);gap:6px;"></div>
+                <p id="recoveryMsg" style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;"></p>
+              </div>
+            </section>
+            <!-- Educação -->
+            <section class="edit-panel" data-panel="educacao">
+              <div class="edit-field">
+                <label for="editEducation">Educação</label>
+                <input type="text" id="editEducation" placeholder="Ex: USP - Ciência da Computação" maxlength="200">
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Escola, curso ou formação</p>
+              </div>
+            </section>
+            <!-- Hobbies -->
+            <section class="edit-panel" data-panel="hobbies">
+              <div class="edit-field">
+                <label for="editHobbies">Hobbies</label>
+                <input type="text" id="editHobbies" placeholder="Ex: Futebol, Música, Leitura">
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Separe por vírgula — até 10</p>
+                <div id="hobbiesPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
+              </div>
+            </section>
           </div>
         </div>
         <div class="edit-footer">
@@ -266,6 +378,7 @@
     </div>
   </div>
 
+  <script src="/static/js/modals.js"></script>
   <script src="/static/js/carousel.js"></script>
   <script src="/static/js/comments.js"></script>
   <script src="/static/js/video-player.js"></script>

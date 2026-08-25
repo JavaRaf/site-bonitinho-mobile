@@ -129,7 +129,9 @@ function renderStats(data) {
 
 function updateBioDisplay() {
     const bioEl = document.getElementById("profileBio");
-    if (profile.bio) {
+    const pinned = profile?.pinned_details || [];
+    const showBio = pinned.includes("bio");
+    if (profile.bio && showBio) {
         bioEl.textContent = profile.bio;
         bioEl.hidden = false;
         bioEl.classList.toggle("editable", !!profile.is_me);
@@ -165,7 +167,7 @@ document.getElementById("bioDelete").addEventListener("click", async () => {
         body: JSON.stringify({ bio: "" }),
     });
     const data = await res.json();
-    if (data.error) return alert(data.error);
+    if (data.error) { showAlert(data.error, "Erro"); return; }
     profile.bio = "";
     updateBioDisplay();
 });
@@ -303,27 +305,58 @@ async function toggleFollow() {
 function renderDetails(data) {
     const list = document.getElementById("detailsList");
     let html = "";
+    const pinned = data.pinned_details || [];
+    const show = (k) => pinned.includes(k);
 
-    if (data.location) {
+    if (data.location && show("location")) {
         html += '<div class="detail-item">' +
             '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>' +
             '<span class="detail-text">' + esc(data.location) + '</span></div>';
     }
 
-    if (data.birthday && /^\d{4}-\d{2}-\d{2}$/.test(data.birthday)) {
+    if (data.birthday && /^\d{4}-\d{2}-\d{2}$/.test(data.birthday) && show("birthday")) {
         const [y, m, d] = data.birthday.split("-");
         html += '<div class="detail-item">' +
             '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>' +
             '<span class="detail-text">Nascido em ' + esc(d + "/" + m + "/" + y) + '</span></div>';
     }
 
-    if (data.marital_status) {
+    if (data.marital_status && show("birthday")) {
         html += '<div class="detail-item">' +
             '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>' +
             '<span class="detail-text">' + esc(data.marital_status) + '</span></div>';
     }
 
-    if (data.created_at) {
+    if (data.social_links && data.social_links.length && show("contact")) {
+        data.social_links.forEach(l=>{
+            const safeUrl = esc(l.url);
+            const safeName = esc(l.name);
+            html += '<div class="detail-item">' +
+                '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>' +
+                '<a class="detail-text" href="'+safeUrl+'" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">'+safeName+'</a></div>';
+        });
+    }
+
+    if (data.education && show("education")) {
+        html += '<div class="detail-item">' +
+            '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M22 10a10 10 0 0 0-20 0"/><path d="M12 10V6"/></svg></span>' +
+            '<span class="detail-text">' + esc(data.education) + '</span></div>';
+    }
+
+    if (data.hobbies && data.hobbies.length && show("hobbies")) {
+        html += '<div class="detail-item">' +
+            '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 12.5l-2 2-1-1"/></svg></span>' +
+            '<span class="detail-text">' + data.hobbies.map(h=>esc(h)).join(" · ") + '</span></div>';
+    }
+
+    if ((data.category || data.price || data.hours) && show("work")) {
+        const workTxt = [data.category, data.price, data.hours].filter(Boolean).map(esc).join(" · ");
+        html += '<div class="detail-item">' +
+            '<span class="detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>' +
+            '<span class="detail-text">' + workTxt + '</span></div>';
+    }
+
+    if (data.created_at && show("joined")) {
         const joined = formatDate(data.created_at);
         if (joined) {
             html += '<div class="detail-item">' +
@@ -445,47 +478,264 @@ function openEditModal() {
     if (!profile) return;
     document.getElementById("editDisplayName").value = profile.display_name || profile.username || "";
     document.getElementById("editUsername").value = profile.username;
+    const emEl = document.getElementById("editEmail");
+    if (emEl) emEl.value = profile.email || "";
     document.getElementById("editBio").value = profile.bio || "";
-    document.getElementById("editLocation").value = profile.location || "";
+    const loc = profile.location || "";
+    const loc1 = document.getElementById("editLocation");
+    const loc2 = document.getElementById("editLocation2");
+    if (loc1) loc1.value = loc;
+    if (loc2) loc2.value = loc;
     document.getElementById("editBirthday").value = profile.birthday || "";
     document.getElementById("editMarital").value = profile.marital_status || "";
+    const catEl = document.getElementById("editCategory");
+    if (catEl) catEl.value = profile.category || "";
+    const priceEl = document.getElementById("editPrice");
+    if (priceEl) priceEl.value = profile.price || "";
+    const hoursEl = document.getElementById("editHours");
+    if (hoursEl) hoursEl.value = profile.hours || "";
+    const eduEl = document.getElementById("editEducation");
+    if (eduEl) eduEl.value = profile.education || "";
+    const hobEl = document.getElementById("editHobbies");
+    if (hobEl) hobEl.value = (profile.hobbies || []).join(", ");
+    // reset segurança
+    ["secCurrent","secNew","secConfirm"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; });
+    const secMsg=document.getElementById("secMsg"); if(secMsg) secMsg.textContent="";
+    const recMsg=document.getElementById("recoveryMsg"); if(recMsg) recMsg.textContent="";
+    const recBox=document.getElementById("recoveryCodes"); if(recBox){ recBox.style.display="none"; recBox.innerHTML=""; }
     document.getElementById("bioCounter").textContent = (profile.bio || "").length + "/110";
     selectedColor = profile.color || "";
     buildEditColors();
+    // reset colapsável de cor para fechado
+    const colorTrigger = document.getElementById("editColorsTrigger");
+    const colorWrap = document.getElementById("editColorsWrap");
+    if (colorTrigger) colorTrigger.setAttribute("aria-expanded", "false");
+    if (colorWrap) colorWrap.hidden = true;
+    updateEditColorsPreview();
     const savedNsfw = localStorage.getItem("nsfwFilter") || "blur";
     const radio = document.querySelector(`input[name="nsfw"][value="${savedNsfw}"]`);
     if (radio) radio.checked = true;
+    updateNsfwDesc();
+    loadSocialLinks(profile.social_links || []);
+    buildPinnedChooser(profile.pinned_details || []);
+    updateHobbiesPreview();
+    // reset tabs para apresentacao
+    document.querySelectorAll(".edit-tab").forEach(t=>t.classList.remove("active"));
+    document.querySelector('.edit-tab[data-tab="apresentacao"]')?.classList.add("active");
+    document.querySelectorAll(".edit-panel").forEach(p=>p.classList.remove("active"));
+    document.querySelector('.edit-panel[data-panel="apresentacao"]')?.classList.add("active");
     document.getElementById("editOverlay").classList.add("open");
 }
 
+// Tabs laterais
+document.querySelectorAll(".edit-tab").forEach(tab=>{
+    tab.addEventListener("click", ()=>{
+        const target = tab.dataset.tab;
+        if(!target) return;
+        document.querySelectorAll(".edit-tab").forEach(t=>t.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll(".edit-panel").forEach(p=>{
+            p.classList.toggle("active", p.dataset.panel===target);
+        });
+    });
+});
+
+// Sync localização entre abas
+document.getElementById("editLocation")?.addEventListener("input", e=>{
+    const v=e.target.value;
+    const other=document.getElementById("editLocation2");
+    if(other) other.value=v;
+});
+document.getElementById("editLocation2")?.addEventListener("input", e=>{
+    const v=e.target.value;
+    const other=document.getElementById("editLocation");
+    if(other) other.value=v;
+});
+
+// Social links
+function createSocialRow(name="", url="") {
+    const row = document.createElement("div");
+    row.className = "social-row";
+    row.style.cssText = "display:flex;gap:6px;align-items:center;";
+    row.innerHTML = `
+        <input type="text" placeholder="Nome (ex: Instagram)" value="${name.replace(/"/g,'&quot;')}" class="social-name" style="flex:0 0 110px;padding:8px 10px;border:none;border-bottom:1.5px solid var(--border);background:transparent;font-size:0.875rem;outline:none;">
+        <input type="text" placeholder="https://..." value="${url.replace(/"/g,'&quot;')}" class="social-url" style="flex:1;padding:8px 10px;border:none;border-bottom:1.5px solid var(--border);background:transparent;font-size:0.875rem;outline:none;">
+        <button type="button" class="social-remove" style="width:28px;height:28px;border:none;background:var(--surface-2);border-radius:50%;cursor:pointer;color:var(--text-muted);font-size:1rem;line-height:1;">×</button>
+    `;
+    row.querySelector(".social-remove").addEventListener("click", ()=> row.remove());
+    return row;
+}
+function loadSocialLinks(links) {
+    const list = document.getElementById("socialLinksList");
+    if (!list) return;
+    list.innerHTML = "";
+    (links || []).forEach(l => list.appendChild(createSocialRow(l.name||"", l.url||"")));
+}
+document.getElementById("btnAddSocial")?.addEventListener("click", ()=>{
+    const list = document.getElementById("socialLinksList");
+    if (!list) return;
+    if (list.children.length >= 5) return showAlert("Máximo 5 links");
+    list.appendChild(createSocialRow());
+});
+
+// Pinned details
+const PINNED_OPTS = [
+    {key:"bio", label:"Bio"},
+    {key:"location", label:"Localização"},
+    {key:"birthday", label:"Data de nascimento"},
+    {key:"work", label:"Trabalho"},
+    {key:"education", label:"Educação"},
+    {key:"hobbies", label:"Hobbies"},
+    {key:"contact", label:"Contato"},
+    {key:"joined", label:"Ingressou em"},
+];
+function buildPinnedChooser(pinned) {
+    const c = document.getElementById("pinnedChooser");
+    if (!c) return;
+    c.innerHTML = "";
+    PINNED_OPTS.forEach(o=>{
+        const row = document.createElement("label");
+        row.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:0.8125rem;color:var(--text-soft);";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = o.key;
+        cb.checked = pinned.includes(o.key);
+        cb.addEventListener("change", updatePinnedPreview);
+        row.appendChild(cb);
+        row.appendChild(document.createTextNode(o.label));
+        c.appendChild(row);
+    });
+    updatePinnedPreview();
+}
+function updatePinnedPreview() {
+    const box = document.getElementById("pinnedPreview");
+    const chosen = Array.from(document.querySelectorAll("#pinnedChooser input:checked")).map(i=>i.value);
+    if (!box) return;
+    if (!chosen.length) { box.textContent = "Nenhum detalhe fixado"; box.style.color="var(--text-muted)"; return; }
+    const labels = chosen.map(k=> PINNED_OPTS.find(o=>o.key===k)?.label || k);
+    box.textContent = labels.join(" · ");
+    box.style.color="var(--text)";
+}
+function updateHobbiesPreview() {
+    const inp = document.getElementById("editHobbies");
+    const box = document.getElementById("hobbiesPreview");
+    if (!inp || !box) return;
+    const vals = inp.value.split(",").map(s=>s.trim()).filter(Boolean).slice(0,10);
+    if (!vals.length) { box.innerHTML = ""; return; }
+    box.innerHTML = vals.map(v=> `<span style="background:var(--surface-2);padding:4px 8px;border-radius:9999px;font-size:0.75rem;color:var(--text-soft);">${esc(v)}</span>`).join("");
+}
+document.getElementById("editHobbies")?.addEventListener("input", updateHobbiesPreview);
+function updateNsfwDesc() {
+    const desc = document.getElementById("nsfwDesc");
+    if (!desc) return;
+    const val = document.querySelector('input[name="nsfw"]:checked')?.value || "blur";
+    const map = {
+        all: "Mostrar todas as imagens sem filtro",
+        blur: "Imagens impróprias aparecem borradas",
+        hide: "Imagens impróprias não aparecem"
+    };
+    desc.textContent = map[val] || "";
+}
+
+document.querySelectorAll('input[name="nsfw"]').forEach(r => r.addEventListener("change", updateNsfwDesc));
+
 function closeEditModal() {
     document.getElementById("editOverlay").classList.remove("open");
+}
+
+const COLOR_NAMES = {
+    "#f43f5e": "Rosa avermelhado",
+    "#ef4444": "Vermelho",
+    "#6366f1": "Índigo",
+    "#3b82f6": "Azul",
+    "#10b981": "Esmeralda",
+    "#22c55e": "Verde",
+    "#f59e0b": "Âmbar",
+    "#f97316": "Laranja",
+    "#8b5cf6": "Violeta",
+    "#a855f7": "Roxo",
+    "#0ea5e9": "Azul céu",
+    "#06b6d4": "Ciano",
+    "#ec4899": "Rosa",
+    "#d946ef": "Fúcsia",
+    "#84cc16": "Lima",
+    "#14b8a6": "Turquesa",
+    "#eab308": "Amarelo",
+    "#64748b": "Cinza"
+};
+
+function updateEditColorsPreview() {
+    const swatch = document.getElementById("editColorsPreviewSwatch");
+    const text = document.getElementById("editColorsPreviewText");
+    if (!swatch || !text) return;
+    if (selectedColor && COLOR_NAMES[selectedColor]) {
+        swatch.style.background = selectedColor;
+        swatch.classList.remove("is-empty");
+        swatch.style.borderColor = selectedColor;
+        text.textContent = COLOR_NAMES[selectedColor];
+        text.style.color = selectedColor;
+    } else if (selectedColor) {
+        swatch.style.background = selectedColor;
+        swatch.classList.remove("is-empty");
+        swatch.style.borderColor = selectedColor;
+        text.textContent = selectedColor;
+        text.style.color = selectedColor;
+    } else {
+        swatch.style.background = "transparent";
+        swatch.classList.add("is-empty");
+        swatch.style.borderColor = "var(--border)";
+        text.textContent = "Padrão";
+        text.style.color = "var(--text-muted)";
+    }
 }
 
 function buildEditColors() {
     const el = document.getElementById("editColors");
     el.innerHTML = "";
     for (const c of COLORS) {
+        const row = document.createElement("div");
+        row.className = "edit-color-row" + (c === selectedColor ? " selected" : "");
+        row.tabIndex = 0;
+        row.setAttribute("role", "radio");
+        row.setAttribute("aria-checked", String(c === selectedColor));
+        row.setAttribute("aria-label", COLOR_NAMES[c] || c);
         const swatch = document.createElement("div");
-        swatch.className = "edit-color" + (c === selectedColor ? " selected" : "");
+        swatch.className = "edit-color";
         swatch.style.background = c;
-        swatch.tabIndex = 0;
-        swatch.setAttribute("role", "radio");
-        swatch.setAttribute("aria-checked", String(c === selectedColor));
-        swatch.setAttribute("aria-label", c);
-        swatch.addEventListener("click", () => pickColor(c));
-        el.appendChild(swatch);
+        const nameEl = document.createElement("span");
+        nameEl.className = "edit-color-name";
+        nameEl.textContent = COLOR_NAMES[c] || c;
+        const hexEl = document.createElement("span");
+        hexEl.className = "edit-color-hex";
+        hexEl.textContent = c;
+        row.append(swatch, nameEl, hexEl);
+        row.addEventListener("click", () => pickColor(c));
+        row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickColor(c); }});
+        el.appendChild(row);
     }
+    updateEditColorsPreview();
 }
 
 function pickColor(c) {
     selectedColor = c;
-    document.querySelectorAll(".edit-color").forEach(s => {
-        const match = s.style.backgroundColor === c || rgbToHex(s.style.backgroundColor) === c;
-        s.classList.toggle("selected", match);
-        s.setAttribute("aria-selected", String(match));
+    document.querySelectorAll(".edit-color-row").forEach(row => {
+        const sw = row.querySelector(".edit-color");
+        const match = sw && (sw.style.background === c || sw.style.backgroundColor === c || rgbToHex(sw.style.backgroundColor) === c);
+        row.classList.toggle("selected", match);
+        row.setAttribute("aria-checked", String(match));
     });
+    updateEditColorsPreview();
 }
+
+// Collapsible toggle for editColors
+document.getElementById("editColorsTrigger")?.addEventListener("click", () => {
+    const trigger = document.getElementById("editColorsTrigger");
+    const wrap = document.getElementById("editColorsWrap");
+    if (!trigger || !wrap) return;
+    const isOpen = trigger.getAttribute("aria-expanded") === "true";
+    trigger.setAttribute("aria-expanded", String(!isOpen));
+    wrap.hidden = isOpen;
+});
 
 function rgbToHex(rgb) {
     if (!rgb || rgb.startsWith("#")) return rgb;
@@ -506,16 +756,33 @@ document.getElementById("editBio").addEventListener("input", (e) => {
 
 document.getElementById("editSave").addEventListener("click", async () => {
     const username = document.getElementById("editUsername").value.trim();
-    if (username.length < 3) return alert("Nome de usuário mínimo 3 caracteres");
+    if (username.length < 3) return showAlert("Nome de usuário mínimo 3 caracteres");
     const display_name = document.getElementById("editDisplayName").value.trim().slice(0, 30);
+    const email = document.getElementById("editEmail") ? document.getElementById("editEmail").value.trim() : "";
 
+    const locVal = (document.getElementById("editLocation")?.value || document.getElementById("editLocation2")?.value || "").trim();
+    const socialLinks = Array.from(document.querySelectorAll("#socialLinksList .social-row")).map(r=>({
+        name: r.querySelector(".social-name")?.value.trim() || "",
+        url: r.querySelector(".social-url")?.value.trim() || ""
+    })).filter(x=>x.name && x.url);
+    const hobbiesVal = document.getElementById("editHobbies")?.value || "";
+    const hobbiesArr = hobbiesVal.split(",").map(s=>s.trim()).filter(Boolean);
+    const pinned = Array.from(document.querySelectorAll("#pinnedChooser input:checked")).map(i=>i.value);
     const body = {
         username,
         display_name,
+        email,
         bio: document.getElementById("editBio").value.trim(),
-        location: document.getElementById("editLocation").value.trim(),
+        location: locVal,
         birthday: document.getElementById("editBirthday").value,
         marital_status: document.getElementById("editMarital").value,
+        category: document.getElementById("editCategory")?.value.trim() || "",
+        price: document.getElementById("editPrice")?.value.trim() || "",
+        hours: document.getElementById("editHours")?.value.trim() || "",
+        social_links: socialLinks,
+        education: document.getElementById("editEducation")?.value.trim() || "",
+        hobbies: hobbiesArr,
+        pinned_details: pinned,
         color: selectedColor,
     };
 
@@ -530,7 +797,7 @@ document.getElementById("editSave").addEventListener("click", async () => {
         body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (data.error) return alert(data.error);
+    if (data.error) { showAlert(data.error, "Erro"); return; }
 
     closeEditModal();
     if (username !== profile.username) {
@@ -538,6 +805,62 @@ document.getElementById("editSave").addEventListener("click", async () => {
     } else {
         location.reload();
     }
+});
+
+document.getElementById("btnGenCodes")?.addEventListener("click", async () => {
+    const btn = document.getElementById("btnGenCodes");
+    const box = document.getElementById("recoveryCodes");
+    const msg = document.getElementById("recoveryMsg");
+    if (!await showConfirm("Gerar novos códigos invalida os anteriores. Continuar?", "Gerar códigos", "Gerar", "Cancelar")) return;
+    btn.disabled = true;
+    btn.textContent = "Gerando...";
+    try {
+        const res = await fetch("/api/auth/recovery/generate", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) { msg.textContent = data.error || "Erro"; return; }
+        const header = `MikanNet - Codigos de Recuperacao\nUsuario: ${profile?.username || ""}\nGerado em: ${new Date().toLocaleString("pt-BR")}\n${"=".repeat(40)}\n`;
+        const footer = `\n${"=".repeat(40)}\nCada codigo so pode ser usado uma vez.\nGuarde este arquivo em local seguro.\nPara usar: Login > Esqueci minha senha > informe usuario + codigo + nova senha\nOu acesse /reset\n`;
+        const content = header + data.codes.join("\n") + footer;
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `mikanet-codigos-${profile?.username || "recuperacao"}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        box.style.display = "none";
+        box.innerHTML = "";
+        msg.textContent = "Arquivo baixado. Guarde em local seguro. Cada código só funciona uma vez.";
+        msg.style.color = "var(--text)";
+    } catch { msg.textContent = "Erro de conexão"; }
+    finally { btn.disabled = false; btn.textContent = "Gerar novos códigos"; }
+});
+
+document.getElementById("btnChangePass")?.addEventListener("click", async () => {
+    const cur = document.getElementById("secCurrent")?.value || "";
+    const nw = document.getElementById("secNew")?.value || "";
+    const cf = document.getElementById("secConfirm")?.value || "";
+    const msg = document.getElementById("secMsg");
+    if (!cur || !nw) { msg.textContent = "Preencha senha atual e nova"; msg.style.color="var(--danger)"; return; }
+    if (nw.length < 4) { msg.textContent = "Nova senha mínimo 4 caracteres"; msg.style.color="var(--danger)"; return; }
+    if (nw !== cf) { msg.textContent = "Confirmação não coincide"; msg.style.color="var(--danger)"; return; }
+    msg.textContent = "Alterando..."; msg.style.color="var(--text-muted)";
+    try {
+        const res = await fetch("/api/auth/change-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ current_password: cur, new_password: nw })
+        });
+        const data = await res.json();
+        if (!res.ok) { msg.textContent = data.error || "Erro"; msg.style.color="var(--danger)"; return; }
+        msg.textContent = "Senha alterada com sucesso!";
+        msg.style.color = "#16a34a";
+        document.getElementById("secCurrent").value="";
+        document.getElementById("secNew").value="";
+        document.getElementById("secConfirm").value="";
+    } catch { msg.textContent = "Erro de conexão"; msg.style.color="var(--danger)"; }
 });
 
 /* ── Cover Upload ─────────────────────────────────────────── */
@@ -563,7 +886,7 @@ async function uploadCoverDirect(file) {
         profile.cover = data.cover;
         setCover(document.getElementById("coverImg"), data.cover);
     } else {
-        alert((data && data.error) || "Erro ao enviar capa");
+        showAlert((data && data.error) || "Erro ao enviar capa");
     }
 }
 
@@ -732,7 +1055,7 @@ document.getElementById("coverCropConfirm").addEventListener("click", async () =
         profile.cover = data.cover;
         setCover(document.getElementById("coverImg"), data.cover);
     } else {
-        alert(data.error || "Erro ao enviar capa");
+        showAlert(data.error || "Erro ao enviar capa");
     }
 });
 
@@ -759,7 +1082,7 @@ async function uploadAvatarDirect(file) {
         profile.avatar = data.avatar;
         setAvatar(document.getElementById("avatarImg"), data.avatar);
     } else {
-        alert((data && data.error) || "Erro ao enviar avatar");
+        showAlert((data && data.error) || "Erro ao enviar avatar");
     }
 }
 
@@ -910,7 +1233,7 @@ document.getElementById("cropConfirm").addEventListener("click", async () => {
         profile.avatar = data.avatar;
         setAvatar(document.getElementById("avatarImg"), data.avatar);
     } else {
-        alert(data.error || "Erro ao enviar avatar");
+        showAlert(data.error || "Erro ao enviar avatar");
     }
 });
 

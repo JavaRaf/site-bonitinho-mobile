@@ -1,3 +1,4 @@
+import json
 import uuid
 from pathlib import Path
 
@@ -41,10 +42,29 @@ def get_profile(username):
             follower_id=viewer_id, following_id=user.id
         ).first() is not None
 
+    try:
+        social = json.loads(user.social_links) if user.social_links else []
+        if not isinstance(social, list):
+            social = []
+    except Exception:
+        social = []
+    try:
+        hobbies = json.loads(user.hobbies) if user.hobbies else []
+        if not isinstance(hobbies, list):
+            hobbies = []
+    except Exception:
+        hobbies = []
+    try:
+        pinned = json.loads(user.pinned_details) if user.pinned_details else []
+        if not isinstance(pinned, list):
+            pinned = []
+    except Exception:
+        pinned = []
     return jsonify({
         "id": user.id,
         "username": user.username,
         "display_name": user.display_name or user.username,
+        "email": user.email if is_me else "",
         "avatar": user.avatar,
         "cover": user.cover or "",
         "color": user.color or "",
@@ -55,6 +75,10 @@ def get_profile(username):
         "price": user.price or "",
         "hours": user.hours or "",
         "location": user.location or "",
+        "social_links": social,
+        "education": user.education or "",
+        "hobbies": hobbies,
+        "pinned_details": pinned,
         "created_at": user.created_at,
         "is_me": is_me,
         "is_following": is_following,
@@ -196,6 +220,14 @@ def update_profile():
         user.display_name = display_name
         session["display_name"] = display_name or user.username
 
+    if "email" in data:
+        email = (data["email"] or "").strip().lower()[:120]
+        if email and "@" not in email:
+            return jsonify({"error": "email inválido"}), 400
+        if email and User.query.filter(User.email == email, User.id != user.id).first():
+            return jsonify({"error": "email já cadastrado"}), 409
+        user.email = email
+
     if "avatar" in data:
         user.avatar = data["avatar"]
         session["avatar"] = data["avatar"]
@@ -224,6 +256,44 @@ def update_profile():
 
     if "location" in data:
         user.location = (data["location"] or "").strip()
+
+    if "social_links" in data:
+        links = data["social_links"]
+        if not isinstance(links, list):
+            return jsonify({"error": "social_links deve ser lista"}), 400
+        clean = []
+        for item in links[:5]:
+            if not isinstance(item, dict):
+                continue
+            name = (item.get("name") or "").strip()[:30]
+            url = (item.get("url") or "").strip()[:200]
+            if not name or not url:
+                continue
+            if not (url.startswith("http://") or url.startswith("https://")):
+                url = "https://" + url
+            clean.append({"name": name, "url": url})
+        user.social_links = json.dumps(clean)
+
+    if "education" in data:
+        user.education = (data["education"] or "").strip()[:200]
+
+    if "hobbies" in data:
+        hobbies = data["hobbies"]
+        if isinstance(hobbies, str):
+            # aceita string separada por vírgula
+            hobbies = [h.strip() for h in hobbies.split(",") if h.strip()]
+        if not isinstance(hobbies, list):
+            hobbies = []
+        clean_h = [str(h).strip()[:30] for h in hobbies[:10] if str(h).strip()]
+        user.hobbies = json.dumps(clean_h)
+
+    if "pinned_details" in data:
+        pinned = data["pinned_details"]
+        if not isinstance(pinned, list):
+            pinned = []
+        allowed = {"location","work","education","hobbies","contact","bio","birthday","joined"}
+        clean_p = [p for p in pinned if p in allowed][:10]
+        user.pinned_details = json.dumps(clean_p)
 
     db.session.commit()
     return jsonify({"ok": True})
