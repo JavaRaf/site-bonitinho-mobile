@@ -7,6 +7,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.Text, nullable=False, unique=True)
     display_name = db.Column(db.Text, nullable=False, default="")
+    email = db.Column(db.Text, nullable=False, default="")
     password = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Integer, nullable=False, default=0)
     avatar = db.Column(db.Text, nullable=False, default="default-avatar.svg")
@@ -19,6 +20,10 @@ class User(db.Model):
     price = db.Column(db.Text, nullable=False, default="")
     hours = db.Column(db.Text, nullable=False, default="")
     location = db.Column(db.Text, nullable=False, default="")
+    social_links = db.Column(db.Text, nullable=False, default="[]")
+    education = db.Column(db.Text, nullable=False, default="")
+    hobbies = db.Column(db.Text, nullable=False, default="[]")
+    pinned_details = db.Column(db.Text, nullable=False, default="[]")
     created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
 
     uploads = db.relationship("Upload", backref="owner", lazy=True, cascade="all, delete-orphan")
@@ -138,4 +143,13 @@ class PushNotification(db.Model):
     body = db.Column(db.Text, nullable=False)
     image_name = db.Column(db.Text, nullable=False, default="")
     read = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+
+
+class RecoveryCode(db.Model):
+    __tablename__ = "recovery_codes"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    code_hash = db.Column(db.Text, nullable=False)
+    used = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))

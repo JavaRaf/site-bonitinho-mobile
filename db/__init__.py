@@ -36,6 +36,11 @@ def _run_migrations():
         ("users", "hours", "TEXT NOT NULL DEFAULT ''"),
         ("users", "location", "TEXT NOT NULL DEFAULT ''"),
         ("users", "display_name", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "email", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "social_links", "TEXT NOT NULL DEFAULT '[]'"),
+        ("users", "education", "TEXT NOT NULL DEFAULT ''"),
+        ("users", "hobbies", "TEXT NOT NULL DEFAULT '[]'"),
+        ("users", "pinned_details", "TEXT NOT NULL DEFAULT '[]'"),
     ]
     for table, column, definition in migrations:
         try:
