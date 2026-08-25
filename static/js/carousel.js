@@ -454,7 +454,7 @@ async function toggleFeedLike(btn) {
 
     let prevUnlikedName = null;
     let prevUnlikedImg = null;
-    if (singleVoteMode && liked) {
+    if (singleVoteMode && liked && img && img.eleicao) {
         for (const n of likedImages) {
             if (n === name) continue;
             const cand = allImages.find(x => x.name === n);

@@ -44,18 +44,20 @@ def toggle_like(image_name):
         return jsonify({"liked": False})
 
     if get_setting("single_vote_mode") == "1":
-        eleicao_names = [
-            r.image_name
-            for r in db.session.query(Upload.image_name).filter(Upload.eleicao == 1).all()
-        ]
-        if eleicao_names:
-            other = Like.query.filter(
-                Like.user_id == session["user_id"],
-                Like.image_name != image_name,
-                Like.image_name.in_(eleicao_names),
-            ).first()
-            if other:
-                db.session.delete(other)
+        target = Upload.query.filter_by(image_name=image_name).first()
+        if target and target.eleicao:
+            eleicao_names = [
+                r.image_name
+                for r in db.session.query(Upload.image_name).filter(Upload.eleicao == 1).all()
+            ]
+            if eleicao_names:
+                others = Like.query.filter(
+                    Like.user_id == session["user_id"],
+                    Like.image_name != image_name,
+                    Like.image_name.in_(eleicao_names),
+                ).all()
+                for other in others:
+                    db.session.delete(other)
 
     liker = User.query.get(session["user_id"])
     owner = Upload.query.filter_by(image_name=image_name).first()
