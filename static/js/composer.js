@@ -97,7 +97,7 @@ composerImageInput.addEventListener("change", () => {
             vid.src = URL.createObjectURL(file);
             vid.onloadedmetadata = () => {
                 if (vid.duration > 60) {
-                    alert("Video muito longo (maximo 1 minuto).");
+                    showAlert("Video muito longo (maximo 1 minuto).");
                     URL.revokeObjectURL(vid.src);
                     return;
                 }
@@ -245,7 +245,7 @@ composerPost.addEventListener("click", async () => {
         } else if (res.status === 401) {
             location.href = "/login";
         } else if (res.status === 413) {
-            alert("Arquivo muito grande (maximo 10 MB).");
+            showAlert("Arquivo muito grande (maximo 10 MB).");
         }
     } catch { /* ignore */ }
     composerPost.disabled = true;

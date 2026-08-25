@@ -114,7 +114,7 @@ function renderNode(c, depth) {
     html += `<div class="comment-avatar"><img src="${avatarUrl(c.avatar)}" alt=""></div>`;
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
-    html += `<span class="comment-user" style="color:${c.color || userColor(c.username)}" title="@${esc(c.username)}">${esc(c.display_name || c.username)}</span>`;
+    html += `<div class="comment-user-row"><span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.display_name || c.username)}</span><span class="comment-handle">@${esc(c.username)}</span></div>`;
     html += `<span class="comment-text">${parseMentions(c.text)}</span>`;
     html += `</div>`;
     html += `<div class="comment-meta">`;
@@ -129,13 +129,13 @@ function renderNode(c, depth) {
     const canEdit = currentUserId === c.user_id;
     if (canEdit || canDelete) {
         html += `<div class="comment-owner-actions">`;
-        html += `<button type="button" class="comment-menu-btn" title="Opções"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
-        html += `<div class="comment-menu" hidden>`;
+        html += `<button type="button" class="comment-menu-btn" title="Opções" aria-label="Opções do comentário" aria-expanded="false" aria-haspopup="menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
+        html += `<div class="comment-menu" hidden role="menu">`;
         if (canEdit) {
-            html += `<button type="button" class="comment-menu-item comment-edit" data-id="${c.id}" data-text="${esc(c.text)}">Editar</button>`;
+            html += `<button type="button" class="comment-menu-item comment-edit" role="menuitem" aria-label="Editar comentário" data-id="${c.id}" data-text="${esc(c.text)}">Editar</button>`;
         }
         if (canDelete) {
-            html += `<button type="button" class="comment-menu-item comment-delete" data-id="${c.id}">Excluir</button>`;
+            html += `<button type="button" class="comment-menu-item comment-delete" role="menuitem" aria-label="Excluir comentário" data-id="${c.id}">Excluir</button>`;
         }
         html += `</div></div>`;
     }

@@ -6,24 +6,64 @@ const seguindoSortMenu = document.getElementById("seguindoSortMenu");
 const eleicaoSortBtn = document.getElementById("eleicaoSortBtn");
 const eleicaoSortMenu = document.getElementById("eleicaoSortMenu");
 
-function currentSubMode() {
-    return sortMode === "likes" || sortMode.endsWith("_likes") ? "likes" : "recent";
+const TAB_SORT_KEY = "tabSorts";
+const TAB_DEFAULTS = {
+    headerSection1: "recent",
+    headerSection2: "following_recent",
+    headerSection3: "eleicao_recent",
+};
+
+function loadTabSorts() {
+    try {
+        const raw = localStorage.getItem(TAB_SORT_KEY);
+        if (raw) return { ...TAB_DEFAULTS, ...JSON.parse(raw) };
+    } catch {}
+    return { ...TAB_DEFAULTS };
 }
+
+function saveTabSort(tabId, mode) {
+    const sorts = loadTabSorts();
+    sorts[tabId] = mode;
+    localStorage.setItem(TAB_SORT_KEY, JSON.stringify(sorts));
+}
+
+function getTabSort(tabId) {
+    return loadTabSorts()[tabId] || TAB_DEFAULTS[tabId];
+}
+
+// envolve setSortMode para persistir por aba
+(function wrapSetSort(){
+    if (typeof window.setSortMode === "function" && !window.setSortMode._wrapped) {
+        const orig = window.setSortMode;
+        window.setSortMode = function(mode){
+            orig(mode);
+            const active = document.querySelector(".header-section.active");
+            if (active) saveTabSort(active.id, mode);
+        };
+        window.setSortMode._wrapped = true;
+        // também expõe como global para carousel
+        if (typeof setSortMode !== "undefined") setSortMode = window.setSortMode;
+    }
+})();
+
+// inicializa sortMode com o da aba ativa
+(function initTabSort(){
+    const active = document.querySelector(".header-section.active");
+    if (active && typeof sortMode !== "undefined") {
+        const saved = getTabSort(active.id);
+        if (saved && typeof window.setSortMode === "function") {
+            setTimeout(()=> window.setSortMode(saved), 0);
+        }
+    }
+})();
 
 headerSections.forEach((section) => {
     section.addEventListener("click", () => {
         headerSections.forEach((s) => s.classList.remove("active"));
         section.classList.add("active");
         if (typeof setSortMode !== "function") return;
-        const sub = currentSubMode() === "likes" ? "likes" : "recent";
-        if (section.id === "headerSection1") {
-            const leave = sortMode.startsWith("following_") || sortMode.startsWith("eleicao");
-            setSortMode(leave ? sub : sortMode);
-        } else if (section.id === "headerSection2") {
-            setSortMode("following_" + sub);
-        } else if (section.id === "headerSection3") {
-            setSortMode("eleicao_" + sub);
-        }
+        const tabSort = getTabSort(section.id);
+        setSortMode(tabSort);
     });
 });
 

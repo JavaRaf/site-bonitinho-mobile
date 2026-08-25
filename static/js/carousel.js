@@ -158,10 +158,10 @@ function getExpandedSlides() {
     images.forEach(img => {
         if (img.media && img.media.length > 1) {
             img.media.forEach(m => {
-                result.push({ name: m.name, nsfw: img.nsfw });
+                result.push({ name: m.name, nsfw: img.nsfw, post_type: img.post_type, caption: img.caption, media_type: m.media_type || img.media_type });
             });
         } else {
-            result.push({ name: img.name, nsfw: img.nsfw });
+            result.push({ name: img.name, nsfw: img.nsfw, post_type: img.post_type, caption: img.caption, media_type: img.media_type });
         }
     });
     return result;
@@ -172,12 +172,19 @@ function renderGrid() {
     if (!thumbs) return;
     const slides = getExpandedSlides();
     thumbs.innerHTML = slides.map(img => {
-        const isVideo = /\.(mp4|webm|mov)$/i.test(img.name);
-        const media = isVideo
-            ? `<video src="/images/${escText(img.name)}" muted preload="metadata" playsinline></video>`
-            : `<img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">`;
+        const isText = img.post_type === "text";
+        const isVideo = !isText && (img.media_type === "video" || /\.(mp4|webm|mov)$/i.test(img.name));
+        let media = "";
+        if (isText) {
+            const txt = (img.caption || "").trim().slice(0, 80) || "Texto";
+            media = `<div class="grid-text-preview">${escText(txt)}</div>`;
+        } else if (isVideo) {
+            media = `<video src="/images/${escText(img.name)}" muted preload="metadata" playsinline></video><span class="grid-play-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5.14v14l11-7-11-7z"/></svg></span>`;
+        } else {
+            media = `<img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">`;
+        }
     return `
-        <button class="grid-thumb" data-name="${escText(img.name)}">
+        <button class="grid-thumb ${isText ? "grid-thumb-text" : ""} ${isVideo ? "grid-thumb-video" : ""}" data-name="${escText(img.name)}">
             ${media}
         </button>`;
     }).join("");
@@ -391,11 +398,11 @@ function feedCardHTML(img) {
                 ${tagNsfwHtml}
                 ${tagEleicaoHtml}
                 ${myUserId && img.owner_id === myUserId ? `
-                    <div class="comment-owner-actions feed-owner-actions">
-                        <button type="button" class="comment-menu-btn feed-menu-btn" title="Opções"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
-                        <div class="comment-menu" hidden>
-                            <button type="button" class="comment-menu-item feed-edit" data-name="${escText(img.name)}" data-caption="${escText(img.caption || "")}" data-nsfw="${img.nsfw ? "1" : "0"}" data-eleicao="${img.eleicao ? "1" : "0"}">Editar</button>
-                            <button type="button" class="comment-menu-item feed-delete" data-name="${escText(img.name)}">Excluir</button>
+                    <div class="post-owner-actions feed-owner-actions">
+                        <button type="button" class="post-menu-btn" title="Opções" aria-label="Opções do post" aria-expanded="false" aria-haspopup="menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+                        <div class="post-menu" hidden role="menu">
+                            <button type="button" class="post-menu-item post-edit" role="menuitem" aria-label="Editar post" data-name="${escText(img.name)}" data-caption="${escText(img.caption || "")}" data-nsfw="${img.nsfw ? "1" : "0"}" data-eleicao="${img.eleicao ? "1" : "0"}">Editar</button>
+                            <button type="button" class="post-menu-item post-delete" role="menuitem" aria-label="Excluir post" data-name="${escText(img.name)}">Excluir</button>
                         </div>
                     </div>
                 ` : ""}
@@ -564,7 +571,7 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     html += `<div class="comment-avatar"><img src="${feedAvatarUrl(c.avatar)}" alt=""></div>`;
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
-    html += `<span class="comment-user" style="color:${c.color || userColorFeed(c.username)}" title="@${escText(c.username)}">${escText(c.display_name || c.username)}</span>`;
+    html += `<div class="comment-user-row"><span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.display_name || c.username)}</span><span class="comment-handle">@${escText(c.username)}</span></div>`;
     html += `<span class="comment-text">${escText(c.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>')}</span>`;
     html += `</div>`;
     html += `<div class="comment-meta">`;
@@ -579,13 +586,13 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     const canEdit = currentUserId === c.user_id;
     if (canEdit || canDelete) {
         html += `<div class="comment-owner-actions">`;
-        html += `<button type="button" class="comment-menu-btn" title="Opções"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
-        html += `<div class="comment-menu" hidden>`;
+        html += `<button type="button" class="comment-menu-btn" title="Opções" aria-label="Opções do comentário" aria-expanded="false" aria-haspopup="menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
+        html += `<div class="comment-menu" hidden role="menu">`;
         if (canEdit) {
-            html += `<button type="button" class="comment-menu-item comment-edit" data-id="${c.id}" data-text="${escText(c.text)}">Editar</button>`;
+            html += `<button type="button" class="comment-menu-item comment-edit" role="menuitem" aria-label="Editar comentário" data-id="${c.id}" data-text="${escText(c.text)}">Editar</button>`;
         }
         if (canDelete) {
-            html += `<button type="button" class="comment-menu-item comment-delete" data-id="${c.id}">Excluir</button>`;
+            html += `<button type="button" class="comment-menu-item comment-delete" role="menuitem" aria-label="Excluir comentário" data-id="${c.id}">Excluir</button>`;
         }
         html += `</div></div>`;
     }
@@ -806,12 +813,17 @@ function onFeedClick(e) {
     if (feedDeleteBtn) {
         e.stopPropagation();
         const delId = feedDeleteBtn.dataset.id;
+        const commentEl = document.querySelector(`.comment[data-id="${delId}"]`);
+        // some na hora (otimista) — igual ao post
+        if (commentEl) { commentEl.style.transition = "opacity 0.2s"; commentEl.style.opacity = "0"; setTimeout(() => commentEl.remove(), 220); }
         fetch(`/api/comments/id/${delId}`, { method: "DELETE" })
             .then(() => {
-                const commentEl = feedDeleteBtn.closest(".comment") || document.querySelector(`.comment[data-id="${delId}"]`);
-                const feedCard = commentEl?.closest(".feed-card");
+                const el = document.querySelector(`.comment[data-id="${delId}"]`);
+                if (el) el.remove();
+                const feedCard = (commentEl || el)?.closest(".feed-card") || document.querySelector(".feed-card");
                 if (feedCard) loadFeedComments(feedCard);
-            });
+            })
+            .catch(() => { if (commentEl) { commentEl.style.opacity = "1"; } });
         return;
     }
 
@@ -827,7 +839,7 @@ function onFeedClick(e) {
         return;
     }
 
-    const postEditBtn = e.target.closest(".feed-edit");
+    const postEditBtn = e.target.closest(".post-edit, .feed-edit");
     if (postEditBtn) {
         e.stopPropagation();
         const name = postEditBtn.dataset.name;
@@ -1023,7 +1035,7 @@ function onFeedClick(e) {
                     vid.src = URL.createObjectURL(file);
                     vid.onloadedmetadata = () => {
                         if (vid.duration > 60) {
-                            alert("Vídeo muito longo (máximo 1 minuto).");
+                            showAlert("Vídeo muito longo (máximo 1 minuto).");
                             URL.revokeObjectURL(vid.src);
                             return;
                         }
@@ -1051,7 +1063,7 @@ function onFeedClick(e) {
             const finalMediaCount = realMediaCount + newFiles.length;
 
             if (finalMediaCount === 0 && !caption) {
-                alert("O post precisa de pelo menos uma mídia ou um texto.");
+                showAlert("O post precisa de pelo menos uma mídia ou um texto.");
                 saveBtn.disabled = false;
                 return;
             }
@@ -1193,22 +1205,55 @@ function onFeedClick(e) {
         return;
     }
 
-    const postDeleteBtn = e.target.closest(".feed-delete");
+    const postDeleteBtn = e.target.closest(".post-delete, .feed-delete");
     if (postDeleteBtn) {
         e.stopPropagation();
         const name = postDeleteBtn.dataset.name;
+        const escName = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(name) : name.replace(/["\\]/g, "\\$&");
         askConfirm("Apagar este post?").then(ok => {
             if (!ok) return;
+            // remoção otimista: some na hora (evita bug do portal fora do card)
+            const optimisticCards = document.querySelectorAll(`.feed-card[data-name="${escName}"]`);
+            // também tenta por post_id caso seja post multi
+            let postId = null;
+            try { postId = postDeleteBtn.closest(".feed-card")?.dataset.postId || null; } catch {}
+            if (!postId) {
+                const found = allImages.find(x => x.name === name);
+                if (found) postId = found.post_id;
+            }
             fetch(`/api/my-images/${encodeURIComponent(name)}`, { method: "DELETE", credentials: "include" })
                 .then(res => res.json())
                 .then(data => {
                     if (data.ok) {
-                        allImages = allImages.filter(x => x.name !== name);
-                        postDeleteBtn.closest(".feed-card")?.remove();
-                        renderFeed();
-                        renderGrid();
+                        allImages = allImages.filter(x => x.name !== name && x.post_id !== postId);
+                        // remove do DOM tanto no feed quanto no perfil (postsGrid)
+                        optimisticCards.forEach(el => el.remove());
+                        if (postId) {
+                            document.querySelectorAll(`.feed-card[data-post-id="${escName}"]`).forEach(el => el.remove());
+                            // fallback: remove por postId real
+                            const escPid = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(postId) : postId;
+                            document.querySelectorAll(`.feed-card[data-post-id="${escPid}"]`).forEach(el => el.remove());
+                        }
+                        // fallback direto se optimistic não pegou (portal fora do card)
+                        const leftover = document.querySelector(`.feed-card[data-name="${escName}"]`);
+                        if (leftover) leftover.remove();
+                        if (document.getElementById("feedView")) renderFeed();
+                        try { if (typeof renderGrid === "function") renderGrid(); } catch {}
+                    } else {
+                        // reverte se falhou (recarrega)
+                        if (document.getElementById("feedView")) renderFeed();
+                        else location.reload();
                     }
+                })
+                .catch(() => {
+                    optimisticCards.forEach(el => el.style.opacity = "0.5");
                 });
+            // some na hora mesmo antes da resposta
+            optimisticCards.forEach(el => { el.style.transition = "opacity 0.2s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 220); });
+            if (postId) {
+                const escPid = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(postId) : postId;
+                document.querySelectorAll(`.feed-card[data-post-id="${escPid}"]`).forEach(el => { el.style.transition = "opacity 0.2s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 220); });
+            }
         });
         return;
     }
@@ -1474,7 +1519,7 @@ document.getElementById("feedCreateFile")?.addEventListener("change", () => {
             vid.src = URL.createObjectURL(file);
             vid.onloadedmetadata = () => {
                 if (vid.duration > 60) {
-                    alert("Video muito longo (maximo 1 minuto).");
+                    showAlert("Video muito longo (maximo 1 minuto).");
                     URL.revokeObjectURL(vid.src);
                     return;
                 }
@@ -1624,66 +1669,92 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
                 const src = (!data.user.avatar || data.user.avatar === "default-avatar.svg")
                     ? "/static/svg/default-avatar.svg" : `/avatars/${data.user.avatar}`;
                 avatar.src = src;
+                avatar.style.cursor = "pointer";
+                avatar.title = "Ver perfil";
+                avatar.addEventListener("click", () => {
+                    location.href = "/perfil/" + encodeURIComponent(data.user.username);
+                });
             }
         }
     } catch { /* ignore */ }
 })();
 
-/* === Comment 3-dot menu (fixed portal to escape overflow clipping) === */
+/* === Post & Comment 3-dot menus — distintos, aparência idêntica (portais) === */
+const postMenuLayer = document.createElement("div");
+postMenuLayer.className = "post-menu";
+postMenuLayer.style.cssText = "position: fixed; right: auto; bottom: auto;";
+postMenuLayer.hidden = true;
+document.body.appendChild(postMenuLayer);
+
 const commentMenuLayer = document.createElement("div");
 commentMenuLayer.className = "comment-menu";
 commentMenuLayer.style.cssText = "position: fixed; right: auto; bottom: auto;";
 commentMenuLayer.hidden = true;
 document.body.appendChild(commentMenuLayer);
 
+function closePostMenu() {
+    if (postMenuLayer._sourceBtn) postMenuLayer._sourceBtn.setAttribute("aria-expanded", "false");
+    postMenuLayer.hidden = true;
+    postMenuLayer.innerHTML = "";
+    postMenuLayer._sourceBtn = null;
+}
 function closeCommentMenu() {
+    if (commentMenuLayer._sourceBtn) commentMenuLayer._sourceBtn.setAttribute("aria-expanded", "false");
     commentMenuLayer.hidden = true;
     commentMenuLayer.innerHTML = "";
+    commentMenuLayer._sourceBtn = null;
+}
+function closeAllMenus() { closePostMenu(); closeCommentMenu(); }
+
+function openPortalMenu({ layer, btn, inlineMenu }) {
+    [...inlineMenu.children].forEach(child => layer.appendChild(child.cloneNode(true)));
+    const host = document.getElementById("feedView") || document.getElementById("postsGrid") || document.body;
+    if (layer.parentElement !== host) host.appendChild(layer);
+    layer._sourceBtn = btn;
+    btn.setAttribute("aria-expanded", "true");
+    layer.hidden = false;
+    const r = btn.getBoundingClientRect();
+    const mw = layer.offsetWidth || 130;
+    const mh = layer.offsetHeight || 96;
+    let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+    if (left < 8) left = 8;
+    let top = r.bottom + 4;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+    layer.style.left = left + "px";
+    layer.style.top = top + "px";
 }
 
 document.addEventListener("click", e => {
-    const menuItem = e.target.closest(".comment-menu-item");
-    if (menuItem && commentMenuLayer.contains(menuItem)) {
-        closeCommentMenu();
-        return;
-    }
+    if (e.target.closest(".post-menu-item") && postMenuLayer.contains(e.target)) { closeAllMenus(); return; }
+    if (e.target.closest(".comment-menu-item") && commentMenuLayer.contains(e.target)) { closeAllMenus(); return; }
 
-    const menuBtn = e.target.closest(".comment-menu-btn, .feed-menu-btn");
-    if (menuBtn) {
-        const wasOpen = !commentMenuLayer.hidden && commentMenuLayer._sourceBtn === menuBtn;
-        closeCommentMenu();
+    const postBtn = e.target.closest(".post-menu-btn, .feed-menu-btn");
+    if (postBtn) {
+        const wasOpen = !postMenuLayer.hidden && postMenuLayer._sourceBtn === postBtn;
+        closeAllMenus();
         if (wasOpen) return;
-
-        const inlineMenu = menuBtn.closest(".comment-owner-actions")?.querySelector(":scope > .comment-menu");
+        const inlineMenu = postBtn.closest(".post-owner-actions, .feed-owner-actions")?.querySelector(":scope > .post-menu, :scope > .comment-menu");
         if (!inlineMenu) return;
-
-        [...inlineMenu.children].forEach(child => commentMenuLayer.appendChild(child.cloneNode(true)));
-
-        // Mount inside #feedView so item clicks bubble to the delegated
-        // edit/delete handlers (position:fixed keeps visuals unchanged)
-        const host = document.getElementById("feedView") || document.body;
-        if (commentMenuLayer.parentElement !== host) host.appendChild(commentMenuLayer);
-
-        commentMenuLayer._sourceBtn = menuBtn;
-        commentMenuLayer.hidden = false;
-
-        const r = menuBtn.getBoundingClientRect();
-        const mw = commentMenuLayer.offsetWidth || 130;
-        const mh = commentMenuLayer.offsetHeight || 96;
-        let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
-        if (left < 8) left = 8;
-        let top = r.bottom + 4;
-        if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
-        commentMenuLayer.style.left = left + "px";
-        commentMenuLayer.style.top = top + "px";
+        openPortalMenu({ layer: postMenuLayer, btn: postBtn, inlineMenu });
         return;
     }
 
-    closeCommentMenu();
+    const commentBtn = e.target.closest(".comment-menu-btn");
+    if (commentBtn) {
+        const wasOpen = !commentMenuLayer.hidden && commentMenuLayer._sourceBtn === commentBtn;
+        closeAllMenus();
+        if (wasOpen) return;
+        const inlineMenu = commentBtn.closest(".comment-owner-actions")?.querySelector(":scope > .comment-menu");
+        if (!inlineMenu) return;
+        openPortalMenu({ layer: commentMenuLayer, btn: commentBtn, inlineMenu });
+        return;
+    }
+
+    closeAllMenus();
 });
 
-window.addEventListener("scroll", closeCommentMenu, true);
-window.addEventListener("resize", closeCommentMenu);
+window.addEventListener("scroll", closeAllMenus, true);
+window.addEventListener("resize", closeAllMenus);
 
 
 

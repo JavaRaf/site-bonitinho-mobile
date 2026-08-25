@@ -558,11 +558,23 @@ header.hidden {
   max-width: 100%;
 }
 
+.comment-user-row {
+  margin-bottom: 0.2rem;
+  line-height: 1.2;
+}
+
 .comment-user {
   font-weight: 700;
   font-size: 0.8125rem;
-  display: block;
-  margin-bottom: 0.2rem;
+  display: inline;
+  margin-right: 0.35rem;
+}
+
+.comment-handle {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: inline;
 }
 
 .comment-text {
@@ -662,13 +674,16 @@ header.hidden {
   white-space: nowrap;
 }
 
-/* === Comment owner menu (3 dots) === */
-.comment-owner-actions {
+/* === Post & Comment owner menus (3 dots) — visual idêntico, classes separadas === */
+.comment-owner-actions,
+.post-owner-actions,
+.feed-owner-actions {
   position: relative;
   flex-shrink: 0;
 }
 
 .comment-menu-btn,
+.post-menu-btn,
 .feed-menu-btn {
   background: none;
   border: none;
@@ -683,12 +698,14 @@ header.hidden {
 }
 
 .comment-menu-btn:hover,
+.post-menu-btn:hover,
 .feed-menu-btn:hover {
   background: var(--surface-2);
   color: var(--text);
 }
 
-.comment-menu {
+.comment-menu,
+.post-menu {
   position: absolute;
   top: calc(100% + 2px);
   right: 0;
@@ -701,11 +718,13 @@ header.hidden {
   overflow: hidden;
 }
 
-.comment-menu[hidden] {
+.comment-menu[hidden],
+.post-menu[hidden] {
   display: none;
 }
 
-.comment-menu-item {
+.comment-menu-item,
+.post-menu-item {
   display: block;
   width: 100%;
   padding: 0.5rem 1rem;
@@ -720,11 +739,14 @@ header.hidden {
   transition: background 0.15s ease;
 }
 
-.comment-menu-item:hover {
+.comment-menu-item:hover,
+.post-menu-item:hover {
   background: var(--surface-2);
 }
 
 .comment-menu-item.comment-delete,
+.post-menu-item.post-delete,
+.post-menu-item.feed-delete,
 .comment-menu-item.feed-delete {
   color: var(--danger);
   font-weight: 600;
@@ -1029,6 +1051,46 @@ header.hidden {
   border-color: var(--text);
 }
 
+.grid-thumb-text {
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.grid-text-preview {
+  font-size: 0.65rem;
+  line-height: 1.3;
+  color: var(--text-soft);
+  display: -webkit-box;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  text-align: left;
+  width: 100%;
+}
+
+.grid-thumb-video {
+  background: #000;
+}
+
+.grid-play-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
+.grid-play-icon svg {
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+  opacity: 0.9;
+}
+
 /* === Feed create post (Twitter style) === */
 .feed-create {
   max-width: 640px;
@@ -1055,6 +1117,7 @@ header.hidden {
   object-fit: cover;
   flex-shrink: 0;
   background: var(--surface-2);
+  cursor: pointer;
 }
 
 .feed-create-main {
@@ -1230,7 +1293,7 @@ header.hidden {
 .feed-view {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
   max-width: 640px;
   margin: 0 auto;
   min-height: 100dvh;
@@ -1371,6 +1434,7 @@ header.hidden {
   border: 1px solid var(--border);
   overflow: hidden;
   border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .feed-owner {
@@ -1399,7 +1463,18 @@ header.hidden {
 .feed-owner-name {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.feed-owner-handle {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

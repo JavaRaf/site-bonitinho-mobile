@@ -121,3 +121,93 @@
   text-decoration: underline;
   font-weight: 500;
 }
+
+.auth-forgot {
+  text-align: center;
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.auth-forgot a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.auth-forgot a:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.forgot-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.forgot-overlay[hidden] { display: none; }
+
+.forgot-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid var(--border);
+}
+
+.forgot-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.forgot-desc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.forgot-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.auth-btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.forgot-success {
+  font-size: 0.8125rem;
+  color: #16a34a;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: var(--danger);
+  min-height: 1em;
+}
+
+.field input.input-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+}
+
+.field input.input-success {
+  border-color: #16a34a;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

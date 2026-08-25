@@ -1,0 +1,74 @@
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+.app-modal-overlay[hidden] { display: none; }
+.app-modal-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.app-modal-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--text);
+}
+.app-modal-card p {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.app-modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.app-modal-input:focus { border-color: var(--accent, #1877f2); }
+.app-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+.app-modal-btn {
+  min-width: 80px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-modal-btn.secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.app-modal-btn.primary {
+  background: var(--accent, #1877f2);
+  color: #fff;
+}
+.app-modal-btn.danger {
+  background: var(--danger, #ef4444);
+  color: #fff;
+}
