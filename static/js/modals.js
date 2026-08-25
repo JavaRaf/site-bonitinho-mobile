@@ -94,6 +94,40 @@
     return showModal({title, message, confirmText, cancelText:"Cancelar", showCancel:true, input:true, inputValue: defaultValue, inputPlaceholder: placeholder});
   };
 
+  // Eye toggle para senhas
+  const eyeOpen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeClosed = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.53 9.53A3 3 0 0 0 12 15a3 3 0 0 0 2.47-1.47"/><path d="M1 1l22 22"/></svg>`;
+  function initPasswordToggles(){
+    document.querySelectorAll('input[type="password"]').forEach(inp=>{
+      if (inp.dataset.eyeInit) return;
+      inp.dataset.eyeInit = "1";
+      const wrapper = document.createElement("div");
+      wrapper.className = "password-wrapper";
+      inp.parentNode.insertBefore(wrapper, inp);
+      wrapper.appendChild(inp);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "password-toggle";
+      btn.setAttribute("aria-label", "Mostrar senha");
+      btn.innerHTML = eyeOpen;
+      let shown = false;
+      btn.addEventListener("click", ()=>{
+        shown = !shown;
+        inp.type = shown ? "text" : "password";
+        btn.innerHTML = shown ? eyeClosed : eyeOpen;
+        btn.setAttribute("aria-label", shown ? "Ocultar senha" : "Mostrar senha");
+      });
+      wrapper.appendChild(btn);
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPasswordToggles);
+  } else {
+    initPasswordToggles();
+  }
+  // observa novos inputs (ex: modais dinâmicos)
+  new MutationObserver(initPasswordToggles).observe(document.body, {childList:true, subtree:true});
+
   // Compat: substituir alert/confirm nativos se desejar, mas manter nativo como fallback
   // Não sobrescreve window.alert para não quebrar libs, use showAlert explicitamente
 })();
