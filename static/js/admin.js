@@ -326,6 +326,7 @@ function renderUsers(filter = "") {
             <div class="user-card-actions">
                 ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Promover</button>` : ""}
                 <button class="admin-btn small" data-rename="${u.id}" data-name="${esc(u.username)}">Renomear</button>
+                <button class="admin-btn small" data-reset="${u.id}" data-name="${esc(u.username)}">Resetar senha</button>
                 <button class="admin-btn danger small" data-delete="${u.id}">Excluir</button>
             </div>
         </div>
@@ -388,6 +389,19 @@ function renderUsers(filter = "") {
                 if (e.key === "Escape") restore();
             });
             input.addEventListener("blur", save);
+        });
+    });
+
+    list.querySelectorAll("[data-reset]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const newPass = await showPrompt(`Digite a nova senha para @${btn.dataset.name}`, "", "Resetar senha", "Redefinir", "Nova senha (mín. 4)");
+            if (newPass === null) return;
+            if (!newPass || newPass.trim().length < 4) { showStatus("Mínimo 4 caracteres"); return; }
+            const res = await api("PUT", `/api/admin/users/${btn.dataset.reset}/reset-password`, { password: newPass.trim() });
+            const data = await res.json().catch(()=>null);
+            if (res.ok) showStatus(`Senha de @${btn.dataset.name} redefinida`);
+            else showStatus(data?.error || "Erro ao resetar");
         });
     });
 

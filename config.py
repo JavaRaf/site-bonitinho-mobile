@@ -12,6 +12,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{BASE_DIR / 'db' / 'app.db'}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Recovery offline: sem envio de email
+
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SEND_FILE_MAX_AGE_DEFAULT = 300

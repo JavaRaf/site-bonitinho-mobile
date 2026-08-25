@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FA8128">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MikanNet">
+  <link rel="apple-touch-icon" href="/static/png/logo-128x128.png">
+  <link rel="icon" href="/static/png/logo-128x128.png">
   <title>Entrar — MikanNet</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/auth.css">
@@ -35,9 +42,38 @@
       <p class="auth-error" id="authError"></p>
     </form>
 
+    <p class="auth-forgot">
+      <a href="#" id="forgotLink">Esqueci minha senha</a>
+    </p>
+
     <p class="auth-switch">
       Não tem conta? <a href="/register">Criar conta</a>
     </p>
+  </div>
+
+  <div class="forgot-overlay" id="forgotOverlay" hidden>
+    <div class="forgot-card">
+      <h3>Recuperar com código</h3>
+      <p class="forgot-desc">Use um dos códigos de recuperação gerados no seu perfil (offline). Cada código só pode ser usado uma vez.</p>
+      <div class="field">
+        <label for="forgotUsername">Usuário</label>
+        <input type="text" id="forgotUsername" placeholder="seu usuário" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="forgotCode">Código</label>
+        <input type="text" id="forgotCode" placeholder="ex: A1B2C3D4" autocomplete="off" style="text-transform:uppercase">
+      </div>
+      <div class="field">
+        <label for="forgotNewPass">Nova senha</label>
+        <input type="password" id="forgotNewPass" placeholder="mínimo 4 caracteres" autocomplete="new-password">
+      </div>
+      <p class="auth-error" id="forgotError"></p>
+      <p class="forgot-success" id="forgotSuccess" hidden></p>
+      <div class="forgot-actions">
+        <button type="button" class="auth-btn auth-btn-secondary" id="forgotCancel">Cancelar</button>
+        <button type="button" class="auth-btn" id="forgotSubmit">Redefinir</button>
+      </div>
+    </div>
   </div>
 
   <script src="/static/js/auth.js"></script>

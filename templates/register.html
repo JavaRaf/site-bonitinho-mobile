@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FA8128">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MikanNet">
+  <link rel="apple-touch-icon" href="/static/png/logo-128x128.png">
+  <link rel="icon" href="/static/png/logo-128x128.png">
   <title>Criar conta — MikanNet</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/auth.css">
@@ -22,7 +29,8 @@
     <form id="registerForm" class="auth-form">
       <div class="field">
         <label for="username">Usuário (@)</label>
-        <input type="text" id="username" name="username" placeholder="ex: joao123" autocomplete="username" required minlength="3">
+        <input type="text" id="username" name="username" placeholder="ex: joao123" autocomplete="username" required minlength="3" aria-describedby="usernameError">
+        <span class="field-error" id="usernameError" aria-live="polite"></span>
       </div>
       <div class="field">
         <label for="display_name">Nome</label>
@@ -34,7 +42,7 @@
         <input type="password" id="password" name="password" placeholder="mínimo 4 caracteres" autocomplete="new-password" required minlength="4">
       </div>
 
-      <button type="submit" class="auth-btn">Criar conta</button>
+      <button type="submit" class="auth-btn" id="registerBtn">Criar conta</button>
 
       <p class="auth-error" id="authError"></p>
     </form>

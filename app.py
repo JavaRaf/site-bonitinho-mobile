@@ -44,6 +44,10 @@ def register_page_routes(app):
     def register_page():
         return render_template("register.html")
 
+    @app.route("/reset", methods=["GET"])
+    def reset_page():
+        return render_template("reset.html")
+
     @app.route("/perfil", methods=["GET"])
     @app.route("/perfil/<username>", methods=["GET"])
     def perfil_page(username=None):
@@ -70,6 +74,14 @@ def register_page_routes(app):
     @app.route("/votos", methods=["GET"])
     def votos_redirect():
         return redirect("/eleicao")
+
+    @app.route("/favicon.ico", methods=["GET"])
+    def favicon():
+        return send_from_directory(
+            Config.BASE_DIR / "static" / "png",
+            "logo-128x128.png",
+            mimetype="image/png",
+        )
 
 
 def register_service_worker(app):

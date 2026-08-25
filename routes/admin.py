@@ -159,6 +159,28 @@ def admin_rename_user(user_id):
     return jsonify({"ok": True})
 
 
+@admin_bp.route("/api/admin/users/<int:user_id>/reset-password", methods=["PUT"])
+@admin_required
+def admin_reset_password(user_id):
+    data = request.get_json(silent=True) or {}
+    new_password = (data.get("password") or "").strip()
+    if len(new_password) < 4:
+        return jsonify({"error": "password min 4 chars"}), 400
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "not found"}), 404
+    from routes.auth import hash_password
+    user.password = hash_password(new_password)
+    # invalida códigos de recuperação antigos
+    try:
+        from db.models import RecoveryCode
+        RecoveryCode.query.filter_by(user_id=user.id).delete()
+    except Exception:
+        pass
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @admin_bp.route("/api/admin/collage", methods=["POST"])
 @admin_required
 def admin_export_collage():
