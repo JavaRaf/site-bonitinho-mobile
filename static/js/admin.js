@@ -310,14 +310,14 @@ function renderUsers(filter = "") {
     }
 
     list.innerHTML = filtered.map(u => `
-        <div class="user-card" data-user-id="${u.id}">
-            <div class="user-card-row">
-                <div class="user-card-avatar">
-                    <img src="${getUserAvatar(u.avatar)}" alt="${esc(u.username)}">
+        <div class="user-card" data-user-id="${u.id}" data-username="${esc(u.username)}" style="cursor:pointer">
+            <div class="user-card-row" data-username="${esc(u.username)}" style="cursor:pointer">
+                <div class="user-card-avatar" data-username="${esc(u.username)}">
+                    <img src="${getUserAvatar(u.avatar)}" alt="${esc(u.username)}" data-username="${esc(u.username)}">
                 </div>
-                <div class="user-card-info">
-                    <div class="user-card-name" style="color:${u.color || 'var(--text)'}">${esc(u.username)}</div>
-                    <div class="user-card-meta">
+                <div class="user-card-info" data-username="${esc(u.username)}">
+                    <div class="user-card-name" style="color:${u.color || 'var(--text)'}" data-username="${esc(u.username)}">${esc(u.username)}</div>
+                    <div class="user-card-meta" data-username="${esc(u.username)}">
                         <span class="user-card-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span>
                         <span>${formatDate(u.created_at)}</span>
                     </div>
@@ -331,6 +331,14 @@ function renderUsers(filter = "") {
             </div>
         </div>
     `).join("");
+
+    list.querySelectorAll(".user-card").forEach(card => {
+        card.addEventListener("click", (e) => {
+            if (e.target.closest("button") || e.target.closest("input")) return;
+            const uname = card.dataset.username;
+            if (uname) location.href = `/perfil/${encodeURIComponent(uname)}`;
+        });
+    });
 
     list.querySelectorAll("[data-promote]").forEach(btn => {
         btn.addEventListener("click", async (e) => {
