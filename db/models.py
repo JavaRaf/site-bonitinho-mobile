@@ -101,6 +101,8 @@ class Comment(db.Model):
     image_name = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
+    media_name = db.Column(db.Text, nullable=False, default="")
+    media_type = db.Column(db.Text, nullable=False, default="")
     created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
 
 

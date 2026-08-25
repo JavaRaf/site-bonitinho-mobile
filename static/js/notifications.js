@@ -13,9 +13,9 @@ bellBtn.addEventListener("click", (e) => {
     notifPanel.hidden = !opening;
     document.getElementById("userMenu").classList.remove("open");
     if (opening) {
-        loadNotifications();
-    } else {
         updateBadge(0);
+        fetch("/api/push/read", { method: "POST", credentials: "include" }).catch(() => {});
+        loadNotifications();
     }
 });
 
@@ -59,9 +59,9 @@ async function loadNotifications() {
                 el.addEventListener("click", () => goToNotification(el.dataset.image));
             });
         }
-        updateBadge(data.unread);
+        updateBadge(0);
         if (data.unread > 0) {
-            await fetch("/api/push/read", { method: "POST", credentials: "include" });
+            fetch("/api/push/read", { method: "POST", credentials: "include" }).catch(() => {});
         }
     } catch { /* ignore */ }
 }

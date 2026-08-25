@@ -116,6 +116,13 @@ function renderNode(c, depth) {
     html += `<div class="comment-bubble">`;
     html += `<div class="comment-user-row"><span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.display_name || c.username)}</span><span class="comment-handle">@${esc(c.username)}</span></div>`;
     html += `<span class="comment-text">${parseMentions(c.text)}</span>`;
+    if (c.media_name) {
+        if (c.media_type === "video") {
+            html += `<div class="comment-media" style="margin-top:6px;"><video src="/images/${esc(c.media_name)}" controls preload="metadata" style="max-width:180px;max-height:140px;border-radius:8px;display:block;"></video></div>`;
+        } else {
+            html += `<div class="comment-media" style="margin-top:6px;"><img src="/images/${esc(c.media_name)}" alt="" loading="lazy" style="max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;"></div>`;
+        }
+    }
     html += `</div>`;
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${timeAgo(c.created_at)}</span>`;

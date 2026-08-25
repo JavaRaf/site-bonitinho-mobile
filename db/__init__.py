@@ -41,6 +41,8 @@ def _run_migrations():
         ("users", "education", "TEXT NOT NULL DEFAULT ''"),
         ("users", "hobbies", "TEXT NOT NULL DEFAULT '[]'"),
         ("users", "pinned_details", "TEXT NOT NULL DEFAULT '[]'"),
+        ("comments", "media_name", "TEXT NOT NULL DEFAULT ''"),
+        ("comments", "media_type", "TEXT NOT NULL DEFAULT ''"),
     ]
     for table, column, definition in migrations:
         try:

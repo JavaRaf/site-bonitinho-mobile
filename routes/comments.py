@@ -1,5 +1,11 @@
 import re
+import os
+import uuid
+from pathlib import Path
+from PIL import Image, ImageOps
+
 from flask import Blueprint, request, jsonify, session
+from config import Config
 from db import db
 from db.models import User, Comment, CommentLike, Upload
 from utils.security import login_required
@@ -13,6 +19,7 @@ def handle_comments(image_name):
         rows = (
             db.session.query(
                 Comment.id, Comment.text, Comment.created_at, Comment.parent_id,
+                Comment.media_name, Comment.media_type,
                 Comment.user_id, User.username, User.display_name, User.color, User.avatar,
                 db.func.count(CommentLike.id).label("likes"),
             )
@@ -26,7 +33,8 @@ def handle_comments(image_name):
         return jsonify([
             {
                 "id": r.id, "text": r.text, "created_at": r.created_at,
-                "parent_id": r.parent_id, "username": r.username, "display_name": r.display_name or r.username, "color": r.color,
+                "parent_id": r.parent_id, "media_name": r.media_name or "", "media_type": r.media_type or "",
+                "username": r.username, "display_name": r.display_name or r.username, "color": r.color,
                 "avatar": r.avatar, "user_id": r.user_id, "likes": r.likes,
             }
             for r in rows
@@ -35,12 +43,86 @@ def handle_comments(image_name):
     if "user_id" not in session:
         return jsonify({"error": "login required"}), 401
 
-    data = request.get_json()
-    text = (data.get("text") or "").strip()
-    if not text:
-        return jsonify({"error": "text is required"}), 400
+    # suporta JSON e multipart
+    if request.content_type and "multipart/form-data" in request.content_type:
+        text = (request.form.get("text") or "").strip()
+        parent_id = request.form.get("parent_id")
+        if parent_id:
+            try:
+                parent_id = int(parent_id)
+            except:
+                parent_id = None
+        media_file = request.files.get("media")
+        media_name = ""
+        media_type = ""
+    else:
+        data = request.get_json(silent=True) or {}
+        text = (data.get("text") or "").strip()
+        parent_id = data.get("parent_id")
+        media_name = (data.get("media_name") or "").strip()
+        media_type = (data.get("media_type") or "").strip()
+        media_file = None
 
-    parent_id = data.get("parent_id")
+    if media_file and media_file.filename:
+        ext = Path(media_file.filename).suffix.lower()
+        allowed = Config.ALLOWED_EXTENSIONS | Config.VIDEO_EXTENSIONS
+        if ext not in allowed:
+            return jsonify({"error": "tipo de arquivo não permitido"}), 400
+        media_file.seek(0, os.SEEK_END)
+        size = media_file.tell()
+        media_file.seek(0)
+        if size > Config.MAX_IMAGE_BYTES and ext not in Config.VIDEO_EXTENSIONS:
+            return jsonify({"error": "arquivo muito grande"}), 400
+        # video limite 1min
+        is_video = ext in Config.VIDEO_EXTENSIONS
+        # gera nome único
+        media_name = f"{uuid.uuid4().hex[:8]}_{Path(media_file.filename).stem[:20]}{ext}"
+        # sanitiza
+        media_name = Path(media_name).name
+        dest = Config.IMAGES_DIR / media_name
+        Config.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+        if is_video:
+            # salva temp e checa duração
+            tmp = dest
+            media_file.save(str(tmp))
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(tmp)],
+                    capture_output=True, text=True, timeout=10
+                )
+                dur = float(result.stdout.strip()) if result.stdout.strip() else 0
+                if dur > 60:
+                    tmp.unlink(missing_ok=True)
+                    return jsonify({"error": "vídeo muito longo (máx 1min)"}), 400
+            except Exception:
+                pass
+            media_type = "video"
+            # thumb para video opcional
+        else:
+            try:
+                with Image.open(media_file.stream) as im:
+                    im = im.convert("RGB")
+                    im = ImageOps.exif_transpose(im)
+                    im.thumbnail((1080, 1080))
+                    im.save(str(dest), format="JPEG", quality=85)
+            except Exception:
+                media_file.save(str(dest))
+            media_type = "image"
+            # gera thumb
+            try:
+                thumb_dir = Config.THUMB_DIR
+                thumb_dir.mkdir(parents=True, exist_ok=True)
+                with Image.open(dest) as im:
+                    im.thumbnail((480, 480))
+                    im.save(str(thumb_dir / (media_name + ".webp")), format="WEBP", quality=80)
+            except Exception:
+                pass
+            if ext == ".gif":
+                media_type = "image"
+
+    if not text and not media_name:
+        return jsonify({"error": "text or media required"}), 400
     if parent_id:
         parent = Comment.query.filter(
             Comment.id == parent_id, Comment.image_name == image_name
@@ -54,7 +136,9 @@ def handle_comments(image_name):
         user_id=session["user_id"],
         image_name=image_name,
         text=text,
-        parent_id=parent_id,
+        parent_id=parent_id if parent_id else None,
+        media_name=media_name,
+        media_type=media_type,
     )
     db.session.add(comment)
     db.session.commit()
@@ -102,7 +186,8 @@ def handle_comments(image_name):
 
     return jsonify({
         "id": comment.id, "text": comment.text, "created_at": comment.created_at,
-        "parent_id": comment.parent_id, "username": commenter.username if commenter else "",
+        "parent_id": comment.parent_id, "media_name": comment.media_name or "", "media_type": comment.media_type or "",
+        "username": commenter.username if commenter else "",
         "display_name": commenter.display_name if commenter and commenter.display_name else (commenter.username if commenter else ""),
         "color": commenter.color if commenter else "",
     }), 201

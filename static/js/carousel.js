@@ -427,7 +427,13 @@ function feedCardHTML(img) {
             <div class="feed-reply-indicator"><span class="feed-reply-text"></span><button type="button" class="feed-reply-cancel">&times;</button></div>
             <form class="comment-form feed-comment-form">
                 <textarea class="comment-textarea" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
-                <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                <div class="comment-form-actions">
+                    <input type="file" class="comment-media-input" accept="image/*,video/mp4,video/webm,video/quicktime,.gif" hidden>
+                    <button type="button" class="comment-gif-btn" title="GIF">GIF</button>
+                    <button type="button" class="comment-media-btn" title="Imagem/Vídeo"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M18 20H4V6h9V4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zm-7.79-3.17l-1.96-2.36L5.5 18h11l-3.54-4.71zM20 4V1h-2v3h-3c.01.01 0 2 0 2h3v2.99c.01.01 2 0 2 0V6h3V4h-3z"/></svg></button>
+                    <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                </div>
+                <div class="comment-media-preview" hidden></div>
             </form>
         </div>
     </article>`;
@@ -573,6 +579,13 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     html += `<div class="comment-bubble">`;
     html += `<div class="comment-user-row"><span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.display_name || c.username)}</span><span class="comment-handle">@${escText(c.username)}</span></div>`;
     html += `<span class="comment-text">${escText(c.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>')}</span>`;
+    if (c.media_name) {
+        if (c.media_type === "video") {
+            html += `<div class="comment-media" style="margin-top:6px;"><video src="/images/${escText(c.media_name)}" controls preload="metadata" style="max-width:180px;max-height:140px;border-radius:8px;display:block;"></video></div>`;
+        } else {
+            html += `<div class="comment-media" style="margin-top:6px;"><img src="/images/${escText(c.media_name)}" alt="" loading="lazy" style="max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;"></div>`;
+        }
+    }
     html += `</div>`;
     html += `<div class="comment-meta">`;
     html += `<span class="comment-time">${feedTimeAgo(c.created_at)}</span>`;
@@ -1287,27 +1300,39 @@ async function onFeedSubmit(e) {
     const form = e.target;
     const textarea = form.querySelector("textarea");
     const text = textarea.value.trim();
-    if (!text) return;
+    const mediaInput = form.querySelector(".comment-media-input");
+    const hasMedia = mediaInput && mediaInput.files && mediaInput.files[0];
+    if (!text && !hasMedia) return;
     const card = form.closest(".feed-card");
     const name = card.dataset.name;
-    const body = { text };
+    let fetchOpts = {};
+    if (hasMedia) {
+        const fd = new FormData();
+        fd.append("text", text);
+        if (feedReplyParentId) fd.append("parent_id", feedReplyParentId);
+        fd.append("media", mediaInput.files[0]);
+        fetchOpts = { method: "POST", body: fd };
+    } else {
+        const body = { text };
+        if (feedReplyParentId) body.parent_id = feedReplyParentId;
+        fetchOpts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+    }
     if (feedReplyParentId) {
-        body.parent_id = feedReplyParentId;
         feedReplyParentId = null;
         const indicator = card.querySelector(".feed-reply-indicator");
         if (indicator) indicator.classList.remove("visible");
         textarea.placeholder = "Adicione um comentario...";
     }
     try {
-        const res = await fetch(`/api/comments/${encodeURIComponent(name)}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        });
+        const res = await fetch(`/api/comments/${encodeURIComponent(name)}`, fetchOpts);
         if (res.ok) {
             textarea.value = "";
+            if (mediaInput) { mediaInput.value = ""; const prev=form.querySelector(".comment-media-preview"); if(prev){ prev.hidden=true; prev.innerHTML=""; } }
             autoResizeFeed(textarea);
             await loadFeedComments(card);
+        } else {
+            const d=await res.json().catch(()=>null);
+            if(d?.error) showAlert(d.error, "Erro");
         }
     } catch { /* ignore */ }
     if (typeof hideMentionDropdown === "function") hideMentionDropdown();
@@ -1340,6 +1365,49 @@ function bindFeedEvents(root) {
     root.addEventListener("submit", onFeedSubmit);
     root.addEventListener("input", onFeedInput);
     root.addEventListener("keydown", onFeedKeydown);
+    root.addEventListener("click", (e)=>{
+        const gifBtn = e.target.closest(".comment-gif-btn");
+        if (gifBtn) {
+            const form = gifBtn.closest("form");
+            const inp = form?.querySelector(".comment-media-input");
+            if (inp) { inp.accept = ".gif,image/gif"; inp.click(); }
+        }
+        const mediaBtn = e.target.closest(".comment-media-btn");
+        if (mediaBtn) {
+            const form = mediaBtn.closest("form");
+            const inp = form?.querySelector(".comment-media-input");
+            if (inp) { inp.accept = "image/*,video/mp4,video/webm,video/quicktime,.gif"; inp.click(); }
+        }
+    });
+    root.addEventListener("change", (e)=>{
+        if (!e.target.matches(".comment-media-input")) return;
+        const inp = e.target;
+        const file = inp.files[0];
+        const form = inp.closest("form");
+        const preview = form?.querySelector(".comment-media-preview");
+        if (!file || !preview) return;
+        if (file.size > 10 * 1024 * 1024) { showAlert("Arquivo muito grande (máx 10MB)"); inp.value=""; preview.hidden=true; return; }
+        const isVideo = file.type.startsWith("video/");
+        if (isVideo) {
+            const url = URL.createObjectURL(file);
+            const v = document.createElement("video");
+            v.preload = "metadata";
+            v.src = url;
+            v.onloadedmetadata = ()=>{
+                if (v.duration > 60) { showAlert("Vídeo muito longo (máx 1min)"); inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); }
+                else {
+                    preview.innerHTML = `<div style="position:relative;display:inline-block;"><video src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;" muted></video><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
+                    preview.hidden = false;
+                    preview.querySelector(".comment-media-remove").onclick = ()=>{ inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); };
+                }
+            };
+        } else {
+            const url = URL.createObjectURL(file);
+            preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;"><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
+            preview.hidden = false;
+            preview.querySelector(".comment-media-remove").onclick = ()=>{ inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); };
+        }
+    });
 }
 
 const feedRootEl = document.getElementById("feedView");
