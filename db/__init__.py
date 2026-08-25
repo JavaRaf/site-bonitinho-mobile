@@ -48,6 +48,26 @@ def _run_migrations():
         except Exception:
             pass
     db.session.commit()
+    # Índices para acelerar feed e likes
+    for stmt in [
+        "CREATE INDEX IF NOT EXISTS idx_uploads_active_created ON uploads(active, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_uploads_user_active ON uploads(user_id, active)",
+        "CREATE INDEX IF NOT EXISTS idx_likes_image ON likes(image_name)",
+        "CREATE INDEX IF NOT EXISTS idx_likes_user ON likes(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_comments_image ON comments(image_name)",
+        "CREATE INDEX IF NOT EXISTS idx_uploads_post_id ON uploads(post_id)",
+    ]:
+        try:
+            db.session.execute(text(stmt))
+        except Exception:
+            pass
+    db.session.commit()
+    # WAL para concorrência
+    try:
+        db.session.execute(text("PRAGMA journal_mode=WAL"))
+        db.session.execute(text("PRAGMA synchronous=NORMAL"))
+    except Exception:
+        pass
     # Backfill display_name = username where empty
     try:
         db.session.execute(text("UPDATE users SET display_name = username WHERE display_name IS NULL OR display_name = ''"))

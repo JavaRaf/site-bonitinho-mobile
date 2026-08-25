@@ -12,6 +12,11 @@ class Config:
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{BASE_DIR / 'db' / 'app.db'}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"check_same_thread": False},
+        "pool_pre_ping": True,
+    }
+
     # Recovery offline: sem envio de email
 
     SESSION_PERMANENT = True

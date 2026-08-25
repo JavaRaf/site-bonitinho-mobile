@@ -5,3 +5,5 @@ python-dotenv
 PyJWT
 cryptography
 requests
+Flask-Compress
+Flask-Caching

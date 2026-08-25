@@ -1435,6 +1435,8 @@ header.hidden {
   overflow: hidden;
   border-radius: 10px;
   margin-bottom: 10px;
+  content-visibility: auto;
+  contain-intrinsic-size: 400px;
 }
 
 .feed-owner {

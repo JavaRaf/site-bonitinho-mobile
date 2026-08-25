@@ -128,6 +128,22 @@ def list_images():
             "media": [{"name": fname, "media_type": "image"}],
         })
 
+    # Paginação opcional
+    page = request.args.get("page", type=int)
+    limit = request.args.get("limit", type=int)
+    if page:
+        per_page = min(max(limit or 20, 1), 50)
+        start = (page - 1) * per_page
+        end = start + per_page
+        paged = result[start:end]
+        return jsonify({
+            "images": paged,
+            "page": page,
+            "per_page": per_page,
+            "total": len(result),
+            "has_more": end < len(result)
+        })
+
     return jsonify(result)
 
 

@@ -1,11 +1,24 @@
 from pathlib import Path
-from flask import Flask, jsonify, redirect, render_template, session, send_from_directory
+from flask import Flask, jsonify, redirect, render_template, session, send_from_directory, request
 from config import Config
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    # Compressão gzip
+    try:
+        from flask_compress import Compress
+        Compress(app)
+    except Exception:
+        pass
+    # Cache simples (memória) para endpoints
+    try:
+        from flask_caching import Cache
+        cache = Cache(app, config={"CACHE_TYPE": "SimpleCache", "CACHE_DEFAULT_TIMEOUT": 30})
+        app.cache = cache
+    except Exception:
+        pass
 
     from db import init_app
     init_app(app)
@@ -15,6 +28,17 @@ def create_app():
 
     register_page_routes(app)
     register_service_worker(app)
+
+    @app.after_request
+    def add_cache_headers(resp):
+        # thumbs, avatars, covers, images com cache longo
+        if request.path.startswith("/thumbs/") or request.path.startswith("/avatars/") or request.path.startswith("/covers/"):
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif request.path.startswith("/static/"):
+            resp.headers["Cache-Control"] = "public, max-age=86400"
+        elif request.path.startswith("/api/images") or request.path.startswith("/api/profile"):
+            resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp
 
     return app
 

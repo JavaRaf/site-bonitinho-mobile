@@ -62,10 +62,18 @@ async function fetchMyUserId() {
     } catch { /* not logged in */ }
 }
 
+let feedPage = 1;
+let feedHasMore = true;
+let feedLoadingMore = false;
+
 async function loadCarousel(skipScroll = false) {
-    const res = await fetch("/api/images");
-    const images = await res.json();
+    feedPage = 1;
+    feedHasMore = true;
+    const res = await fetch(`/api/images?page=${feedPage}&limit=20`);
+    const data = await res.json();
+    const images = Array.isArray(data) ? data : (data.images || []);
     allImages = images;
+    feedHasMore = Array.isArray(data) ? false : !!data.has_more;
     updateLastTimestamp();
 
     await fetchMyUserId();
@@ -82,6 +90,30 @@ async function loadCarousel(skipScroll = false) {
     syncSortSelects();
     if (!skipScroll) {
         highlightPostFromUrl();
+    }
+    // infinite scroll
+    if (!window._feedScrollBound) {
+        window._feedScrollBound = true;
+        window.addEventListener("scroll", async () => {
+            if (feedLoadingMore || !feedHasMore) return;
+            if (window.innerHeight + window.scrollY < document.body.offsetHeight - 800) return;
+            feedLoadingMore = true;
+            feedPage++;
+            try {
+                const res = await fetch(`/api/images?page=${feedPage}&limit=20`);
+                const data = await res.json();
+                const more = Array.isArray(data) ? data : (data.images || []);
+                if (more.length) {
+                    allImages = allImages.concat(more);
+                    feedHasMore = Array.isArray(data) ? false : !!data.has_more;
+                    renderFeed();
+                    renderGrid();
+                } else {
+                    feedHasMore = false;
+                }
+            } catch {}
+            feedLoadingMore = false;
+        });
     }
 }
 
