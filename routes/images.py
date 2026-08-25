@@ -553,6 +553,12 @@ def serve_image(filename):
     return send_from_directory(Config.BASE_DIR / "images", filename, max_age=604800)
 
 
+@images_bp.route("/comment-media/<path:filename>")
+def serve_comment_media(filename):
+    safe = Path(filename).name
+    return send_from_directory(Config.BASE_DIR / "comment-media", safe, max_age=604800)
+
+
 @images_bp.route("/thumbs/<path:filename>")
 def serve_thumb(filename):
     safe = Path(filename).name

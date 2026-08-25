@@ -79,8 +79,9 @@ def handle_comments(image_name):
         media_name = f"{uuid.uuid4().hex[:8]}_{Path(media_file.filename).stem[:20]}{ext}"
         # sanitiza
         media_name = Path(media_name).name
-        dest = Config.IMAGES_DIR / media_name
-        Config.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+        dest_dir = Config.COMMENT_MEDIA_DIR
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / media_name
         if is_video:
             # salva temp e checa duração
             tmp = dest

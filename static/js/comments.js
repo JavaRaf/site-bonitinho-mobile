@@ -118,9 +118,9 @@ function renderNode(c, depth) {
     html += `<span class="comment-text">${parseMentions(c.text)}</span>`;
     if (c.media_name) {
         if (c.media_type === "video") {
-            html += `<div class="comment-media" style="margin-top:6px;"><video src="/images/${esc(c.media_name)}" controls preload="metadata" style="max-width:180px;max-height:140px;border-radius:8px;display:block;"></video></div>`;
+            html += `<div class="comment-media" style="margin-top:6px;">${createVideoPlayerHTML("/comment-media/" + esc(c.media_name))}</div>`;
         } else {
-            html += `<div class="comment-media" style="margin-top:6px;"><img src="/images/${esc(c.media_name)}" alt="" loading="lazy" style="max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;"></div>`;
+            html += `<div class="comment-media" style="margin-top:6px;"><img src="/comment-media/${esc(c.media_name)}" alt="" loading="lazy" style="max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;"></div>`;
         }
     }
     html += `</div>`;
@@ -170,6 +170,7 @@ function renderComments(comments) {
 
     const tree = buildTree(comments);
     list.innerHTML = tree.map(c => renderNode(c, 0)).join("");
+    list.querySelectorAll(".video-player").forEach(initVideoPlayer);
 }
 
 /* === Autocomplete @mentions === */

@@ -5,6 +5,7 @@ let sortMode = localStorage.getItem("sortMode") || "likes";
 let singleVoteMode = false;
 let nsfwFilter = localStorage.getItem("nsfwFilter") || "blur";
 let myUserId = null;
+let myUser = null;
 let followingIds = [];
 
 function askConfirm(msg, confirmLabel = "Excluir") {
@@ -58,7 +59,11 @@ async function fetchMyUserId() {
     try {
         const me = await fetch("/api/auth/me");
         const meData = await me.json();
-        if (meData.user) myUserId = meData.user.id;
+        if (meData.user) {
+            myUserId = meData.user.id;
+            myUser = meData.user;
+            window.currentUserIsAdmin = meData.user.is_admin || false;
+        }
     } catch { /* not logged in */ }
 }
 
@@ -389,6 +394,7 @@ function feedCardHTML(img) {
             <img src="/static/svg/eleicao.svg" alt="" style="width: 12px; height: 12px; filter: brightness(0) invert(1);"> Eleição
         </span>` : '';
 
+    const userPlaceholder = myUser && myUser.display_name ? `Comente como ${myUser.display_name}` : "Adicione um comentário...";
     return `
     <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
         <div class="feed-owner">
@@ -426,14 +432,45 @@ function feedCardHTML(img) {
             <div class="feed-comments-list"></div>
             <div class="feed-reply-indicator"><span class="feed-reply-text"></span><button type="button" class="feed-reply-cancel">&times;</button></div>
             <form class="comment-form feed-comment-form">
-                <textarea class="comment-textarea" placeholder="Adicione um comentario..." rows="1" autocomplete="off"></textarea>
-                <div class="comment-form-actions">
-                    <input type="file" class="comment-media-input" accept="image/*,video/mp4,video/webm,video/quicktime,.gif" hidden>
-                    <button type="button" class="comment-gif-btn" title="GIF">GIF</button>
-                    <button type="button" class="comment-media-btn" title="Imagem/Vídeo"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M18 20H4V6h9V4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zm-7.79-3.17l-1.96-2.36L5.5 18h11l-3.54-4.71zM20 4V1h-2v3h-3c.01.01 0 2 0 2h3v2.99c.01.01 2 0 2 0V6h3V4h-3z"/></svg></button>
-                    <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                <div class="comment-avatar">
+                    <img src="${myUser && myUser.avatar ? feedAvatarUrl(myUser.avatar) : '/static/svg/default-avatar.svg'}" alt="Avatar">
                 </div>
-                <div class="comment-media-preview" hidden></div>
+                <div class="comment-box">
+                    <div class="comment-media-preview" hidden></div>
+                    <textarea class="comment-textarea" placeholder="${userPlaceholder}" rows="1" autocomplete="off"></textarea>
+                    <div class="comment-form-actions">
+                        <input type="file" class="comment-media-input" accept="image/*,image/webp,video/mp4,video/webm,video/quicktime,.gif" hidden>
+                        
+                        <!-- Câmera / Imagem -->
+                        <button type="button" class="comment-media-btn" title="Câmera">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 7h4l1.5-2h5L16 7h4v12H4V7z"/>
+                                <circle cx="12" cy="13" r="3.5"/>
+                            </svg>
+                        </button>
+
+                        <!-- GIF -->
+                        <button type="button" class="comment-gif-btn" title="GIF">
+                            <span class="gif-icon">GIF</span>
+                        </button>
+
+                        <!-- Figurinha -->
+                        <button type="button" class="comment-sticker-btn" title="Figurinha">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M5 3h14a2 2 0 0 1 2 2v9a7 7 0 0 1-7 7H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                <path d="M14 21v-5a2 2 0 0 1 2-2h5"/>
+                                <circle cx="9" cy="10" r="1"/>
+                                <circle cx="15" cy="10" r="1"/>
+                                <path d="M8 14c1.2 1.5 2.8 1.5 4 0"/>
+                            </svg>
+                        </button>
+
+                        <!-- Enviar -->
+                        <button type="submit" class="feed-create-send feed-comment-send" title="Enviar" disabled>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </article>`;
@@ -581,9 +618,9 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
     html += `<span class="comment-text">${escText(c.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>')}</span>`;
     if (c.media_name) {
         if (c.media_type === "video") {
-            html += `<div class="comment-media" style="margin-top:6px;"><video src="/images/${escText(c.media_name)}" controls preload="metadata" style="max-width:180px;max-height:140px;border-radius:8px;display:block;"></video></div>`;
+            html += `<div class="comment-media" style="margin-top:6px;">${createVideoPlayerHTML("/comment-media/" + escText(c.media_name))}</div>`;
         } else {
-            html += `<div class="comment-media" style="margin-top:6px;"><img src="/images/${escText(c.media_name)}" alt="" loading="lazy" style="max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;"></div>`;
+            html += `<div class="comment-media" style="margin-top:6px;"><img src="/comment-media/${escText(c.media_name)}" alt="" loading="lazy" style="max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;"></div>`;
         }
     }
     html += `</div>`;
@@ -670,6 +707,7 @@ async function loadFeedComments(card) {
         }
         const tree = buildFeedTree(comments);
         list.innerHTML = tree.map(c => renderFeedNode(c, 0, feedCurrentUserId, feedIsAdmin, feedMyLikes)).join("");
+        list.querySelectorAll(".video-player").forEach(initVideoPlayer);
     } catch { list.innerHTML = ""; }
 }
 
@@ -829,6 +867,7 @@ function onFeedClick(e) {
         const commentEl = document.querySelector(`.comment[data-id="${delId}"]`);
         // some na hora (otimista) — igual ao post
         if (commentEl) { commentEl.style.transition = "opacity 0.2s"; commentEl.style.opacity = "0"; setTimeout(() => commentEl.remove(), 220); }
+        closeAllMenus();
         fetch(`/api/comments/id/${delId}`, { method: "DELETE" })
             .then(() => {
                 const el = document.querySelector(`.comment[data-id="${delId}"]`);
@@ -891,7 +930,7 @@ function onFeedClick(e) {
                 <div id="editMediaPreviews" class="composer-media-previews"></div>
                 <div class="feed-create-toolbar edit-post-toolbar">
                     <input type="file" id="editFileInput" multiple accept="image/*,video/mp4,video/webm,video/quicktime" hidden>
-                    <input type="file" id="editZipInput" accept=".zip,application/zip" hidden>
+                    ${window.currentUserIsAdmin ? `<input type="file" id="editZipInput" accept=".zip,application/zip" hidden>` : ""}
                     <button type="button" class="feed-create-icon edit-icon-eleicao${currentEleicao ? " active" : ""}" id="editEleicaoToggle" title="Marcar como Eleicao" aria-label="Marcar como Eleicao">
                         <svg width="30" height="15" viewBox="0 2 32 16" fill="currentColor" aria-hidden="true">
 <path fill-rule="evenodd" d="M5 2h22c2.761 0 5 2.239 5 5v6c0 2.761-2.239 5-5 5H5c-2.761 0-5-2.239-5-5V7c0-2.761 2.239-5 5-5Zm0 2C3.343 4 2 5.343 2 7v6c0 1.657 1.343 3 3 3h22c1.657 0 3-1.343 3-3V7c0-1.657-1.343-3-3-3H5Z"/>
@@ -907,9 +946,9 @@ function onFeedClick(e) {
                         <svg width="20" height="21" viewBox="452 29.333 1133.333 1078.667" aria-hidden="true"><path fill="currentColor" d="M 540.225 140.346 C 545.508 139.898 552.392 139.858 557.708 139.842 L 972.783 139.809 L 1109.66 139.855 C 1131.88 139.877 1155.47 138.317 1177.5 140.267 C 1183.26 140.776 1189.25 142.757 1193.36 146.995 C 1198.23 152.007 1199.46 159.133 1199.4 165.871 C 1199.3 177.476 1194.46 186.536 1183.06 190.341 C 1168.04 195.35 1083.42 192.654 1061.64 192.68 L 707.136 192.984 L 600.103 192.901 C 582.503 192.869 564.556 192.55 547.105 193.151 C 537.206 194.231 528.662 203.113 528.514 212.847 C 528.052 243.182 528.251 273.445 528.211 303.72 L 528.243 490.286 L 527.933 1015.55 C 528.999 1017.47 530.605 1019.93 531.922 1021.68 C 535.678 1026.61 541.235 1029.84 547.376 1030.68 C 554.607 1031.63 571.413 1031.25 579.304 1031.25 L 636.419 1031.24 L 833.327 1031.26 L 1219.39 1031.22 C 1284.66 1031.2 1349.91 1031.23 1415.21 1031.03 C 1438.4 1030.96 1438.55 1016.33 1438.66 997.277 C 1438.7 991.02 1438.6 984.528 1438.65 978.263 L 1439.21 911.25 L 1439.44 555.126 C 1439.62 529.374 1439.64 503.62 1439.51 477.868 C 1439.43 468.653 1438.48 450.689 1438.89 442.343 C 1439.07 438.843 1439.83 435.399 1441.16 432.156 C 1451.96 405.854 1488.56 416.936 1490.12 428.769 C 1493.78 456.396 1492.25 521.532 1492.21 547.233 L 1492.21 837.848 L 1492.26 954.854 C 1492.31 975.57 1492.85 997.002 1492.07 1017.51 C 1490.5 1040 1480.42 1058.67 1461.99 1071.49 C 1439.6 1087.08 1418.02 1085.37 1392.28 1085.42 L 1338.27 1085.46 L 1138.59 1085.63 L 743.476 1085.27 L 614.308 1085.24 C 581.742 1085.26 533.682 1090.42 506.668 1072.54 C 490.873 1061.98 480.013 1045.48 476.554 1026.8 C 473.813 1012.76 474.985 956.524 474.89 938.415 L 474.764 716.348 L 474.658 268.493 C 474.665 210.998 466.437 153.921 540.225 140.346 z"></path><path fill="currentColor" d="M 587.6 499.532 L 640.487 499.769 L 704.697 648.041 C 705.46 631.836 704.741 615.233 704.744 598.944 C 704.973 565.893 704.855 532.841 704.389 499.792 L 756.083 500.114 L 756.293 760.537 C 740.189 760.712 720.633 761.331 704.651 760.719 C 687.264 725.463 671.929 687.186 654.678 651.666 C 651.523 645.17 641.963 621.335 638.915 616.787 C 634.219 620.787 640.647 753.252 636.414 759.765 L 632.75 761.232 L 631.762 760.938 C 621.379 759.861 599.499 760.568 588.017 760.444 L 587.6 499.532 z"></path><path fill="currentColor" d="M 810.03 496.329 C 810.95 496.235 811.86 496.157 812.78 496.095 C 871.78 492.154 895.94 521.312 898.73 577.222 C 883 577.955 863.28 577.455 847.24 577.492 C 847.19 575.989 847.11 574.487 846.99 572.987 C 846.43 565.332 843.58 556.195 837.21 551.647 C 811.18 533.056 782.429 564.965 806.06 587.994 C 813.31 595.053 826.54 599.423 835.77 603.969 C 849.33 610.005 861.75 616.046 874.06 624.509 C 908.74 648.348 910.01 705.245 886.33 737.216 C 872.52 755.853 852.92 761.96 830.58 764.9 C 829.11 764.981 827.63 765.041 826.16 765.081 C 768.896 766.664 741.764 738.374 740.348 681.711 C 757.725 681.587 775.102 681.678 792.477 681.983 C 794.262 731.697 854.29 721.457 847.36 684.246 C 843.09 661.309 795.046 651.568 776.973 637.806 C 761.476 626.005 749.438 614.337 745.788 593.006 C 737.777 542.474 757.994 505.42 810.03 496.329 z"></path><path fill="currentColor" d="M 985.459 500.105 C 997.949 499.342 1018.001 500.02 1031.232 500.015 L 1124.129 499.979 C 1123.81 517.783 1123.642 535.589 1123.625 553.396 L 1040.465 553.454 C 1040.917 570.662 1041.166 587.875 1041.21 605.089 C 1065.26 604.981 1089.31 605.098 1113.358 605.44 C 1113.286 622.823 1113.531 640.205 1114.095 657.579 L 1093.896 657.29 L 1040.726 657.277 C 1040.996 691.685 1041.094 726.094 1041.02 760.503 C 1024.354 761.205 1002.444 760.78 985.691 760.588 C 984.85 734.095 985.673 706.251 985.577 679.623 L 985.459 500.105 z"></path><path fill="currentColor" d="M 1109.29 499.845 L 1165.6 499.949 C 1170.19 534.794 1175.95 569.379 1180.63 604.252 C 1182.49 614.149 1186.4 661.393 1190.41 666.477 C 1192.29 664.667 1203.16 591.147 1204.56 582.858 C 1209.63 554.253 1214.36 528.931 1218.41 499.95 C 1234.74 499.579 1252.34 499.913 1268.77 499.918 C 1269.81 512.121 1275.08 549.424 1277.88 561.644 C 1278.98 575.766 1290.73 656.159 1295.15 666.607 C 1296.76 653.604 1299.59 641.169 1301.23 628.333 C 1306.73 586.483 1312.52 541.467 1319.91 499.935 C 1336.23 499.962 1354.66 499.555 1370.79 500.079 C 1365.01 526.449 1361.44 550.852 1356.84 577.341 L 1342.45 655.885 C 1336.97 686.389 1326.91 730.668 1324.07 760.33 C 1307.24 760.431 1284.27 761.294 1267.96 760.546 C 1264.44 727.161 1256.64 693.489 1251.24 660.346 C 1250.51 655.835 1249.87 650.347 1248.92 645.981 C 1249.46 640.275 1243.84 612.65 1242.27 605.854 C 1240.33 612.597 1235.81 629.354 1236.24 636.01 C 1227.81 673.379 1222.51 712.777 1215.38 750.474 C 1214.44 755.414 1214.92 758.836 1210.29 760.973 L 1208.18 760.59 C 1191.82 759.984 1173.08 760.402 1156.54 760.392 C 1152.11 733.611 1145.89 704.99 1140.9 678.077 C 1129.52 618.819 1118.98 559.402 1109.29 499.845 z"></path><path fill="currentColor" d="M 1404.33 51.3557 C 1405.56 51.3099 1406.78 51.2792 1408.01 51.2636 C 1412.15 51.2151 1415.24 51.3353 1419.19 52.5844 C 1447.82 61.653 1444.59 91.8808 1444.64 115.704 C 1444.68 134.021 1444.5 151.812 1444.36 169.852 C 1473.92 170.48 1508.12 168.199 1537.34 171.081 C 1562.11 173.524 1572.96 210.461 1554.19 229.529 C 1549.48 234.233 1543.55 237.524 1537.07 239.031 C 1528.49 241.007 1507.31 240.232 1497.11 240.172 L 1444.01 240.073 C 1443.76 259.118 1444.36 278.428 1444.26 297.492 C 1444.21 306.376 1444.85 319.521 1443.57 327.999 C 1442.73 333.581 1440.76 338.933 1437.78 343.728 C 1431.88 353.023 1424.28 357.256 1413.82 359.62 C 1412.65 359.651 1411.48 359.669 1410.31 359.673 C 1400.21 359.702 1391.57 357.052 1384.32 349.699 C 1379.54 344.763 1376.27 338.557 1374.92 331.819 C 1373.05 322.855 1373.74 303.266 1373.79 292.93 L 1373.83 240.109 C 1350.03 239.575 1326.01 240.44 1302.19 240.231 C 1295.3 240.17 1288.07 240.597 1281.3 239.23 C 1274.72 237.934 1268.65 234.817 1263.76 230.236 C 1250.41 217.521 1249.59 193.688 1262.97 180.636 C 1268.04 175.785 1274.35 172.443 1281.21 170.985 C 1289.88 169.092 1307.91 169.768 1317.51 169.788 L 1374.17 169.914 C 1373.59 142.24 1373.38 110.134 1374.63 82.3828 C 1375.36 66.245 1388.51 54.8599 1404.33 51.3557 z"></path></svg>
                     </button>
                     <div class="feed-create-divider"></div>
-                    <button type="button" class="feed-create-icon" id="editZipBtn" title="Enviar ZIP" aria-label="Enviar ZIP">
+                    ${window.currentUserIsAdmin ? `<button type="button" class="feed-create-icon" id="editZipBtn" title="Enviar ZIP" aria-label="Enviar ZIP">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 22H4c-1.103 0-2-.897-2-2V4c0-1.103.897-2 2-2h9.414L20 8.586V20c0 1.103-.897 2-2 2ZM4 4v16h14V9h-6V4H4Zm10 0v3h3l-3-3Z"/><path d="M5 10h4.5v1.3L7 14h2.5v1.5H5v-1.3l2.5-2.7H5V10Z"/><path d="M10.5 10H12v5.5h-1.5V10Z"/><path d="M13 10h2.7c1.2 0 1.8.7 1.8 1.8s-.6 1.8-1.8 1.8h-1.2v1.9H13V10Zm1.5 1.3v1h1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1Z"/><path d="M11 17h2v1h-2v-1Zm0 1.5h2v1h-2v-1Zm0 1.5h2v1h-2v-1Z"/></svg>
-                    </button>
+                    </button>` : ""}
                     <div class="feed-create-divider"></div>
                     <button type="button" class="feed-create-icon" id="editAddMediaBtn" title="Adicionar midia" aria-label="Adicionar midia">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 20H4V6h9V4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zm-7.79-3.17l-1.96-2.36L5.5 18h11l-3.54-4.71zM20 4V1h-2v3h-3c.01.01 0 2 0 2h3v2.99c.01.01 2 0 2 0V6h3V4h-3z"/></svg>
@@ -940,14 +979,30 @@ function onFeedClick(e) {
         };
 
         modal.querySelector("#editAddMediaBtn").onclick = () => fileInput.click();
-        modal.querySelector("#editZipBtn").onclick = () => zipInput.click();
+        const editZipBtn = modal.querySelector("#editZipBtn");
+        if (editZipBtn) {
+            editZipBtn.onclick = () => {
+                if (!window.currentUserIsAdmin) {
+                    showAlert("Apenas administradores podem enviar arquivos ZIP.");
+                    return;
+                }
+                zipInput?.click();
+            };
+        }
 
-        zipInput.onchange = () => {
-            const file = zipInput.files[0];
-            if (!file) return;
-            selectedZip = file;
-            renderEditPreviews();
-        };
+        if (zipInput) {
+            zipInput.onchange = () => {
+                if (!window.currentUserIsAdmin) {
+                    showAlert("Apenas administradores podem enviar arquivos ZIP.");
+                    zipInput.value = "";
+                    return;
+                }
+                const file = zipInput.files[0];
+                if (!file) return;
+                selectedZip = file;
+                renderEditPreviews();
+            };
+        }
 
         function renderEditPreviews() {
             previewsContainer.innerHTML = "";
@@ -1136,7 +1191,7 @@ function onFeedClick(e) {
                             }
                         }
                     }
-                    if (selectedZip) {
+                    if (window.currentUserIsAdmin && selectedZip) {
                         form.append("zip", selectedZip);
                     }
                     const upRes = await fetch("/api/upload", {
@@ -1344,7 +1399,17 @@ function onFeedInput(e) {
     }
     if (e.target.matches(".feed-comment-form textarea")) {
         autoResizeFeed(e.target);
+        updateFeedCommentSendBtn(e.target.closest("form"));
     }
+}
+
+function updateFeedCommentSendBtn(form) {
+    const btn = form.querySelector(".feed-comment-send");
+    if (!btn) return;
+    const text = form.querySelector("textarea").value.trim();
+    const mediaInput = form.querySelector(".comment-media-input");
+    const hasMedia = mediaInput && mediaInput.files && mediaInput.files[0];
+    btn.disabled = !text && !hasMedia;
 }
 
 function onFeedKeydown(e) {
@@ -1376,7 +1441,13 @@ function bindFeedEvents(root) {
         if (mediaBtn) {
             const form = mediaBtn.closest("form");
             const inp = form?.querySelector(".comment-media-input");
-            if (inp) { inp.accept = "image/*,video/mp4,video/webm,video/quicktime,.gif"; inp.click(); }
+            if (inp) { inp.accept = "image/*,image/webp,video/mp4,video/webm,video/quicktime,.gif"; inp.click(); }
+            return;
+        }
+        const stickerBtn = e.target.closest(".comment-sticker-btn");
+        if (stickerBtn) {
+            showAlert("Figurinhas em breve!", "Info");
+            e.stopPropagation();
         }
     });
     root.addEventListener("change", (e)=>{
@@ -1386,7 +1457,7 @@ function bindFeedEvents(root) {
         const form = inp.closest("form");
         const preview = form?.querySelector(".comment-media-preview");
         if (!file || !preview) return;
-        if (file.size > 10 * 1024 * 1024) { showAlert("Arquivo muito grande (máx 10MB)"); inp.value=""; preview.hidden=true; return; }
+        if (file.size > 10 * 1024 * 1024) { showAlert("Arquivo muito grande (máx 10MB)"); inp.value=""; preview.hidden=true; updateFeedCommentSendBtn(form); return; }
         const isVideo = file.type.startsWith("video/");
         if (isVideo) {
             const url = URL.createObjectURL(file);
@@ -1394,18 +1465,20 @@ function bindFeedEvents(root) {
             v.preload = "metadata";
             v.src = url;
             v.onloadedmetadata = ()=>{
-                if (v.duration > 60) { showAlert("Vídeo muito longo (máx 1min)"); inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); }
+                if (v.duration > 60) { showAlert("Vídeo muito longo (máx 1min)"); inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); updateFeedCommentSendBtn(form); }
                 else {
                     preview.innerHTML = `<div style="position:relative;display:inline-block;"><video src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;" muted></video><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
                     preview.hidden = false;
-                    preview.querySelector(".comment-media-remove").onclick = ()=>{ inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); };
+                    updateFeedCommentSendBtn(form);
+                    preview.querySelector(".comment-media-remove").onclick = ()=>{ inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); updateFeedCommentSendBtn(form); };
                 }
             };
         } else {
             const url = URL.createObjectURL(file);
             preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;"><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
             preview.hidden = false;
-            preview.querySelector(".comment-media-remove").onclick = ()=>{ inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); };
+            updateFeedCommentSendBtn(form);
+            preview.querySelector(".comment-media-remove").onclick = ()=>{ inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); updateFeedCommentSendBtn(form); };
         }
     });
 }
@@ -1520,6 +1593,10 @@ document.getElementById("feedCreateImg")?.addEventListener("click", () => {
 });
 
 document.getElementById("feedCreateZipBtn")?.addEventListener("click", () => {
+    if (!window.currentUserIsAdmin) {
+        showAlert("Apenas administradores podem enviar arquivos ZIP.");
+        return;
+    }
     document.getElementById("feedCreateZip")?.click();
 });
 
@@ -1554,6 +1631,12 @@ function clearFeedCreateZip() {
 }
 
 document.getElementById("feedCreateZip")?.addEventListener("change", () => {
+    if (!window.currentUserIsAdmin) {
+        showAlert("Apenas administradores podem enviar arquivos ZIP.");
+        const input = document.getElementById("feedCreateZip");
+        if (input) input.value = "";
+        return;
+    }
     const input = document.getElementById("feedCreateZip");
     const file = input.files[0];
     if (!file) return;
@@ -1702,7 +1785,7 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
             form.append("images", imageToUpload, imageName);
         }
     }
-    if (feedCreateZip) form.append("zip", feedCreateZip);
+    if (window.currentUserIsAdmin && feedCreateZip) form.append("zip", feedCreateZip);
     form.append("caption", text);
     if (feedCreateNsfw) form.append("nsfw", "1");
     if (feedCreateEleicao) form.append("eleicao", "1");
@@ -1732,6 +1815,7 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
         const res = await fetch("/api/auth/me");
         const data = await res.json();
         if (data.user) {
+            window.currentUserIsAdmin = data.user.is_admin || false;
             const avatar = document.getElementById("feedCreateAvatar");
             if (avatar) {
                 const src = (!data.user.avatar || data.user.avatar === "default-avatar.svg")
@@ -1745,6 +1829,10 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
             }
         }
     } catch { /* ignore */ }
+    if (!window.currentUserIsAdmin) {
+        const zipBtn = document.getElementById("feedCreateZipBtn");
+        if (zipBtn) zipBtn.style.display = "none";
+    }
 })();
 
 /* === Post & Comment 3-dot menus — distintos, aparência idêntica (portais) === */

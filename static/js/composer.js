@@ -16,6 +16,20 @@ let selectedFiles = [];
 let selectedZip = null;
 let composerNsfwActive = false;
 
+async function initComposerAdminCheck() {
+    try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (!data.user?.is_admin) {
+            window.currentUserIsAdmin = false;
+            if (composerAddZip) composerAddZip.style.display = "none";
+        } else {
+            window.currentUserIsAdmin = true;
+        }
+    } catch { /* not logged in */ }
+}
+initComposerAdminCheck();
+
 function closeComposer() {
     composerModal.classList.remove("open");
 }
@@ -27,7 +41,13 @@ composerModal.addEventListener("click", e => {
 });
 
 composerAdd.addEventListener("click", () => composerImageInput.click());
-composerAddZip.addEventListener("click", () => composerZipInput.click());
+composerAddZip.addEventListener("click", () => {
+    if (!window.currentUserIsAdmin) {
+        showAlert("Apenas administradores podem enviar arquivos ZIP.");
+        return;
+    }
+    composerZipInput.click();
+});
 
 function clearAllMedia() {
     selectedFiles = [];
@@ -115,6 +135,11 @@ composerImageInput.addEventListener("change", () => {
 });
 
 composerZipInput.addEventListener("change", () => {
+    if (!window.currentUserIsAdmin) {
+        showAlert("Apenas administradores podem enviar arquivos ZIP.");
+        composerZipInput.value = "";
+        return;
+    }
     const file = composerZipInput.files[0];
     if (!file) return;
     clearAllMedia();
@@ -220,7 +245,7 @@ composerPost.addEventListener("click", async () => {
             }
         }
     }
-    if (selectedZip) form.append("zip", selectedZip);
+    if (window.currentUserIsAdmin && selectedZip) form.append("zip", selectedZip);
     form.append("caption", composerText.value.trim());
     if (composerNsfwActive) form.append("nsfw", "1");
     try {

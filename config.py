@@ -33,10 +33,12 @@ class Config:
     ALL_MEDIA_EXTENSIONS = ALLOWED_EXTENSIONS | VIDEO_EXTENSIONS
     MAX_VIDEO_SECONDS = 60
     IMAGES_DIR = BASE_DIR / "images"
+    COMMENT_MEDIA_DIR = BASE_DIR / "comment-media"
 
 
 (Config.BASE_DIR / "db").mkdir(parents=True, exist_ok=True)
 (Config.IMAGES_DIR).mkdir(parents=True, exist_ok=True)
 (Config.THUMB_DIR).mkdir(parents=True, exist_ok=True)
+(Config.COMMENT_MEDIA_DIR).mkdir(parents=True, exist_ok=True)
 (Config.BASE_DIR / "static" / "avatars").mkdir(parents=True, exist_ok=True)
 (Config.BASE_DIR / "static" / "covers").mkdir(parents=True, exist_ok=True)

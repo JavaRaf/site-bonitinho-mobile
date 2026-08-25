@@ -39,8 +39,8 @@ function initVideoPlayer(wrapper) {
     /* Play / Pause */
     function showTapIndicator(paused) {
         tapIndicator.innerHTML = paused
-            ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>'
-            : '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>';
+            ? '<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>'
+            : '<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>';
         tapIndicator.classList.remove("show");
         void tapIndicator.offsetWidth;
         tapIndicator.classList.add("show");
@@ -59,11 +59,11 @@ function initVideoPlayer(wrapper) {
     function updatePlayIcon() {
         const paused = video.paused || video.ended;
         playBtn.innerHTML = paused
-            ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>'
-            : '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>';
+            ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>'
+            : '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>';
         bigPlay.style.display = paused ? "" : "none";
         bigPlay.innerHTML = paused
-            ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>'
+            ? '<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>'
             : "";
     }
 
@@ -146,10 +146,10 @@ function initVideoPlayer(wrapper) {
         const muted = video.muted || video.volume === 0;
         const vol = video.muted ? 0 : video.volume;
         volumeBtn.innerHTML = muted || vol === 0
-            ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
             : vol < 0.5
-                ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>'
-                : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
         const fillPct = muted ? 0 : video.volume * 100;
         volumeFill.style.width = fillPct + "%";
     }
@@ -218,13 +218,27 @@ function initVideoPlayer(wrapper) {
     function updateFsIcon() {
         const fs = isFullscreen();
         fullscreenBtn.innerHTML = fs
-            ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>'
-            : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
     }
 
     document.addEventListener("fullscreenchange", updateFsIcon);
     document.addEventListener("webkitfullscreenchange", updateFsIcon);
     updateFsIcon();
+
+    function updateControlsVisibility() {
+        const fs = isFullscreen();
+        const extraControls = wrapper.querySelectorAll(".vp-volume, .vp-time, .vp-spacer, .vp-speed, .vp-pip, .vp-progress-wrap");
+        extraControls.forEach(el => { el.style.display = fs ? "" : "none"; });
+        const playBtn = wrapper.querySelector(".vp-play");
+        if (playBtn) playBtn.style.display = "";
+        const fsBtn = wrapper.querySelector(".vp-fullscreen");
+        if (fsBtn) fsBtn.style.display = "";
+    }
+
+    document.addEventListener("fullscreenchange", updateControlsVisibility);
+    document.addEventListener("webkitfullscreenchange", updateControlsVisibility);
+    updateControlsVisibility();
 
     /* PiP */
     if (pipBtn) {
@@ -327,10 +341,10 @@ function createVideoPlayerHTML(src) {
         <video src="${src}" playsinline preload="metadata"></video>
         <div class="vp-loading" style="display:none"><div class="vp-spinner"></div></div>
         <button class="vp-big-play" type="button" aria-label="Reproduzir">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
         </button>
         <div class="vp-controls">
-            <div class="vp-progress-wrap">
+            <div class="vp-progress-wrap" style="display:none">
                 <div class="vp-progress-buffer"></div>
                 <div class="vp-progress-fill"></div>
                 <div class="vp-progress-handle"></div>
@@ -338,24 +352,24 @@ function createVideoPlayerHTML(src) {
             </div>
             <div class="vp-controls-row">
                 <button class="vp-play vp-btn" type="button" aria-label="Reproduzir">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
                 </button>
-                <div class="vp-volume">
+                <div class="vp-volume" style="display:none">
                     <button class="vp-volume-btn vp-btn" type="button" aria-label="Volume">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
                     </button>
                     <div class="vp-volume-slider">
                         <div class="vp-volume-fill"></div>
                     </div>
                 </div>
-                <span class="vp-time">0:00 / 0:00</span>
+                <span class="vp-time" style="display:none">0:00 / 0:00</span>
                 <div class="vp-spacer"></div>
-                <button class="vp-speed vp-btn" type="button" aria-label="Velocidade">1x</button>
-                <button class="vp-pip vp-btn" type="button" aria-label="Picture-in-Picture">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+                <button class="vp-speed vp-btn" type="button" aria-label="Velocidade" style="display:none">1x</button>
+                <button class="vp-pip vp-btn" type="button" aria-label="Picture-in-Picture" style="display:none">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
                 </button>
                 <button class="vp-fullscreen vp-btn" type="button" aria-label="Tela cheia">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
                 </button>
             </div>
         </div>
