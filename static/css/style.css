@@ -2391,6 +2391,20 @@ header.hidden {
   will-change: transform;
 }
 
+/* Lightbox de vídeo: mídia centralizada e sempre contida na tela */
+.video-lightbox-body .video-player {
+  width: auto;
+  max-width: calc(100vw - 1.5rem);
+  max-height: calc(100dvh - 4rem);
+  flex-shrink: 1;
+}
+.video-lightbox-body .video-player video {
+  width: auto;
+  height: auto;
+  max-width: calc(100vw - 1.5rem);
+  max-height: calc(100dvh - 4rem);
+}
+
 .lightbox-nav {
   position: absolute;
   top: 50%;

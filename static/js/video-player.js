@@ -1,7 +1,139 @@
+let videoLightbox = null;
+let videoLightboxBody = null;
+let videoLightboxClose = null;
+let videoLightboxHolder = null;
+
+function cacheVideoLightbox() {
+    if (!document.getElementById("videoLightbox")) return false;
+    if (!videoLightbox) {
+        videoLightbox = document.getElementById("videoLightbox");
+        videoLightboxBody = document.getElementById("videoLightboxBody");
+        videoLightboxClose = document.getElementById("videoLightboxClose");
+        videoLightboxClose.addEventListener("click", closeVideoLightbox);
+        videoLightbox.addEventListener("click", (e) => {
+            if (!e.target.closest(".video-player")) closeVideoLightbox();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (videoLightbox.classList.contains("open") && e.key === "Escape") closeVideoLightbox();
+        });
+    }
+    return true;
+}
+
+function openVideoLightbox(wrapper) {
+    if (wrapper.dataset.inLightbox === "1") return;
+    if (!cacheVideoLightbox()) return;
+    const video = wrapper.querySelector("video");
+    videoLightboxHolder = { parent: wrapper.parentNode, next: wrapper.nextSibling };
+    videoLightboxBody.appendChild(wrapper);
+    wrapper.dataset.inLightbox = "1";
+    videoLightbox.classList.add("open");
+    document.body.style.overflow = "hidden";
+    document.querySelectorAll(".video-player video").forEach(v => {
+        if (v !== video) v.pause();
+    });
+    if (video && video.paused) {
+        wrapper.dataset.userPaused = "0";
+        wrapper.dataset.autoplayActive = "1";
+        video.play().catch(() => {});
+    }
+    const controls = wrapper.querySelector(".vp-controls");
+    if (controls) controls.classList.add("visible");
+    if (typeof wrapper._vpUpdateControls === "function") wrapper._vpUpdateControls();
+}
+
+function closeVideoLightbox() {
+    if (!videoLightbox || !videoLightbox.classList.contains("open")) return;
+    const wrapper = videoLightboxBody.querySelector(".video-player");
+    if (wrapper && videoLightboxHolder) {
+        const holder = videoLightboxHolder;
+        if (holder.next) holder.parent.insertBefore(wrapper, holder.next);
+        else holder.parent.appendChild(wrapper);
+        delete wrapper.dataset.inLightbox;
+        if (typeof wrapper._vpUpdateControls === "function") wrapper._vpUpdateControls();
+    }
+    videoLightboxHolder = null;
+    videoLightbox.classList.remove("open");
+    document.body.style.overflow = "";
+    scheduleAutoPlayCheck();
+}
+
+/* Preferência de áudio do usuário (localStorage) */
+function currentVideoMutedPref() {
+    try {
+        const v = localStorage.getItem("mikanet_video_muted");
+        return v === null ? false : v === "1";
+    } catch {
+        return false;
+    }
+}
+
+function applyVideoMutedPref(muted) {
+    const m = typeof muted === "boolean" ? muted : currentVideoMutedPref();
+    document.querySelectorAll(".video-player video").forEach(v => { v.muted = m; });
+    scheduleAutoPlayCheck();
+}
+
+function saveVideoMutedPref(muted) {
+    try { localStorage.setItem("mikanet_video_muted", muted ? "1" : "0"); } catch {}
+    applyVideoMutedPref(muted);
+}
+
+/* Autoplay: vídeo toca quando está no centro (destaque) e pausa ao sair */
+const AUTOPLAY_VIDEOS = new Set();
+let autoplayTicking = false;
+
+function registerAutoPlay(wrapper) {
+    if (wrapper.closest(".comment-media")) return;
+    AUTOPLAY_VIDEOS.add(wrapper);
+    scheduleAutoPlayCheck();
+}
+
+function scheduleAutoPlayCheck() {
+    if (autoplayTicking) return;
+    autoplayTicking = true;
+    requestAnimationFrame(() => { autoplayTicking = false; updateAutoPlayAll(); });
+}
+
+function updateAutoPlayAll() {
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    AUTOPLAY_VIDEOS.forEach(wrapper => {
+        if (wrapper.dataset.inLightbox === "1") return;
+        const video = wrapper.querySelector("video");
+        if (!video) return;
+        const r = wrapper.getBoundingClientRect();
+        const onScreen = r.bottom > 0 && r.top < vh && r.width > 0;
+        if (!onScreen) {
+            if (!video.paused) video.pause();
+            return;
+        }
+        const centerY = r.top + r.height / 2;
+        const centered = centerY > vh * 0.33 && centerY < vh * 0.67;
+        if (centered) {
+            if (video.paused && !video.ended && wrapper.dataset.userPaused !== "1") {
+                wrapper.dataset.autoplayActive = "1";
+                video.play().catch(() => {
+                    if (!video.muted) {
+                        video.muted = true;
+                        video.play().catch(() => {});
+                    }
+                });
+            }
+        } else if (wrapper.dataset.autoplayActive === "1" && !video.paused) {
+            wrapper.dataset.autoplayActive = "0";
+            video.pause();
+        }
+    });
+}
+
+window.addEventListener("scroll", scheduleAutoPlayCheck, { passive: true });
+window.addEventListener("resize", scheduleAutoPlayCheck, { passive: true });
+
 function initVideoPlayer(wrapper) {
     const video = wrapper.querySelector("video");
     if (!video || video.dataset.playerInit) return;
     video.dataset.playerInit = "1";
+    video.muted = currentVideoMutedPref();
 
     const controls = wrapper.querySelector(".vp-controls");
     const playBtn = wrapper.querySelector(".vp-play");
@@ -14,7 +146,7 @@ function initVideoPlayer(wrapper) {
     const volumeBtn = wrapper.querySelector(".vp-volume-btn");
     const volumeSlider = wrapper.querySelector(".vp-volume-slider");
     const volumeFill = wrapper.querySelector(".vp-volume-fill");
-    const fullscreenBtn = wrapper.querySelector(".vp-fullscreen");
+    const muteBtn = wrapper.querySelector(".vp-mute");
     const pipBtn = wrapper.querySelector(".vp-pip");
     const speedBtn = wrapper.querySelector(".vp-speed");
     const loadingEl = wrapper.querySelector(".vp-loading");
@@ -49,9 +181,13 @@ function initVideoPlayer(wrapper) {
     function togglePlay() {
         if (video.paused || video.ended) {
             showTapIndicator(false);
+            wrapper.dataset.userPaused = "0";
+            wrapper.dataset.autoplayActive = "0";
             video.play().catch(() => {});
         } else {
             showTapIndicator(true);
+            wrapper.dataset.userPaused = "1";
+            wrapper.dataset.autoplayActive = "0";
             video.pause();
         }
     }
@@ -74,7 +210,18 @@ function initVideoPlayer(wrapper) {
     bigPlay.addEventListener("click", (e) => { e.stopPropagation(); togglePlay(); });
     wrapper.addEventListener("click", (e) => {
         if (e.target.closest(".vp-controls") || e.target.closest(".vp-big-play")) return;
-        togglePlay();
+        const rect = wrapper.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        const inCenter = x > 0.3 && x < 0.7 && y > 0.3 && y < 0.7;
+        const inBottomLeft = x < 0.28 && y > 0.72;
+        if (inCenter || inBottomLeft) {
+            togglePlay();
+        } else if (wrapper.dataset.inLightbox === "1") {
+            closeVideoLightbox();
+        } else {
+            openVideoLightbox(wrapper);
+        }
     });
 
     /* Progress */
@@ -145,11 +292,16 @@ function initVideoPlayer(wrapper) {
     function updateVolumeIcon() {
         const muted = video.muted || video.volume === 0;
         const vol = video.muted ? 0 : video.volume;
-        volumeBtn.innerHTML = muted || vol === 0
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
-            : vol < 0.5
-                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>'
-                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+        const icons = {
+            off: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
+            low: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+            high: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+        };
+        const html = muted || vol === 0 ? icons.off : vol < 0.5 ? icons.low : icons.high;
+        if (volumeBtn) volumeBtn.innerHTML = html;
+        if (muteBtn) muteBtn.innerHTML = muted || vol === 0
+            ? icons.off
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
         const fillPct = muted ? 0 : video.volume * 100;
         volumeFill.style.width = fillPct + "%";
     }
@@ -161,8 +313,7 @@ function initVideoPlayer(wrapper) {
         updateVolumeIcon();
     }
 
-    volumeBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
+    function toggleMute() {
         if (video.muted || video.volume === 0) {
             video.muted = false;
             video.volume = lastVol || 0.5;
@@ -171,6 +322,17 @@ function initVideoPlayer(wrapper) {
             video.muted = true;
         }
         updateVolumeIcon();
+        saveVideoMutedPref(video.muted || video.volume === 0);
+    }
+
+    if (volumeBtn) volumeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMute();
+    });
+
+    if (muteBtn) muteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMute();
     });
 
     let volDragging = false;
@@ -195,49 +357,24 @@ function initVideoPlayer(wrapper) {
     video.addEventListener("volumechange", updateVolumeIcon);
     updateVolumeIcon();
 
-    /* Fullscreen */
+    /* Fullscreen nativo não é mais usado; extras aparecem no lightbox */
     function isFullscreen() {
         return document.fullscreenElement === wrapper || document.webkitFullscreenElement === wrapper;
     }
 
-    function toggleFullscreen() {
-        if (isFullscreen()) {
-            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-        } else {
-            (wrapper.requestFullscreen || wrapper.webkitRequestFullscreen).call(wrapper);
-        }
-    }
-
-    fullscreenBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleFullscreen(); });
-
-    wrapper.addEventListener("dblclick", (e) => {
-        if (e.target.closest(".vp-controls")) return;
-        toggleFullscreen();
-    });
-
-    function updateFsIcon() {
-        const fs = isFullscreen();
-        fullscreenBtn.innerHTML = fs
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>'
-            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
-    }
-
-    document.addEventListener("fullscreenchange", updateFsIcon);
-    document.addEventListener("webkitfullscreenchange", updateFsIcon);
-    updateFsIcon();
-
     function updateControlsVisibility() {
-        const fs = isFullscreen();
+        const showExtras = isFullscreen() || wrapper.dataset.inLightbox === "1";
         const extraControls = wrapper.querySelectorAll(".vp-volume, .vp-time, .vp-spacer, .vp-speed, .vp-pip, .vp-progress-wrap");
-        extraControls.forEach(el => { el.style.display = fs ? "" : "none"; });
+        extraControls.forEach(el => { el.style.display = showExtras ? "" : "none"; });
         const playBtn = wrapper.querySelector(".vp-play");
         if (playBtn) playBtn.style.display = "";
-        const fsBtn = wrapper.querySelector(".vp-fullscreen");
-        if (fsBtn) fsBtn.style.display = "";
+        const muteBtn = wrapper.querySelector(".vp-mute");
+        if (muteBtn) muteBtn.style.display = "";
     }
 
     document.addEventListener("fullscreenchange", updateControlsVisibility);
     document.addEventListener("webkitfullscreenchange", updateControlsVisibility);
+    wrapper._vpUpdateControls = updateControlsVisibility;
     updateControlsVisibility();
 
     /* PiP */
@@ -322,7 +459,10 @@ function initVideoPlayer(wrapper) {
                 e.preventDefault(); volumeBtn.click(); break;
             case "f":
             case "F":
-                e.preventDefault(); toggleFullscreen(); break;
+                e.preventDefault();
+                if (wrapper.dataset.inLightbox === "1") closeVideoLightbox();
+                else openVideoLightbox(wrapper);
+                break;
             case "0":
                 e.preventDefault(); video.currentTime = 0; break;
         }
@@ -333,6 +473,8 @@ function initVideoPlayer(wrapper) {
     controls.classList.add("visible");
     updatePlayIcon();
     updateProgress();
+
+    registerAutoPlay(wrapper);
 }
 
 function createVideoPlayerHTML(src) {
@@ -368,8 +510,8 @@ function createVideoPlayerHTML(src) {
                 <button class="vp-pip vp-btn" type="button" aria-label="Picture-in-Picture" style="display:none">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
                 </button>
-                <button class="vp-fullscreen vp-btn" type="button" aria-label="Tela cheia">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                <button class="vp-mute vp-btn" type="button" aria-label="Mudo">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 </button>
             </div>
         </div>
