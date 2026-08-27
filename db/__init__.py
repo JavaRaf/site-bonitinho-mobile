@@ -76,28 +76,39 @@ def _run_migrations():
         db.session.commit()
     except Exception:
         pass
-    # Normaliza usernames para minúsculas (case-insensitive no login/URLs/mentions)
-    # preservando o display_name (nome bonito original). Idempotente. Em colisão
-    # (ex.: "Admin" e "admin" existirem juntos) NÃO mexe — mantém ambos intactos
+    # Normaliza usernames para minúsculas e converte espaços/símbolos/acentos
+    # para "_" (ex.: "Ana Torres" e "João@2020!" -> "ana_torres" e "joao_2020_"),
+    # preservando o display_name (nome bonito). Mesma regra de caracteres do
+    # cadastro (a-z0-9_.). Idempotente. Em colisão (dois usuários caindo no MESMO
+    # alvo — case, espaço/símbolo, acento etc.) NÃO mexe: mantém ambos intactos
     # para não perder nenhum usuário; admin pode renomear depois.
     try:
         from collections import Counter
+        import re
+        import unicodedata
+
+        def _slugify(username):
+            t = unicodedata.normalize("NFKD", username)
+            t = "".join(c for c in t if not unicodedata.combining(c))
+            return re.sub(r"[^a-z0-9_.]+", "_", t.strip().lower())
+
         rows = db.session.execute(text("SELECT id, username, display_name FROM users ORDER BY id")).fetchall()
-        counts = Counter(
-            u.username.lower()
-            for u in rows
-            if isinstance(u.username, str) and u.username.strip()
-        )
+        targets = {}
+        for u in rows:
+            if not isinstance(u.username, str) or not u.username.strip():
+                continue
+            targets[u.id] = _slugify(u.username)
+        counts = Counter(targets.values())
         for uid, uname, dname in rows:
             if not isinstance(uname, str) or not uname.strip():
                 continue
-            low = uname.lower()
-            if low == uname or counts.get(low, 0) != 1:
+            target = targets.get(uid, "")
+            if not target or target == uname or counts.get(target, 0) != 1:
                 continue
-            pretty = dname if (dname and dname.strip()) else uname
+            pretty = (dname or "").strip() or uname.strip()
             db.session.execute(
                 text("UPDATE users SET display_name = :d, username = :u WHERE id = :i"),
-                {"d": pretty, "u": low, "i": uid},
+                {"d": pretty, "u": target, "i": uid},
             )
         db.session.commit()
     except Exception:
