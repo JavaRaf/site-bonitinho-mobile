@@ -94,6 +94,13 @@
   align-items: center;
 }
 
+.auth-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .password-wrapper input {
   padding-right: 2.5rem;
 }

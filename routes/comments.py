@@ -174,7 +174,7 @@ def handle_comments(image_name):
         try:
             from routes.push import send_push
             for uname in mentioned_usernames:
-                user = User.query.filter_by(username=uname).first()
+                user = User.query.filter(db.func.lower(User.username) == uname.lower()).first()
                 if user and user.id != session_user_id:
                     send_push(
                         f"@{commenter_name} mencionou voce",

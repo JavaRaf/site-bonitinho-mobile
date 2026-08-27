@@ -8,8 +8,13 @@ from config import Config
 from db import db
 from db.models import User, Upload, Follow, Block, Like, Comment
 from utils.security import login_required
+from utils.validation import normalize_username, validate_username
 
 profile_bp = Blueprint("profile", __name__)
+
+
+def _get_by_username(username):
+    return User.query.filter(db.func.lower(User.username) == (username or "").lower()).first()
 
 
 def _is_blocked(viewer_id, target_id):
@@ -23,7 +28,7 @@ def _is_blocked(viewer_id, target_id):
 
 @profile_bp.route("/api/profile/<username>", methods=["GET"])
 def get_profile(username):
-    user = User.query.filter_by(username=username).first()
+    user = _get_by_username(username)
     if not user:
         return jsonify({"error": "user not found"}), 404
 
@@ -91,7 +96,7 @@ def get_profile(username):
 
 @profile_bp.route("/api/profile/<username>/posts", methods=["GET"])
 def get_profile_posts(username):
-    user = User.query.filter_by(username=username).first()
+    user = _get_by_username(username)
     if not user:
         return jsonify({"error": "user not found"}), 404
 
@@ -170,7 +175,7 @@ def get_profile_posts(username):
 
 @profile_bp.route("/api/profile/<username>/followers", methods=["GET"])
 def get_followers(username):
-    user = User.query.filter_by(username=username).first()
+    user = _get_by_username(username)
     if not user:
         return jsonify({"error": "user not found"}), 404
     rows = (
@@ -184,7 +189,7 @@ def get_followers(username):
 
 @profile_bp.route("/api/profile/<username>/following-list", methods=["GET"])
 def get_following_list(username):
-    user = User.query.filter_by(username=username).first()
+    user = _get_by_username(username)
     if not user:
         return jsonify({"error": "user not found"}), 404
     rows = (
@@ -207,14 +212,17 @@ def update_profile():
     data = request.get_json()
 
     if "username" in data:
-        username = data["username"].strip()
-        if len(username) < 3:
-            return jsonify({"error": "username min 3 chars"}), 400
-        existing = User.query.filter(User.username == username, User.id != user.id).first()
+        new_username = normalize_username(data["username"])
+        ok, reason = validate_username(new_username)
+        if not ok:
+            return jsonify({"error": reason}), 400
+        existing = User.query.filter(
+            db.func.lower(User.username) == new_username, User.id != user.id
+        ).first()
         if existing:
             return jsonify({"error": "username already taken"}), 409
-        user.username = username
-        session["username"] = username
+        user.username = new_username
+        session["username"] = new_username
 
     if "display_name" in data:
         display_name = (data["display_name"] or "").strip()[:30]
@@ -375,7 +383,7 @@ def serve_cover(filename):
 @profile_bp.route("/api/auth/follow/<username>", methods=["POST"])
 @login_required
 def toggle_follow(username):
-    target = User.query.filter_by(username=username).first()
+    target = _get_by_username(username)
     if not target:
         return jsonify({"error": "user not found"}), 404
 
@@ -398,7 +406,7 @@ def toggle_follow(username):
 @profile_bp.route("/api/auth/block/<username>", methods=["POST"])
 @login_required
 def toggle_block(username):
-    target = User.query.filter_by(username=username).first()
+    target = _get_by_username(username)
     if not target:
         return jsonify({"error": "user not found"}), 404
 

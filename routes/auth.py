@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, session
 from db import db
 from db.models import User
 from utils.security import login_required
+from utils.validation import normalize_username, validate_username
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -26,10 +27,13 @@ def verify_password(password: str, stored: str) -> bool:
 
 @auth_bp.route("/api/auth/check-username", methods=["GET"])
 def check_username():
-    username = (request.args.get("username") or "").strip()
+    username = normalize_username(request.args.get("username") or "")
     if not username or len(username) < 3:
         return jsonify({"available": False, "reason": "username muito curto"})
-    exists = User.query.filter(db.func.lower(User.username) == username.lower()).first()
+    ok, reason = validate_username(username)
+    if not ok:
+        return jsonify({"available": False, "reason": reason})
+    exists = User.query.filter(db.func.lower(User.username) == username).first()
     if exists:
         return jsonify({"available": False, "reason": "nome de usuário já em uso"})
     return jsonify({"available": True})
@@ -38,27 +42,32 @@ def check_username():
 @auth_bp.route("/api/auth/register", methods=["POST"])
 def register():
     data = request.get_json(silent=True) or {}
-    username = (data.get("username") or "").strip()
+    typed_username = (data.get("username") or "").strip()
     password = (data.get("password") or "").strip()
     display_name = (data.get("display_name") or "").strip()[:30]
     email = (data.get("email") or "").strip().lower()[:120]
 
-    if not username or not password:
+    if not typed_username or not password:
         return jsonify({"error": "usuário e senha são obrigatórios"}), 400
-    if len(username) < 3 or len(password) < 4:
+    if len(typed_username) < 3 or len(password) < 4:
         return jsonify({"error": "usuário mínimo 3 caracteres, senha mínimo 4"}), 400
+
+    username = normalize_username(typed_username)
+    ok, reason = validate_username(username)
+    if not ok:
+        return jsonify({"error": reason}), 400
     if email and "@" not in email:
         return jsonify({"error": "email inválido"}), 400
     if email and User.query.filter_by(email=email).first():
         return jsonify({"error": "email já cadastrado"}), 409
 
-    if User.query.filter(db.func.lower(User.username) == username.lower()).first():
+    if User.query.filter(db.func.lower(User.username) == username).first():
         return jsonify({"error": "nome de usuário já em uso"}), 409
 
     admin_count = User.query.filter_by(is_admin=1).count()
     is_admin = 1 if admin_count == 0 else 0
 
-    user = User(username=username, display_name=display_name or username, email=email, password=hash_password(password), is_admin=is_admin)
+    user = User(username=username, display_name=display_name or typed_username, email=email, password=hash_password(password), is_admin=is_admin)
     db.session.add(user)
     db.session.commit()
 
@@ -80,10 +89,10 @@ def register():
 @auth_bp.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
-    username = (data.get("username") or "").strip()
+    username = normalize_username(data.get("username") or "")
     password = (data.get("password") or "").strip()
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter(db.func.lower(User.username) == username).first()
     if not user or not verify_password(password, user.password):
         return jsonify({"error": "invalid credentials"}), 401
 
@@ -147,14 +156,14 @@ def generate_recovery_codes():
 @auth_bp.route("/api/auth/recovery/reset", methods=["POST"])
 def recovery_reset():
     data = request.get_json(silent=True) or {}
-    username = (data.get("username") or "").strip()
+    username = normalize_username(data.get("username") or "")
     code = (data.get("code") or "").strip().upper()
     new_password = (data.get("password") or "").strip()
     if not username or not code or not new_password:
         return jsonify({"error": "username, code and password required"}), 400
     if len(new_password) < 4:
         return jsonify({"error": "password min 4 chars"}), 400
-    user = User.query.filter(db.func.lower(User.username) == username.lower()).first()
+    user = User.query.filter(db.func.lower(User.username) == username).first()
     if not user:
         return jsonify({"error": "usuário não encontrado"}), 404
     from db.models import RecoveryCode

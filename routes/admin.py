@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, session
 from db import db
 from db.models import User, Upload, Like, Round, Setting
 from utils.security import admin_required, get_setting, set_setting
+from utils.validation import normalize_username, validate_username
 from config import Config
 
 admin_bp = Blueprint("admin", __name__)
@@ -143,11 +144,14 @@ def admin_promote_user(user_id):
 @admin_required
 def admin_rename_user(user_id):
     data = request.get_json()
-    username = (data.get("username") or "").strip()
-    if len(username) < 3:
-        return jsonify({"error": "username min 3 chars"}), 400
+    username = normalize_username(data.get("username") or "")
+    ok, reason = validate_username(username)
+    if not ok:
+        return jsonify({"error": reason}), 400
 
-    existing = User.query.filter(User.username == username, User.id != user_id).first()
+    existing = User.query.filter(
+        db.func.lower(User.username) == username, User.id != user_id
+    ).first()
     if existing:
         return jsonify({"error": "username already taken"}), 409
 
