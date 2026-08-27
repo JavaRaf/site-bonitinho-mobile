@@ -443,19 +443,11 @@ function feedCardHTML(img) {
                         
                         <!-- Câmera / Imagem -->
                         <button type="button" class="comment-media-btn" title="Câmera">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M4 7h4l1.5-2h5L16 7h4v12H4V7z"/>
-                                <circle cx="12" cy="13" r="3.5"/>
-                            </svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 0h24v24H0V0z" fill="none"></path><path d="M18 20H4V6h9V4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zm-7.79-3.17l-1.96-2.36L5.5 18h11l-3.54-4.71zM20 4V1h-2v3h-3c.01.01 0 2 0 2h3v2.99c.01.01 2 0 2 0V6h3V4h-3z"></path></svg>
                         </button>
 
-                        <!-- GIF -->
-                        <button type="button" class="comment-gif-btn" title="GIF">
-                            <span class="gif-icon">GIF</span>
-                        </button>
-
-                        <!-- Figurinha -->
-                        <button type="button" class="comment-sticker-btn" title="Figurinha">
+                        <!-- Imagem / GIF -->
+                        <button type="button" class="comment-gif-btn" title="Imagem / GIF">
                             <svg viewBox="0 0 24 24">
                                 <path d="M5 3h14a2 2 0 0 1 2 2v9a7 7 0 0 1-7 7H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
                                 <path d="M14 21v-5a2 2 0 0 1 2-2h5"/>
@@ -1346,6 +1338,163 @@ function downloadFeedImage(name) {
     document.body.removeChild(a);
 }
 
+const RECENT_GIFS_KEY = "mikanet_recent_gifs";
+const RECENT_GIFS_MAX = 30;
+
+function normalizeRecentEntry(entry) {
+    if (entry && typeof entry === "object" && typeof entry.name === "string" && entry.name) {
+        return { name: entry.name, thumb: entry.thumb ? String(entry.thumb) : null };
+    }
+    if (typeof entry === "string" && entry) {
+        return { name: entry, thumb: null };
+    }
+    return null;
+}
+
+function getRecentGifs() {
+    try {
+        const list = JSON.parse(localStorage.getItem(RECENT_GIFS_KEY) || "[]");
+        if (!Array.isArray(list)) return [];
+        return list.map(normalizeRecentEntry).filter(Boolean);
+    } catch { return []; }
+}
+
+function addRecentFigurinha(name, thumb) {
+    if (!name || typeof name !== "string") return;
+    try {
+        const clean = getRecentGifs().filter(entry => entry.name !== name);
+        clean.unshift(normalizeRecentEntry({ name, thumb: thumb || null }));
+        if (clean.length > RECENT_GIFS_MAX) clean.length = RECENT_GIFS_MAX;
+        localStorage.setItem(RECENT_GIFS_KEY, JSON.stringify(clean));
+    } catch {}
+}
+
+function fileToCompressedThumb(file, maxSize = 180, quality = 0.72) {
+    return new Promise((resolve) => {
+        try {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+                const w = Math.max(1, Math.round(img.width * scale));
+                const h = Math.max(1, Math.round(img.height * scale));
+                const canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+                try { resolve(canvas.toDataURL("image/jpeg", quality)); }
+                catch { resolve(null); }
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+            img.src = url;
+        } catch { resolve(null); }
+    });
+}
+
+let gifPickerEl = null;
+
+function closeGifPicker() {
+    if (gifPickerEl) {
+        gifPickerEl.remove();
+        gifPickerEl = null;
+    }
+}
+
+function setReuseGif(form, name) {
+    if (!form) return;
+    const inp = form.querySelector(".comment-media-input");
+    if (inp) inp.value = "";
+    form.dataset.reuseGif = name;
+    const preview = form.querySelector(".comment-media-preview");
+    if (preview) {
+        preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="/comment-media/${encodeURIComponent(name)}" style="max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;"><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
+        preview.hidden = false;
+        const rm = preview.querySelector(".comment-media-remove");
+        rm.onclick = (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            delete form.dataset.reuseGif;
+            preview.hidden = true;
+            preview.innerHTML = "";
+            updateFeedCommentSendBtn(form);
+        };
+    }
+    updateFeedCommentSendBtn(form);
+}
+
+function openGifPicker(btn) {
+    if (gifPickerEl) { closeGifPicker(); return; }
+    const recents = getRecentGifs();
+    const form = btn.closest("form");
+    const inp = form && form.querySelector(".comment-media-input");
+    if (!recents.length) {
+        if (inp) { inp.accept = "image/*,image/webp,.gif"; inp.click(); }
+        return;
+    }
+    gifPickerEl = document.createElement("div");
+    gifPickerEl.className = "comment-gif-picker";
+    gifPickerEl.style.position = "fixed";
+    gifPickerEl.style.zIndex = "1500";
+    gifPickerEl.style.width = "calc(100vw - 24px)";
+    gifPickerEl.style.maxWidth = "520px";
+    gifPickerEl.style.boxSizing = "border-box";
+    gifPickerEl.innerHTML = `
+        <div class="comment-gif-picker-head">
+            <span>Figurinhas recentes</span>
+            <button type="button" class="comment-gif-picker-new">Nova</button>
+        </div>
+        <div class="comment-gif-picker-grid"></div>`;
+    const grid = gifPickerEl.querySelector(".comment-gif-picker-grid");
+    recents.forEach(entry => {
+        const it = document.createElement("button");
+        it.type = "button";
+        it.className = "comment-gif-item";
+        it.title = entry.name;
+        const src = entry.thumb || "/comment-media/" + encodeURIComponent(entry.name);
+        it.innerHTML = `<img src="${src}" alt="" decoding="async">`;
+        it.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            closeGifPicker();
+            setReuseGif(form, entry.name);
+        });
+        grid.appendChild(it);
+    });
+    document.body.appendChild(gifPickerEl);
+
+    const pickerRect = gifPickerEl.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const pickerW = pickerRect.width || 300;
+    const pickerH = pickerRect.height || 200;
+    let left = btnRect.left + btnRect.width / 2 - pickerW / 2;
+    left = Math.max(8, Math.min(window.innerWidth - pickerW - 8, left));
+    let top = btnRect.top - pickerH - 8;
+    if (top < 8) top = btnRect.bottom + 8;
+    gifPickerEl.style.left = left + "px";
+    gifPickerEl.style.top = top + "px";
+
+    gifPickerEl.querySelector(".comment-gif-picker-new").addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeGifPicker();
+        if (inp) { inp.accept = "image/*,image/webp,.gif"; inp.click(); }
+    });
+}
+
+document.addEventListener("click", (e) => {
+    if (gifPickerEl && !gifPickerEl.contains(e.target) && !e.target.closest(".comment-gif-btn")) {
+        closeGifPicker();
+    }
+}, true);
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && gifPickerEl) {
+        closeGifPicker();
+        if (document.activeElement && typeof document.activeElement.blur === "function") document.activeElement.blur();
+    }
+});
+
 let feedReplyParentId = null;
 
 async function onFeedSubmit(e) {
@@ -1357,7 +1506,9 @@ async function onFeedSubmit(e) {
     const text = textarea.value.trim();
     const mediaInput = form.querySelector(".comment-media-input");
     const hasMedia = mediaInput && mediaInput.files && mediaInput.files[0];
-    if (!text && !hasMedia) return;
+    const submitFile = hasMedia ? mediaInput.files[0] : null;
+    const reuseGif = form.dataset.reuseGif || "";
+    if (!text && !hasMedia && !reuseGif) return;
     const card = form.closest(".feed-card");
     const name = card.dataset.name;
     let fetchOpts = {};
@@ -1369,6 +1520,7 @@ async function onFeedSubmit(e) {
         fetchOpts = { method: "POST", body: fd };
     } else {
         const body = { text };
+        if (reuseGif) { body.media_name = reuseGif; body.media_type = "image"; }
         if (feedReplyParentId) body.parent_id = feedReplyParentId;
         fetchOpts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
     }
@@ -1378,9 +1530,26 @@ async function onFeedSubmit(e) {
         if (indicator) indicator.classList.remove("visible");
         textarea.placeholder = "Adicione um comentario...";
     }
+    if (reuseGif) {
+        delete form.dataset.reuseGif;
+        const preview = form.querySelector(".comment-media-preview");
+        if (preview) { preview.hidden = true; preview.innerHTML = ""; }
+    }
     try {
         const res = await fetch(`/api/comments/${encodeURIComponent(name)}`, fetchOpts);
         if (res.ok) {
+            const d = await res.json().catch(() => null);
+            const mediaName = d && d.media_name;
+            if (mediaName) {
+                const isGif = mediaName.toLowerCase().endsWith(".gif");
+                const isImage = submitFile && submitFile.type && submitFile.type.startsWith("image/");
+                if (isGif) {
+                    addRecentFigurinha(mediaName);
+                } else if (isImage) {
+                    const thumb = await fileToCompressedThumb(submitFile);
+                    addRecentFigurinha(mediaName, thumb);
+                }
+            }
             textarea.value = "";
             if (mediaInput) { mediaInput.value = ""; const prev=form.querySelector(".comment-media-preview"); if(prev){ prev.hidden=true; prev.innerHTML=""; } }
             autoResizeFeed(textarea);
@@ -1409,7 +1578,8 @@ function updateFeedCommentSendBtn(form) {
     const text = form.querySelector("textarea").value.trim();
     const mediaInput = form.querySelector(".comment-media-input");
     const hasMedia = mediaInput && mediaInput.files && mediaInput.files[0];
-    btn.disabled = !text && !hasMedia;
+    const hasReuse = !!(form.dataset.reuseGif);
+    btn.disabled = !text && !hasMedia && !hasReuse;
 }
 
 function onFeedKeydown(e) {
@@ -1433,9 +1603,8 @@ function bindFeedEvents(root) {
     root.addEventListener("click", (e)=>{
         const gifBtn = e.target.closest(".comment-gif-btn");
         if (gifBtn) {
-            const form = gifBtn.closest("form");
-            const inp = form?.querySelector(".comment-media-input");
-            if (inp) { inp.accept = ".gif,image/gif"; inp.click(); }
+            openGifPicker(gifBtn);
+            return;
         }
         const mediaBtn = e.target.closest(".comment-media-btn");
         if (mediaBtn) {
@@ -1443,11 +1612,6 @@ function bindFeedEvents(root) {
             const inp = form?.querySelector(".comment-media-input");
             if (inp) { inp.accept = "image/*,image/webp,video/mp4,video/webm,video/quicktime,.gif"; inp.click(); }
             return;
-        }
-        const stickerBtn = e.target.closest(".comment-sticker-btn");
-        if (stickerBtn) {
-            showAlert("Figurinhas em breve!", "Info");
-            e.stopPropagation();
         }
     });
     root.addEventListener("change", (e)=>{

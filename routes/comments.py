@@ -101,26 +101,32 @@ def handle_comments(image_name):
             media_type = "video"
             # thumb para video opcional
         else:
-            try:
-                with Image.open(media_file.stream) as im:
-                    im = im.convert("RGB")
-                    im = ImageOps.exif_transpose(im)
-                    im.thumbnail((1080, 1080))
-                    im.save(str(dest), format="JPEG", quality=85)
-            except Exception:
-                media_file.save(str(dest))
-            media_type = "image"
-            # gera thumb
+            if ext == ".gif":
+                # preserva animação: salva bytes originais do GIF
+                byte = media_file.read()
+                if byte[:6] not in (b"GIF87a", b"GIF89a"):
+                    return jsonify({"error": "GIF inválido"}), 400
+                dest.write_bytes(byte)
+                media_type = "image"
+            else:
+                try:
+                    with Image.open(media_file.stream) as im:
+                        im = ImageOps.exif_transpose(im)
+                        im.thumbnail((1080, 1080))
+                        im.save(str(dest), format="JPEG", quality=85)
+                except Exception:
+                    media_file.save(str(dest))
+                media_type = "image"
+            # gera thumb (primeiro frame)
             try:
                 thumb_dir = Config.THUMB_DIR
                 thumb_dir.mkdir(parents=True, exist_ok=True)
                 with Image.open(dest) as im:
+                    im.seek(0)
                     im.thumbnail((480, 480))
                     im.save(str(thumb_dir / (media_name + ".webp")), format="WEBP", quality=80)
             except Exception:
                 pass
-            if ext == ".gif":
-                media_type = "image"
 
     if not text and not media_name:
         return jsonify({"error": "text or media required"}), 400
