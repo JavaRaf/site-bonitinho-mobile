@@ -1939,8 +1939,9 @@ header.hidden {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  padding: 10px 4px;
+  padding: 0;
   width: 100%;
+  padding-left: 5px;
 }
 
 .feed-comment-form .comment-avatar {
@@ -1988,9 +1989,10 @@ header.hidden {
   color: var(--text);
   font-size: 15px;
   font-family: inherit;
-  padding: 0;
   overflow-y: auto;
   box-sizing: border-box;
+  padding-left: 5px;
+
 }
 
 .feed-comment-form .comment-textarea::placeholder {
