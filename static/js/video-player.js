@@ -79,6 +79,26 @@ function saveVideoMutedPref(muted) {
     applyVideoMutedPref(muted);
 }
 
+/* Volume preferido do usuário (localStorage) */
+function currentVideoVolumePref() {
+    try {
+        const n = parseFloat(localStorage.getItem("mikanet_video_volume"));
+        return isFinite(n) ? Math.max(0, Math.min(1, n)) : 1;
+    } catch {
+        return 1;
+    }
+}
+
+function saveVideoVolumePref(volume) {
+    try { localStorage.setItem("mikanet_video_volume", String(volume)); } catch {}
+}
+
+function applyVideoVolumePref(volume) {
+    document.querySelectorAll(".video-player video").forEach(v => {
+        if (!v.muted) v.volume = volume;
+    });
+}
+
 /* Autoplay: vídeo toca quando está no centro (destaque) e pausa ao sair */
 const AUTOPLAY_VIDEOS = new Set();
 let autoplayTicking = false;
@@ -134,6 +154,7 @@ function initVideoPlayer(wrapper) {
     if (!video || video.dataset.playerInit) return;
     video.dataset.playerInit = "1";
     video.muted = currentVideoMutedPref();
+    video.volume = currentVideoVolumePref();
 
     const controls = wrapper.querySelector(".vp-controls");
     const playBtn = wrapper.querySelector(".vp-play");
@@ -159,7 +180,7 @@ function initVideoPlayer(wrapper) {
 
     let hideTimer = null;
     let seekDragging = false;
-    let lastVol = 1;
+    let lastVol = video.volume;
 
     function fmt(s) {
         if (!isFinite(s) || s < 0) return "0:00";
@@ -311,6 +332,8 @@ function initVideoPlayer(wrapper) {
         video.muted = video.volume === 0;
         lastVol = video.volume || lastVol;
         updateVolumeIcon();
+        saveVideoVolumePref(lastVol);
+        applyVideoVolumePref(lastVol);
     }
 
     function toggleMute() {
