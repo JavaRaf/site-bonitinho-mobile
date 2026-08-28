@@ -118,7 +118,7 @@
         resultsEl.querySelectorAll(".search-user").forEach(el => {
             el.addEventListener("click", () => {
                 const u = el.dataset.username;
-                if (u) location.href = "/perfil/" + encodeURIComponent(u);
+                if (u) goToProfile(u);
             });
         });
         resultsEl.querySelectorAll(".search-post").forEach(el => {

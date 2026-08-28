@@ -59,18 +59,77 @@ function esc(s) {
     return d.innerHTML;
 }
 
+function profileCacheKey(username) {
+    return "profileState:" + username;
+}
+
+function saveProfileState() {
+    if (!profile?.username) return;
+    try {
+        sessionStorage.setItem(profileCacheKey(profile.username), JSON.stringify({
+            profile,
+            scrollX: window.scrollX,
+            scrollY: window.scrollY,
+            activeTab,
+            selectedColor,
+        }));
+    } catch { /* ignore */ }
+}
+
+function applyProfileData(data) {
+    document.title = data.username + " — MikanNet";
+    setAvatar(document.getElementById("avatarImg"), data.avatar);
+    setCover(document.getElementById("coverImg"), data.cover);
+    const display = data.display_name || data.username;
+    const nameEl = document.getElementById("profileName");
+    nameEl.textContent = display;
+    if (data.color) nameEl.style.color = data.color;
+    document.getElementById("topbarName").textContent = display;
+    document.getElementById("topbarCount").textContent = data.posts_count + " posts";
+    document.getElementById("profileHandle").textContent = "@" + data.username;
+    renderStats(data);
+    renderActions(data);
+    renderDetails(data);
+    updateBioDisplay();
+    loadPosts(data.username);
+    if (data.is_me) {
+        document.getElementById("btnCoverEdit").hidden = false;
+        document.getElementById("btnAvatarEdit").hidden = false;
+        document.getElementById("tabBlocked").hidden = false;
+    }
+}
+
+function restoreProfileUI(state) {
+    if (typeof state.scrollX === "number" || typeof state.scrollY === "number") {
+        requestAnimationFrame(() => window.scrollTo(state.scrollX || 0, state.scrollY || 0));
+    }
+}
+
 /* ── Load Profile ─────────────────────────────────────────── */
 
-async function loadProfile() {
+async function loadProfile(forceRefresh = false) {
     const username = getUsernameFromURL();
     if (!username) {
         const me = await fetch("/api/auth/me").then(r => r.json()).catch(() => null);
         if (me?.user) {
-            location.href = "/perfil/" + me.user.username;
+            goToProfile(me.user.username);
         } else {
             location.href = "/login";
         }
         return;
+    }
+
+    const cacheKey = profileCacheKey(username);
+    if (!forceRefresh) {
+        try {
+            const cached = JSON.parse(sessionStorage.getItem(cacheKey) || "null");
+            if (cached?.profile) {
+                profile = cached.profile;
+                applyProfileData(cached.profile);
+                restoreProfileUI(cached);
+                return;
+            }
+        } catch { /* ignore */ }
     }
 
     const data = await fetch("/api/profile/" + encodeURIComponent(username)).then(r => r.json()).catch(() => null);
@@ -84,37 +143,14 @@ async function loadProfile() {
     }
 
     profile = data;
-    document.title = data.username + " — MikanNet";
-
-    setAvatar(document.getElementById("avatarImg"), data.avatar);
-    setCover(document.getElementById("coverImg"), data.cover);
-
-    const display = data.display_name || data.username;
-    const nameEl = document.getElementById("profileName");
-    nameEl.textContent = display;
-    if (data.color) nameEl.style.color = data.color;
-
-    document.getElementById("topbarName").textContent = display;
-    document.getElementById("topbarCount").textContent = data.posts_count + " posts";
-    document.getElementById("profileHandle").textContent = "@" + data.username;
-
-    renderStats(data);
+    applyProfileData(data);
 
     document.querySelectorAll(".stat-link").forEach(el => {
         el.style.cursor = "pointer";
         el.addEventListener("click", () => openUserList(el.dataset.list));
     });
 
-    renderActions(data);
-    renderDetails(data);
-    updateBioDisplay();
-    loadPosts(data.username);
-
-    if (data.is_me) {
-        document.getElementById("btnCoverEdit").hidden = false;
-        document.getElementById("btnAvatarEdit").hidden = false;
-        document.getElementById("tabBlocked").hidden = false;
-    }
+    saveProfileState();
 }
 
 /* ── Stats ────────────────────────────────────────────────── */
@@ -801,9 +837,9 @@ document.getElementById("editSave").addEventListener("click", async () => {
 
     closeEditModal();
     if (username !== profile.username) {
-        location.href = "/perfil/" + username;
+        goToProfile(username);
     } else {
-        location.reload();
+        await loadProfile();
     }
 });
 
@@ -1238,5 +1274,19 @@ document.getElementById("cropConfirm").addEventListener("click", async () => {
 });
 
 /* ── Init ─────────────────────────────────────────────────── */
+
+window.addEventListener("pagehide", saveProfileState);
+window.addEventListener("pageshow", () => {
+    if (profile) restoreProfileUI(readProfileState());
+});
+
+function readProfileState() {
+    if (!profile?.username) return {};
+    try {
+        return JSON.parse(sessionStorage.getItem(profileCacheKey(profile.username)) || "null") || {};
+    } catch {
+        return {};
+    }
+}
 
 loadProfile();

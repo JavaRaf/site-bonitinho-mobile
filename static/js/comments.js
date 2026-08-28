@@ -297,7 +297,7 @@ function handleMentionKeydown(e) {
 document.addEventListener("click", async e => {
     const authorEl = e.target.closest("[data-comment-username]");
     if (authorEl && authorEl.dataset.commentUsername) {
-        window.location.href = "/perfil/" + encodeURIComponent(authorEl.dataset.commentUsername);
+        goToProfile(authorEl.dataset.commentUsername);
         return;
     }
 

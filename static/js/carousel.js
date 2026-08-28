@@ -774,13 +774,13 @@ function onFeedClick(e) {
 
     const cAuthor = e.target.closest("[data-comment-username]");
     if (cAuthor && cAuthor.dataset.commentUsername) {
-        location.href = "/perfil/" + encodeURIComponent(cAuthor.dataset.commentUsername);
+        goToProfile(cAuthor.dataset.commentUsername);
         return;
     }
 
     const ownerEl = e.target.closest("[data-owner]");
     if (ownerEl && ownerEl.dataset.owner) {
-        location.href = "/perfil/" + encodeURIComponent(ownerEl.dataset.owner);
+        goToProfile(ownerEl.dataset.owner);
         return;
     }
 
