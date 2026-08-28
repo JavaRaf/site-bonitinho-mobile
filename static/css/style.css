@@ -148,6 +148,7 @@ body.clone-top #headerClone { top: 0; }
   border: none;
   border-radius: 8px;
   background: transparent;
+  color: var(--text-soft);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -158,9 +159,27 @@ body.clone-top #headerClone { top: 0; }
 .header-search-btn:hover {
   background: var(--surface-2);
 }
-.header-search-btn img {
+
+/* ícone vindo do arquivo svg via máscara: acompanha o tema (currentColor) */
+.header-ico {
+  display: block;
   width: 18px;
   height: 18px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+.ico-lupa {
+  -webkit-mask-image: url("/static/svg/lupa.svg");
+  mask-image: url("/static/svg/lupa.svg");
+}
+.ico-bell {
+  -webkit-mask-image: url("/static/svg/bell.svg");
+  mask-image: url("/static/svg/bell.svg");
 }
 
 /* === Busca === */
@@ -417,6 +436,7 @@ body.clone-top #headerClone { top: 0; }
   border: none;
   border-radius: 8px;
   background: transparent;
+  color: var(--text-soft);
   cursor: pointer;
   display: flex;
   align-items: center;
