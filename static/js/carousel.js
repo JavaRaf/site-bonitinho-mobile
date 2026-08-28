@@ -1423,6 +1423,76 @@ function setReuseGif(form, name) {
     updateFeedCommentSendBtn(form);
 }
 
+function removeRecentFigurinha(name) {
+    try {
+        const clean = getRecentGifs().filter(e => e.name !== name);
+        localStorage.setItem(RECENT_GIFS_KEY, JSON.stringify(clean));
+    } catch {}
+}
+
+function renderRecentFigurinhas(grid, form) {
+    const recents = getRecentGifs();
+    grid.innerHTML = "";
+    recents.forEach(entry => {
+        const it = document.createElement("button");
+        it.type = "button";
+        it.className = "comment-gif-item";
+        it.title = (entry.name || "") + " — toque longo para remover";
+        const src = entry.thumb || "/comment-media/" + encodeURIComponent(entry.name);
+        it.innerHTML = `<img src="${src}" alt="" decoding="async">`;
+        it.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (it._longPress) { it._longPress = false; return; }
+            closeGifPicker();
+            setReuseGif(form, entry.name);
+        });
+        bindHoldRemove(it, entry.name, grid, form);
+        grid.appendChild(it);
+    });
+    return recents.length;
+}
+
+function bindHoldRemove(btn, name, grid, form) {
+    let timer = null;
+    let startX = 0;
+    let startY = 0;
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const start = (e) => {
+        btn._longPress = false;
+        startX = e.clientX ?? (e.touches && e.touches[0] && e.touches[0].clientX);
+        startY = e.clientY ?? (e.touches && e.touches[0] && e.touches[0].clientY);
+        cancel();
+        timer = setTimeout(() => {
+            timer = null;
+            btn._longPress = true;
+            promptRemoveFigurinha(grid, form, name);
+        }, 500);
+    };
+    const move = (e) => {
+        const x = e.clientX ?? (e.touches && e.touches[0] && e.touches[0].clientX);
+        const y = e.clientY ?? (e.touches && e.touches[0] && e.touches[0].clientY);
+        if (x != null && y != null && (Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10)) cancel();
+    };
+    btn.addEventListener("touchstart", start, { passive: true });
+    btn.addEventListener("touchmove", move, { passive: true });
+    btn.addEventListener("touchend", cancel);
+    btn.addEventListener("touchcancel", cancel);
+    btn.addEventListener("mousedown", start);
+    btn.addEventListener("mousemove", move);
+    btn.addEventListener("mouseup", cancel);
+    btn.addEventListener("mouseleave", cancel);
+}
+
+async function promptRemoveFigurinha(grid, form, name) {
+    const ok = await showConfirm("Remover esta figurinha dos recentes?", "Remover figurinha", "Excluir", "Cancelar", true);
+    if (!ok) return;
+    removeRecentFigurinha(name);
+    if (grid && grid.isConnected) {
+        if (renderRecentFigurinhas(grid, form) === 0) closeGifPicker();
+    }
+}
+
 function openGifPicker(btn) {
     if (gifPickerEl) { closeGifPicker(); return; }
     const recents = getRecentGifs();
@@ -1435,7 +1505,7 @@ function openGifPicker(btn) {
     gifPickerEl = document.createElement("div");
     gifPickerEl.className = "comment-gif-picker";
     gifPickerEl.style.position = "fixed";
-    gifPickerEl.style.zIndex = "1500";
+    gifPickerEl.style.zIndex = "900";
     gifPickerEl.style.width = "calc(100vw - 24px)";
     gifPickerEl.style.maxWidth = "520px";
     gifPickerEl.style.boxSizing = "border-box";
@@ -1446,21 +1516,7 @@ function openGifPicker(btn) {
         </div>
         <div class="comment-gif-picker-grid"></div>`;
     const grid = gifPickerEl.querySelector(".comment-gif-picker-grid");
-    recents.forEach(entry => {
-        const it = document.createElement("button");
-        it.type = "button";
-        it.className = "comment-gif-item";
-        it.title = entry.name;
-        const src = entry.thumb || "/comment-media/" + encodeURIComponent(entry.name);
-        it.innerHTML = `<img src="${src}" alt="" decoding="async">`;
-        it.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            closeGifPicker();
-            setReuseGif(form, entry.name);
-        });
-        grid.appendChild(it);
-    });
+    renderRecentFigurinhas(grid, form);
     document.body.appendChild(gifPickerEl);
 
     const pickerRect = gifPickerEl.getBoundingClientRect();
