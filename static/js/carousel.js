@@ -2142,7 +2142,7 @@ document.getElementById("feedCreateSend")?.addEventListener("click", async () =>
                 avatar.style.cursor = "pointer";
                 avatar.title = "Ver perfil";
                 avatar.addEventListener("click", () => {
-                    location.href = "/perfil/" + encodeURIComponent(data.user.username);
+                    goToProfile(data.user.username);
                 });
             }
         }

@@ -39,11 +39,11 @@
     }
 
     window.saveNavState = saveNavState;
+    window.getSavedNavState = readNavState;
     window.restoreNavState = restoreNavState;
     window.goToProfile = function (username) {
-        if (!username) return;
         saveNavState();
-        location.href = "/perfil/" + encodeURIComponent(username);
+        location.href = username ? "/perfil/" + encodeURIComponent(username) : "/perfil";
     };
 
     let theme = localStorage.getItem(KEY);

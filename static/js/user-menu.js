@@ -36,7 +36,7 @@ document.getElementById("menuAdmin").addEventListener("click", () => {
 // Perfil
 document.getElementById("menuPerfil").addEventListener("click", () => {
     menu.classList.remove("open");
-    window.location.href = "/perfil";
+    goToProfile();
 });
 
 // Eleição

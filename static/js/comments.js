@@ -479,7 +479,7 @@ document.addEventListener("keydown", e => {
     const authorEl = e.target.closest(".comment-user-row[data-comment-username]");
     if (!authorEl || !authorEl.dataset.commentUsername) return;
     e.preventDefault();
-    window.location.href = "/perfil/" + encodeURIComponent(authorEl.dataset.commentUsername);
+    goToProfile(authorEl.dataset.commentUsername);
 });
 
 /* === Main form (carousel comment — removed, kept as no-op guard) === */

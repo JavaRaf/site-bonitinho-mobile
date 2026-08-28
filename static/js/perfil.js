@@ -505,6 +505,11 @@ if (postsGridEl && typeof bindFeedEvents === "function") {
 /* ── Back ─────────────────────────────────────────────────── */
 
 document.getElementById("btnBack").addEventListener("click", () => {
+    const state = getSavedNavState();
+    if (state?.path && state.path !== location.pathname && history.length > 1) {
+        history.back();
+        return;
+    }
     location.href = "/";
 });
 
