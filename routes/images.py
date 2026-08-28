@@ -220,10 +220,56 @@ def search_users():
     q = (request.args.get("q") or "").strip()
     if len(q) < 1:
         return jsonify([])
+    blocked = _blocked_ids()
+    viewer_id = session.get("user_id")
     users = User.query.filter(
         db.or_(User.username.like(f"%{q}%"), User.display_name.like(f"%{q}%"))
     ).order_by(User.username).limit(8).all()
-    return jsonify([{"id": u.id, "username": u.username, "display_name": u.display_name or u.username, "avatar": u.avatar} for u in users])
+    result = []
+    for u in users:
+        if u.id == viewer_id:
+            continue
+        if u.id in blocked:
+            continue
+        result.append({"id": u.id, "username": u.username, "display_name": u.display_name or u.username, "avatar": u.avatar})
+    return jsonify(result)
+
+
+@images_bp.route("/api/posts/search", methods=["GET"])
+def search_posts():
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 1:
+        return jsonify([])
+    rows = (
+        db.session.query(Upload, User.username, User.display_name, User.avatar.label("owner_avatar"))
+        .outerjoin(User, Upload.user_id == User.id)
+        .filter(Upload.active == 1, Upload.nsfw == 0)
+        .filter(
+            db.or_(
+                Upload.caption.like(f"%{q}%"),
+                User.username.like(f"%{q}%"),
+                User.display_name.like(f"%{q}%"),
+            )
+        )
+        .order_by(db.desc(Upload.created_at))
+        .limit(20)
+        .all()
+    )
+    blocked = _blocked_ids()
+    result = []
+    for upload, username, display_name, owner_avatar in rows:
+        if upload.user_id and upload.user_id in blocked:
+            continue
+        result.append({
+            "name": upload.image_name,
+            "post_type": upload.post_type,
+            "media_type": upload.media_type,
+            "caption": (upload.caption or "")[:120],
+            "owner": username,
+            "owner_display_name": display_name or username,
+            "owner_avatar": owner_avatar or "default-avatar.svg",
+        })
+    return jsonify(result)
 
 
 @images_bp.route("/api/upload", methods=["POST"])

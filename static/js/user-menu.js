@@ -55,21 +55,26 @@ loadProfile();
 
 /* === Auto-hide header on scroll === */
 (function () {
-    const header = document.querySelector("header");
-    if (!header) return;
+    const headers = document.querySelectorAll("header");
+    if (!headers.length) return;
     let lastScroll = 0;
     let ticking = false;
+
+    const setHeaders = (hidden) => {
+        headers.forEach(h => h.classList.toggle("hidden", hidden));
+        document.body.classList.toggle("clone-top", hidden);
+    };
 
     window.addEventListener("scroll", () => {
         if (!ticking) {
             requestAnimationFrame(() => {
                 const scrollY = window.scrollY;
                 if (scrollY < 60) {
-                    header.classList.remove("hidden");
+                    setHeaders(false);
                 } else if (scrollY > lastScroll + 5) {
-                    header.classList.add("hidden");
+                    setHeaders(true);
                 } else if (scrollY < lastScroll - 5) {
-                    header.classList.remove("hidden");
+                    setHeaders(false);
                 }
                 lastScroll = scrollY;
                 ticking = false;
