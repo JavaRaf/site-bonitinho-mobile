@@ -506,16 +506,11 @@ if (postsGridEl && typeof bindFeedEvents === "function") {
 
 document.getElementById("btnBack").addEventListener("click", () => {
     const state = getSavedNavState();
-    if (state?.path && state.path !== location.pathname && history.length > 1) {
-        history.back();
-        setTimeout(() => {
-            if (location.pathname === "/perfil" || location.pathname.startsWith("/perfil/")) {
-                location.replace("/");
-            }
-        }, 250);
+    if (state?.url && state.path !== location.pathname) {
+        location.href = state.url;
         return;
     }
-    location.replace("/");
+    location.href = "/";
 });
 
 /* ── Edit Modal ───────────────────────────────────────────── */

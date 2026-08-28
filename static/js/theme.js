@@ -17,6 +17,7 @@
     function saveNavState(extra = {}) {
         const state = Object.assign({}, readNavState(), extra, {
             path: location.pathname,
+            url: location.pathname + location.search + location.hash,
             scrollX: window.scrollX,
             scrollY: window.scrollY,
             ts: Date.now(),
@@ -43,7 +44,7 @@
     window.restoreNavState = restoreNavState;
     window.goToProfile = function (username) {
         saveNavState();
-        location.replace(username ? "/perfil/" + encodeURIComponent(username) : "/perfil");
+        location.href = username ? "/perfil/" + encodeURIComponent(username) : "/perfil";
     };
 
     let theme = localStorage.getItem(KEY);
