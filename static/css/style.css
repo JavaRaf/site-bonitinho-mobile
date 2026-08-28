@@ -1405,8 +1405,13 @@ body.clone-top #headerClone { top: 0; }
   transition: background 0.15s;
 }
 
-.feed-create-icon:hover {
+.feed-create-icon {
+  border-radius: 20%;
+}
+
+.feedCreateEleicaoBtn, .feedCreateNsfwBtn {
   background: var(--accent-soft);
+  border-radius: 20%;
 }
 
 .feed-create-icon svg {
