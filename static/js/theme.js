@@ -43,7 +43,7 @@
     window.restoreNavState = restoreNavState;
     window.goToProfile = function (username) {
         saveNavState();
-        location.href = username ? "/perfil/" + encodeURIComponent(username) : "/perfil";
+        location.replace(username ? "/perfil/" + encodeURIComponent(username) : "/perfil");
     };
 
     let theme = localStorage.getItem(KEY);

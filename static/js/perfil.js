@@ -112,7 +112,7 @@ async function loadProfile(forceRefresh = false) {
     if (!username) {
         const me = await fetch("/api/auth/me").then(r => r.json()).catch(() => null);
         if (me?.user) {
-            goToProfile(me.user.username);
+            location.replace("/perfil/" + encodeURIComponent(me.user.username));
         } else {
             location.href = "/login";
         }
@@ -508,9 +508,14 @@ document.getElementById("btnBack").addEventListener("click", () => {
     const state = getSavedNavState();
     if (state?.path && state.path !== location.pathname && history.length > 1) {
         history.back();
+        setTimeout(() => {
+            if (location.pathname === "/perfil" || location.pathname.startsWith("/perfil/")) {
+                location.replace("/");
+            }
+        }, 250);
         return;
     }
-    location.href = "/";
+    location.replace("/");
 });
 
 /* ── Edit Modal ───────────────────────────────────────────── */
