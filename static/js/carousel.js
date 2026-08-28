@@ -342,11 +342,58 @@ function initFeedCarousel(el) {
     }, { passive: true });
 }
 
+const FEED_BATCH = 6;
+let feedRenderedCount = 0;
+let feedObserver = null;
+
 function renderFeed() {
     const feed = document.getElementById("feedView");
     if (!feed) return;
-    feed.innerHTML = sortedImages().map(feedCardHTML).join("");
-    initFeedMedia(feed);
+    const imgs = sortedImages();
+    feedRenderedCount = 0;
+    feed.innerHTML = "";
+    stopFeedObserver();
+    const params = new URLSearchParams(location.search);
+    if (params.get("img") || params.get("image")) {
+        // com destaque (img na URL): renderiza tudo para conseguir rolar até o post
+        feed.innerHTML = imgs.map(feedCardHTML).join("");
+        initFeedMedia(feed);
+        return;
+    }
+    appendFeedBatch(feed, imgs);
+    setupFeedObserver(feed, imgs);
+}
+
+function appendFeedBatch(feed, imgs) {
+    const next = imgs.slice(feedRenderedCount, feedRenderedCount + FEED_BATCH);
+    if (!next.length) return false;
+    const batch = document.createElement("div");
+    batch.innerHTML = next.map(feedCardHTML).join("");
+    initFeedMedia(batch);
+    while (batch.firstChild) feed.appendChild(batch.firstChild);
+    feedRenderedCount += next.length;
+    return true;
+}
+
+function setupFeedObserver(feed, imgs) {
+    stopFeedObserver();
+    let sentinel = document.getElementById("feedSentinel");
+    if (!sentinel) {
+        sentinel = document.createElement("div");
+        sentinel.id = "feedSentinel";
+        feed.parentNode.insertBefore(sentinel, feed.nextSibling);
+    }
+    feedObserver = new IntersectionObserver((entries) => {
+        if (!entries.some(e => e.isIntersecting)) return;
+        if (!appendFeedBatch(feed, imgs)) stopFeedObserver();
+    }, { rootMargin: "900px 0px" });
+    feedObserver.observe(sentinel);
+}
+
+function stopFeedObserver() {
+    if (feedObserver) { feedObserver.disconnect(); feedObserver = null; }
+    const sentinel = document.getElementById("feedSentinel");
+    if (sentinel) sentinel.remove();
 }
 
 function feedCardHTML(img, i) {
