@@ -403,6 +403,14 @@ body.clone-top #headerClone { top: 0; }
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.logo:hover {
+  opacity: 0.85;
 }
 
 #logo-img {

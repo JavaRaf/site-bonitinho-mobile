@@ -53,6 +53,10 @@ document.getElementById("menuLogout").addEventListener("click", async () => {
 
 loadProfile();
 
+document.getElementById("logoHome")?.addEventListener("click", () => {
+    window.location.href = "/";
+});
+
 /* === Auto-hide header on scroll === */
 (function () {
     const headers = document.querySelectorAll("header");
