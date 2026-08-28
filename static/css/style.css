@@ -148,7 +148,7 @@ body.clone-top #headerClone { top: 0; }
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-soft);
+  color: var(--btn-bg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -160,7 +160,7 @@ body.clone-top #headerClone { top: 0; }
   background: var(--surface-2);
 }
 
-/* ícone vindo do arquivo svg via máscara: acompanha o tema (currentColor) */
+/* ícone vindo do arquivo svg via máscara: acompanha o tema/currentColor */
 .header-ico {
   display: block;
   width: 18px;
@@ -172,6 +172,10 @@ body.clone-top #headerClone { top: 0; }
   mask-repeat: no-repeat;
   mask-position: center;
   mask-size: contain;
+}
+.ico-grid {
+  -webkit-mask-image: url("/static/svg/grid.svg");
+  mask-image: url("/static/svg/grid.svg");
 }
 .ico-lupa {
   -webkit-mask-image: url("/static/svg/lupa.svg");
@@ -436,7 +440,7 @@ body.clone-top #headerClone { top: 0; }
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-soft);
+  color: var(--btn-bg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -446,10 +450,6 @@ body.clone-top #headerClone { top: 0; }
 }
 .header-grid-btn:hover {
   background: var(--surface-2);
-}
-.header-grid-btn img {
-  width: 18px;
-  height: 18px;
 }
 
 #user-avatar {
