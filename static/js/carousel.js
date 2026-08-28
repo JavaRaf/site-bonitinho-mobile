@@ -353,10 +353,12 @@ function renderFeed() {
     feedRenderedCount = 0;
     feed.innerHTML = "";
     stopFeedObserver();
+    if (typeof window.resetFeedNavIndex === "function") window.resetFeedNavIndex();
     const params = new URLSearchParams(location.search);
     if (params.get("img") || params.get("image")) {
         // com destaque (img na URL): renderiza tudo para conseguir rolar até o post
         feed.innerHTML = imgs.map(feedCardHTML).join("");
+        feedRenderedCount = imgs.length;
         initFeedMedia(feed);
         return;
     }
@@ -1772,32 +1774,69 @@ if (document.getElementById("feedView")) loadCarousel();
     const navDown = document.getElementById("feedNavDown");
     if (!navUp || !navDown) return;
 
+    let navIndex = -1; // -1 = sem cursor fixo (ressincroniza com rolagem manual)
+    let navTimer = null;
+
     function getCards() {
         const container = document.getElementById("feedView") || document.getElementById("postsGrid");
         return container ? Array.from(container.querySelectorAll(".feed-card")) : [];
     }
 
-    function currentCardIndex() {
-        const cards = getCards();
-        const scrollY = window.scrollY + window.innerHeight * 0.3;
-        for (let i = cards.length - 1; i >= 0; i--) {
-            if (cards[i].getBoundingClientRect().top + window.scrollY <= scrollY) return i;
-        }
-        return 0;
+    function navTargetIndex(index) {
+        const n = sortedImages().length;
+        if (!n) return -1;
+        return Math.max(0, Math.min(n - 1, index));
     }
 
-    navUp.addEventListener("click", () => {
-        const cards = getCards();
-        if (!cards.length) return;
-        const idx = Math.max(0, currentCardIndex() - 1);
-        cards[idx].scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    function ensureRenderedUpTo(index) {
+        const feed = document.getElementById("feedView");
+        if (!feed) return;
+        const list = sortedImages();
+        let guard = 0;
+        while (feedRenderedCount <= index && guard < list.length + 1) {
+            if (!appendFeedBatch(feed, list)) break;
+            guard++;
+        }
+    }
 
-    navDown.addEventListener("click", () => {
+    function goTo(index) {
+        const targetIdx = navTargetIndex(index);
+        if (targetIdx < 0) return;
+        const list = sortedImages();
+        const item = list[targetIdx];
+        if (!item) return;
+        ensureRenderedUpTo(targetIdx);
+        const card = document.querySelector(`.feed-card[data-name="${CSS.escape(item.name)}"]`);
+        if (!card) return;
+        navIndex = targetIdx;
+        if (navTimer) clearTimeout(navTimer);
+        navTimer = setTimeout(() => { navIndex = -1; }, 700);
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function resyncFromScroll() {
+        if (navIndex >= 0) return; // navegando; ignora scroll intermediário
         const cards = getCards();
         if (!cards.length) return;
-        const idx = Math.min(cards.length - 1, currentCardIndex() + 1);
-        cards[idx].scrollIntoView({ behavior: "smooth", block: "center" });
+        const threshold = window.scrollY + window.innerHeight * 0.3;
+        let cur = 0;
+        for (let i = cards.length - 1; i >= 0; i--) {
+            if (cards[i].getBoundingClientRect().top + window.scrollY <= threshold) { cur = i; break; }
+        }
+        navIndex = cur;
+    }
+
+    window.addEventListener("scroll", resyncFromScroll, { passive: true });
+
+    window.resetFeedNavIndex = () => { navIndex = -1; };
+
+    navUp.addEventListener("click", () => {
+        if (navIndex < 0) resyncFromScroll();
+        goTo(navIndex - 1);
+    });
+    navDown.addEventListener("click", () => {
+        if (navIndex < 0) resyncFromScroll();
+        goTo(navIndex + 1);
     });
 })();
 
