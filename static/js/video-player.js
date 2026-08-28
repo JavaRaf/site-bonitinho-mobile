@@ -500,10 +500,11 @@ function initVideoPlayer(wrapper) {
     registerAutoPlay(wrapper);
 }
 
-function createVideoPlayerHTML(src) {
+function createVideoPlayerHTML(src, highPrio) {
+    const fetchPrio = highPrio ? ' fetchpriority="high"' : ' fetchpriority="low"';
     return `
     <div class="video-player">
-        <video src="${src}" playsinline preload="metadata"></video>
+        <video src="${src}" playsinline preload="metadata"${fetchPrio}></video>
         <div class="vp-loading" style="display:none"><div class="vp-spinner"></div></div>
         <button class="vp-big-play" type="button" aria-label="Reproduzir">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>

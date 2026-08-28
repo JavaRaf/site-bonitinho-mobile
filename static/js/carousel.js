@@ -176,17 +176,19 @@ function renderGrid() {
     const thumbs = document.getElementById("gridThumbs");
     if (!thumbs) return;
     const slides = getExpandedSlides();
-    thumbs.innerHTML = slides.map(img => {
+    thumbs.innerHTML = slides.map((img, idx) => {
         const isText = img.post_type === "text";
         const isVideo = !isText && (img.media_type === "video" || /\.(mp4|webm|mov)$/i.test(img.name));
+        const aboveFold = idx < 12;
         let media = "";
         if (isText) {
             const txt = (img.caption || "").trim().slice(0, 80) || "Texto";
             media = `<div class="grid-text-preview">${escText(txt)}</div>`;
         } else if (isVideo) {
-            media = `<video src="/images/${escText(img.name)}" muted preload="metadata" playsinline></video><span class="grid-play-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5.14v14l11-7-11-7z"/></svg></span>`;
+            media = `<video src="/images/${escText(img.name)}" muted preload="metadata" playsinline fetchpriority="${aboveFold ? "high" : "low"}"></video><span class="grid-play-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5.14v14l11-7-11-7z"/></svg></span>`;
         } else {
-            media = `<img src="/thumbs/${escText(img.name)}" alt="" loading="lazy" decoding="async">`;
+            const imgAttr = aboveFold ? ' fetchpriority="high" loading="eager"' : ' fetchpriority="low" loading="lazy"';
+            media = `<img src="/thumbs/${escText(img.name)}" alt=""${imgAttr} decoding="async">`;
         }
     return `
         <button class="grid-thumb ${isText ? "grid-thumb-text" : ""} ${isVideo ? "grid-thumb-video" : ""}" data-name="${escText(img.name)}">
@@ -347,7 +349,7 @@ function renderFeed() {
     initFeedMedia(feed);
 }
 
-function feedCardHTML(img) {
+function feedCardHTML(img, i) {
     const liked = likedImages.has(img.name);
     const likes = img.likes || 0;
     const comments = img.comments || 0;
@@ -355,23 +357,27 @@ function feedCardHTML(img) {
     const isVideo = img.post_type === "video";
     const isMulti = img.media && img.media.length > 1;
     const nsfwClass = (img.nsfw && nsfwFilter === "blur") ? " nsfw-blur" : "";
+    const aboveFold = typeof i === "number" && i < 3;
 
     let mediaSection = "";
     if (!isText) {
         if (isMulti) {
-            const slides = img.media.map((m, i) => {
+            const slides = img.media.map((m, slideI) => {
                 if (m.media_type === "video") {
-                    return `<div class="feed-carousel-slide">${createVideoPlayerHTML("/images/" + escText(m.name))}</div>`;
+                    return `<div class="feed-carousel-slide">${createVideoPlayerHTML("/images/" + escText(m.name), slideI === 0 && aboveFold)}</div>`;
                 }
-                const loadLazy = i > 0 ? ' loading="lazy"' : '';
-                return `<div class="feed-carousel-slide"><img src="/images/${escText(m.name)}" alt=""${loadLazy} decoding="async" class="${nsfwClass.trim()}"></div>`;
+                const prio = slideI === 0
+                    ? (aboveFold ? ' fetchpriority="high"' : '')
+                    : ' loading="lazy" fetchpriority="low"';
+                return `<div class="feed-carousel-slide"><img src="/images/${escText(m.name)}" alt=""${prio} decoding="async" class="${nsfwClass.trim()}"></div>`;
             }).join("");
-            const dots = img.media.map((_, i) => `<span class="feed-carousel-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`).join("");
+            const dots = img.media.map((_, dI) => `<span class="feed-carousel-dot${dI === 0 ? ' active' : ''}" data-idx="${dI}"></span>`).join("");
             mediaSection = `<div class="feed-carousel" data-post="${escText(img.post_id)}">${slides}<div class="feed-carousel-dots">${dots}</div></div>`;
         } else if (isVideo) {
-            mediaSection = `<div class="feed-img">${createVideoPlayerHTML("/images/" + escText(img.name))}</div>`;
+            mediaSection = `<div class="feed-img">${createVideoPlayerHTML("/images/" + escText(img.name), aboveFold)}</div>`;
         } else {
-            mediaSection = `<div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt="" loading="lazy" decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>`;
+            const imgAttr = aboveFold ? ' fetchpriority="high" loading="eager"' : ' fetchpriority="low" loading="lazy"';
+            mediaSection = `<div class="feed-img${img.nsfw ? ' nsfw-container' : ''}"><img src="/images/${escText(img.name)}" alt=""${imgAttr} decoding="async" class="${nsfwClass.trim()}">${img.nsfw && nsfwFilter === "blur" ? '<button class="nsfw-reveal-btn" type="button">Mostrar imagem</button>' : ''}</div>`;
         }
     }
 
