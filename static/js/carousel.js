@@ -487,7 +487,7 @@ function feedCardHTML(img, i) {
             <div class="feed-comments-list"></div>
             <div class="feed-reply-indicator"><span class="feed-reply-text"></span><button type="button" class="feed-reply-cancel">&times;</button></div>
             <form class="comment-form feed-comment-form">
-                <div class="comment-avatar">
+                <div class="comment-avatar"${myUser && myUser.username ? ` data-comment-username="${escText(myUser.username)}"` : ""}>
                     <img src="${myUser && myUser.avatar ? feedAvatarUrl(myUser.avatar) : '/static/svg/default-avatar.svg'}" alt="Avatar">
                 </div>
                 <div class="comment-box">
@@ -658,10 +658,10 @@ function renderFeedNode(c, depth, currentUserId, isAdmin, myCommentLikes) {
 
     let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
     html += `<div class="comment-main">`;
-    html += `<div class="comment-avatar"><img src="${feedAvatarUrl(c.avatar)}" alt=""></div>`;
+    html += `<div class="comment-avatar" data-comment-username="${escText(c.username)}"><img src="${feedAvatarUrl(c.avatar)}" alt=""></div>`;
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
-    html += `<div class="comment-user-row"><span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.display_name || c.username)}</span><span class="comment-handle">@${escText(c.username)}</span></div>`;
+    html += `<div class="comment-user-row" data-comment-username="${escText(c.username)}"><span class="comment-user" style="color:${c.color || userColorFeed(c.username)}">${escText(c.display_name || c.username)}</span><span class="comment-handle">@${escText(c.username)}</span></div>`;
     html += `<span class="comment-text">${escText(c.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>')}</span>`;
     if (c.media_name) {
         if (c.media_type === "video") {
@@ -771,6 +771,12 @@ function toggleFeedComments(btn) {
 
 function onFeedClick(e) {
     if (e.target.closest(".video-player")) return;
+
+    const cAuthor = e.target.closest("[data-comment-username]");
+    if (cAuthor && cAuthor.dataset.commentUsername) {
+        location.href = "/perfil/" + encodeURIComponent(cAuthor.dataset.commentUsername);
+        return;
+    }
 
     const ownerEl = e.target.closest("[data-owner]");
     if (ownerEl && ownerEl.dataset.owner) {

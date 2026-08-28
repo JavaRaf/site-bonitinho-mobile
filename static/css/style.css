@@ -719,6 +719,19 @@ body.clone-top #headerClone { top: 0; }
   object-fit: cover;
 }
 
+.comment-avatar[data-comment-username],
+.comment-user-row[data-comment-username] {
+  cursor: pointer;
+}
+
+.comment-avatar[data-comment-username]:hover {
+  opacity: 0.82;
+}
+
+.comment-user-row[data-comment-username]:hover .comment-handle {
+  text-decoration: none;
+}
+
 .comment-body {
   flex: 1;
   min-width: 0;

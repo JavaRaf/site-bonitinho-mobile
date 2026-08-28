@@ -36,6 +36,8 @@ def create_app():
             resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif request.path.startswith("/static/"):
             resp.headers["Cache-Control"] = "public, max-age=86400"
+        elif request.path.startswith("/images/") or request.path.startswith("/comment-media/"):
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif request.path.startswith("/api/images") or request.path.startswith("/api/profile"):
             resp.headers["Cache-Control"] = "public, max-age=30"
         return resp

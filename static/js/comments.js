@@ -111,10 +111,10 @@ function renderNode(c, depth) {
 
     let html = `<div class="${cls.join(" ")}" data-id="${c.id}">`;
     html += `<div class="comment-main">`;
-    html += `<div class="comment-avatar"><img src="${avatarUrl(c.avatar)}" alt=""></div>`;
+    html += `<div class="comment-avatar" data-comment-username="${esc(c.username)}"><img src="${avatarUrl(c.avatar)}" alt=""></div>`;
     html += `<div class="comment-body">`;
     html += `<div class="comment-bubble">`;
-    html += `<div class="comment-user-row"><span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.display_name || c.username)}</span><span class="comment-handle">@${esc(c.username)}</span></div>`;
+    html += `<div class="comment-user-row" data-comment-username="${esc(c.username)}" role="button" tabindex="0"><span class="comment-user" style="color:${c.color || userColor(c.username)}">${esc(c.display_name || c.username)}</span><span class="comment-handle">@${esc(c.username)}</span></div>`;
     html += `<span class="comment-text">${parseMentions(c.text)}</span>`;
     if (c.media_name) {
         if (c.media_type === "video") {
@@ -295,6 +295,12 @@ function handleMentionKeydown(e) {
 
 /* === Comment Like === */
 document.addEventListener("click", async e => {
+    const authorEl = e.target.closest("[data-comment-username]");
+    if (authorEl && authorEl.dataset.commentUsername) {
+        window.location.href = "/perfil/" + encodeURIComponent(authorEl.dataset.commentUsername);
+        return;
+    }
+
     const likeCountEl = e.target.closest(".comment-like-count");
     if (likeCountEl) {
         e.stopPropagation();
@@ -466,6 +472,14 @@ document.addEventListener("click", async e => {
             await loadComments(true);
         } catch { /* ignore */ }
     }
+});
+
+document.addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const authorEl = e.target.closest(".comment-user-row[data-comment-username]");
+    if (!authorEl || !authorEl.dataset.commentUsername) return;
+    e.preventDefault();
+    window.location.href = "/perfil/" + encodeURIComponent(authorEl.dataset.commentUsername);
 });
 
 /* === Main form (carousel comment — removed, kept as no-op guard) === */
