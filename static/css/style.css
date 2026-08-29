@@ -1046,6 +1046,10 @@ body.clone-top #headerClone { top: 0; }
 }
 .comment-gif-btn:hover, .comment-media-btn:hover { background: var(--border); }
 .comment-media-preview { width: 100%; margin-top: 6px; }
+.comment-media {
+  display: flex;
+  justify-content: center;
+}
 
 .comment-media .video-player {
   max-width: 100%;
