@@ -467,7 +467,13 @@ function feedCardHTML(img, i) {
     <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
         <div class="feed-owner">
             <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
-            <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">${escText(img.owner_display_name || img.owner || "\u2014")}</span><span class="feed-owner-handle" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
+            <div class="feed-owner-meta">
+                <div class="feed-owner-line">
+                    <span class="feed-owner-name" data-owner="${escText(img.owner || "")}">${escText(img.owner_display_name || img.owner || "\u2014")}</span>
+                    <span class="feed-owner-handle" data-owner="${escText(img.owner || "")}">@${escText(img.owner || "\u2014")}</span>
+                </div>
+                ${img.created_at ? `<span class="feed-time">&middot; ${feedTimeAgo(img.created_at)}</span>` : ""}
+            </div>
             <div class="feed-owner-flags">
                 ${tagNsfwHtml}
                 ${tagEleicaoHtml}
