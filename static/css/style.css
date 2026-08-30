@@ -1791,6 +1791,14 @@ body.clone-top #headerClone { top: 0; }
   cursor: pointer;
 }
 
+.feed-card-wrap {
+  position: relative;
+}
+
+.feed-card-wrap.has-feed-carousel {
+  overflow: visible;
+}
+
 .feed-carousel {
   position: relative;
   overflow: hidden;
@@ -1829,6 +1837,55 @@ body.clone-top #headerClone { top: 0; }
 }
 .feed-carousel-dot.active {
   background: var(--text);
+}
+
+.feed-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.feed-carousel-arrow-left {
+  left: -50px;
+}
+
+.feed-carousel-arrow-right {
+  right: -50px;
+}
+
+.feed-carousel-arrow-left svg {
+  transform: rotate(-90deg);
+}
+
+.feed-carousel-arrow-right svg {
+  transform: rotate(-90deg);
+}
+
+.feed-carousel-arrow,
+.feed-nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 50%;
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.15s, transform 0.1s;
+}
+
+.feed-carousel-arrow:hover,
+.feed-nav-btn:hover {
+  background: var(--surface-2, #f5f5f5);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.feed-carousel-arrow:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .composer-media-previews,
@@ -3174,8 +3231,8 @@ body.clone-top #headerClone { top: 0; }
     flex-direction: column;
     gap: 8px;
     position: fixed;
-    right: max(1rem, calc((100vw - 640px) / 2 - 60px));
-    bottom: 50vh;
+    right: max(1rem, calc((100vw - 640px) / 2 - 100px));
+    bottom: 65vh;
     z-index: 90;
   }
   .feed-nav-btn {

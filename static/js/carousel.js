@@ -327,9 +327,17 @@ function initFeedCarousel(el) {
         dots[idx].classList.add("active");
     }
 
+    function step(dir) {
+        goTo(idx + dir);
+    }
+
     slides[0]?.classList.add("active");
 
     dots.forEach((d, i) => d.addEventListener("click", () => goTo(i)));
+
+    el.closest(".feed-card-wrap")?.querySelectorAll(".feed-carousel-arrow[data-carousel-direction]").forEach(btn => {
+        btn.addEventListener("click", () => step(Number(btn.dataset.carouselDirection || 0)));
+    });
 
     let startX = 0;
     el.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, { passive: true });
@@ -450,7 +458,12 @@ function feedCardHTML(img, i) {
         </span>` : '';
 
     const userPlaceholder = myUser && myUser.display_name ? `Comente como ${myUser.display_name}` : "Adicione um comentário...";
+    const carouselControls = isMulti ? `
+        <button class="feed-carousel-arrow feed-carousel-arrow-left" type="button" aria-label="Imagem anterior" data-carousel-direction="-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg></button>
+        <button class="feed-carousel-arrow feed-carousel-arrow-right" type="button" aria-label="Próxima imagem" data-carousel-direction="1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>` : "";
     return `
+    <div class="feed-card-wrap${isMulti ? ' has-feed-carousel' : ''}">
+    ${carouselControls}
     <article class="feed-card${isText ? ' feed-card-text' : ''}" data-name="${escText(img.name)}" data-post-id="${escText(img.post_id || img.name)}">
         <div class="feed-owner">
             <img class="feed-avatar" src="${avatarUrl(img.owner_avatar)}" alt="" onerror="this.src='/static/svg/default-avatar.svg'" data-owner="${escText(img.owner || "")}">
@@ -520,7 +533,8 @@ function feedCardHTML(img, i) {
                 </div>
             </form>
         </div>
-    </article>`;
+    </article>
+    </div>`;
 }
 
 function initFeedMedia(root) {
