@@ -31,7 +31,7 @@ class Config:
     ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
     VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov"}
     ALL_MEDIA_EXTENSIONS = ALLOWED_EXTENSIONS | VIDEO_EXTENSIONS
-    MAX_VIDEO_SECONDS = 60
+    MAX_VIDEO_SECONDS = 120
     IMAGES_DIR = BASE_DIR / "images"
     COMMENT_MEDIA_DIR = BASE_DIR / "comment-media"
 

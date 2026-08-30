@@ -116,8 +116,8 @@ composerImageInput.addEventListener("change", () => {
             vid.preload = "metadata";
             vid.src = URL.createObjectURL(file);
             vid.onloadedmetadata = () => {
-                if (vid.duration > 60) {
-                    showAlert("Video muito longo (maximo 1 minuto).");
+                if (vid.duration > 120) {
+                    showAlert("Video muito longo (maximo 2 minutos).");
                     URL.revokeObjectURL(vid.src);
                     return;
                 }

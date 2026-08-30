@@ -1175,8 +1175,8 @@ function onFeedClick(e) {
                     vid.preload = "metadata";
                     vid.src = URL.createObjectURL(file);
                     vid.onloadedmetadata = () => {
-                        if (vid.duration > 60) {
-                            showAlert("Vídeo muito longo (máximo 1 minuto).");
+                        if (vid.duration > 120) {
+                            showAlert("Vídeo muito longo (máximo 2 minutos).");
                             URL.revokeObjectURL(vid.src);
                             return;
                         }
@@ -1766,7 +1766,7 @@ function bindFeedEvents(root) {
             v.preload = "metadata";
             v.src = url;
             v.onloadedmetadata = ()=>{
-                if (v.duration > 60) { showAlert("Vídeo muito longo (máx 1min)"); inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); updateFeedCommentSendBtn(form); }
+                if (v.duration > 120) { showAlert("Vídeo muito longo (máx 2min)"); inp.value=""; preview.hidden=true; URL.revokeObjectURL(url); updateFeedCommentSendBtn(form); }
                 else {
                     preview.innerHTML = `<div style="position:relative;display:inline-block;"><video src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;" muted></video><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
                     preview.hidden = false;
@@ -2007,8 +2007,8 @@ document.getElementById("feedCreateFile")?.addEventListener("change", () => {
             vid.preload = "metadata";
             vid.src = URL.createObjectURL(file);
             vid.onloadedmetadata = () => {
-                if (vid.duration > 60) {
-                    showAlert("Video muito longo (maximo 1 minuto).");
+                if (vid.duration > 120) {
+                    showAlert("Video muito longo (maximo 2 minutos).");
                     URL.revokeObjectURL(vid.src);
                     return;
                 }

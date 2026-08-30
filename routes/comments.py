@@ -73,7 +73,7 @@ def handle_comments(image_name):
         media_file.seek(0)
         if size > Config.MAX_IMAGE_BYTES and ext not in Config.VIDEO_EXTENSIONS:
             return jsonify({"error": "arquivo muito grande"}), 400
-        # video limite 1min
+        # video limite 2min
         is_video = ext in Config.VIDEO_EXTENSIONS
         # gera nome único
         media_name = f"{uuid.uuid4().hex[:8]}_{Path(media_file.filename).stem[:20]}{ext}"
@@ -93,9 +93,9 @@ def handle_comments(image_name):
                     capture_output=True, text=True, timeout=10
                 )
                 dur = float(result.stdout.strip()) if result.stdout.strip() else 0
-                if dur > 60:
+                if dur > 120:
                     tmp.unlink(missing_ok=True)
-                    return jsonify({"error": "vídeo muito longo (máx 1min)"}), 400
+                    return jsonify({"error": "vídeo muito longo (máx 2min)"}), 400
             except Exception:
                 pass
             media_type = "video"
