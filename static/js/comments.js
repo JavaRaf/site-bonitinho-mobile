@@ -333,8 +333,8 @@ document.addEventListener("click", async e => {
         const svg = likeBtn.querySelector("svg");
         const countEl = likeBtn.parentElement.querySelector(`.comment-like-count[data-id="${id}"]`);
         const count = (parseInt(countEl?.textContent) || 0) + delta;
-        svg.setAttribute("fill", !wasLiked ? "#FA8128" : "none");
-        svg.setAttribute("stroke", !wasLiked ? "#FA8128" : "currentColor");
+        svg.setAttribute("fill", !wasLiked ? "var(--accent)" : "none");
+        svg.setAttribute("stroke", !wasLiked ? "var(--accent)" : "currentColor");
         if (countEl) {
             countEl.textContent = count > 0 ? count : "";
             countEl.style.display = count > 0 ? "" : "none";
@@ -347,8 +347,8 @@ document.addEventListener("click", async e => {
         } catch {
             if (wasLiked) myCommentLikes.add(id);
             else myCommentLikes.delete(id);
-            svg.setAttribute("fill", wasLiked ? "#FA8128" : "none");
-            svg.setAttribute("stroke", wasLiked ? "#FA8128" : "currentColor");
+            svg.setAttribute("fill", wasLiked ? "var(--accent)" : "none");
+            svg.setAttribute("stroke", wasLiked ? "var(--accent)" : "currentColor");
             const newCount = (parseInt(countEl?.textContent) || 0) - delta;
             if (countEl) {
                 countEl.textContent = newCount > 0 ? newCount : "";

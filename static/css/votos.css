@@ -95,9 +95,9 @@
   z-index: 2;
 }
 
-.rank-gold { background: #fef3c7; color: #92400e; }
-.rank-silver { background: #f1f5f9; color: #475569; }
-.rank-bronze { background: #fff7ed; color: #9a3412; }
+.rank-gold { background: var(--rank-gold-bg); color: var(--rank-gold-text); }
+.rank-silver { background: var(--rank-silver-bg); color: var(--rank-silver-text); }
+.rank-bronze { background: var(--rank-bronze-bg); color: var(--rank-bronze-text); }
 .rank-normal { background: var(--surface-2); color: var(--text-secondary); }
 
 .votos-card-img {

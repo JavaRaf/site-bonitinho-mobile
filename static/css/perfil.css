@@ -66,7 +66,7 @@
   width: 100%;
   aspect-ratio: 3 / 1;
   max-height: 220px;
-  background: #1a1a2e;
+  background: var(--cover-bg);
   overflow: hidden;
 }
 .cover-img {
@@ -80,7 +80,7 @@
 .cover-fallback {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: var(--cover-gradient);
 }
 .cover-img:not([src=""]) + .cover-fallback { display: none; }
 
