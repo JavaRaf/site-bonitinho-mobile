@@ -462,6 +462,15 @@
   color: var(--text-secondary);
 }
 
+.user-card-badge.badge-pending {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.user-card.user-card-pending {
+  border-color: var(--danger);
+}
+
 .user-card-actions {
   display: flex;
   gap: 0.375rem;

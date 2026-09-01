@@ -67,9 +67,16 @@ def register():
     admin_count = User.query.filter_by(is_admin=1).count()
     is_admin = 1 if admin_count == 0 else 0
 
-    user = User(username=username, display_name=display_name or typed_username, email=email, password=hash_password(password), is_admin=is_admin)
+    from utils.security import get_setting
+    require_approval = get_setting("require_approval", "0")
+    is_approved = 1 if is_admin == 1 else (0 if require_approval == "1" else 1)
+
+    user = User(username=username, display_name=display_name or typed_username, email=email, password=hash_password(password), is_admin=is_admin, is_approved=is_approved)
     db.session.add(user)
     db.session.commit()
+
+    if is_approved == 0:
+        return jsonify({"pending_approval": True, "message": "Sua conta aguarda aprovação."}), 201
 
     session.clear()
     session["user_id"] = user.id
@@ -95,6 +102,8 @@ def login():
     user = User.query.filter(db.func.lower(User.username) == username).first()
     if not user or not verify_password(password, user.password):
         return jsonify({"error": "invalid credentials"}), 401
+    if user.is_approved == 0:
+        return jsonify({"error": "Sua conta aguarda aprovação de um administrador."}), 403
 
     session.clear()
     session["user_id"] = user.id

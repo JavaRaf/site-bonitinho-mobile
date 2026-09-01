@@ -295,6 +295,22 @@ function formatDate(dateStr) {
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+async function loadApprovalSetting() {
+    try {
+        const res = await api("GET", "/api/admin/settings/approval");
+        const data = await res.json();
+        const chk = document.getElementById("settingRequireApproval");
+        if (chk) chk.checked = !!data.require_approval;
+    } catch {}
+}
+
+document.getElementById("settingRequireApproval")?.addEventListener("change", async e => {
+    try {
+        await api("PUT", "/api/admin/settings/approval", { require_approval: e.target.checked });
+        showStatus(e.target.checked ? "Aprovação ativada" : "Aprovação desativada");
+    } catch { showStatus("Erro ao salvar"); }
+});
+
 function renderUsers(filter = "") {
     const list = document.getElementById("usersList");
     const count = document.getElementById("usersCount");
@@ -310,7 +326,7 @@ function renderUsers(filter = "") {
     }
 
     list.innerHTML = filtered.map(u => `
-        <div class="user-card" data-user-id="${u.id}" data-username="${esc(u.username)}" style="cursor:pointer">
+        <div class="user-card${!u.is_approved ? ' user-card-pending' : ''}" data-user-id="${u.id}" data-username="${esc(u.username)}" style="cursor:pointer">
             <div class="user-card-row" data-username="${esc(u.username)}" style="cursor:pointer">
                 <div class="user-card-avatar" data-username="${esc(u.username)}">
                     <img src="${getUserAvatar(u.avatar)}" alt="${esc(u.username)}" data-username="${esc(u.username)}">
@@ -319,11 +335,13 @@ function renderUsers(filter = "") {
                     <div class="user-card-name" style="color:${u.color || 'var(--text)'}" data-username="${esc(u.username)}">${esc(u.username)}</div>
                     <div class="user-card-meta" data-username="${esc(u.username)}">
                         <span class="user-card-badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'User'}</span>
+                        ${!u.is_approved ? '<span class="user-card-badge badge-pending">Pendente</span>' : ''}
                         <span>${formatDate(u.created_at)}</span>
                     </div>
                 </div>
             </div>
             <div class="user-card-actions">
+                ${!u.is_approved ? `<button class="admin-btn small" data-approve="${u.id}">Aprovar</button>` : ""}
                 ${!u.is_admin ? `<button class="admin-btn purple small" data-promote="${u.id}">Promover</button>` : ""}
                 <button class="admin-btn small" data-rename="${u.id}" data-name="${esc(u.username)}">Renomear</button>
                 <button class="admin-btn small" data-reset="${u.id}" data-name="${esc(u.username)}">Resetar senha</button>
@@ -337,6 +355,20 @@ function renderUsers(filter = "") {
             if (e.target.closest("button") || e.target.closest("input")) return;
             const uname = card.dataset.username;
             if (uname) location.href = `/perfil/${encodeURIComponent(uname)}`;
+        });
+    });
+
+    list.querySelectorAll("[data-approve]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!await askConfirm("Aprovar este usuário?")) return;
+            const res = await api("PUT", `/api/admin/users/${btn.dataset.approve}/approve`);
+            if (res.ok) {
+                showStatus("Usuário aprovado");
+                loadUsers();
+            } else {
+                showStatus("Erro ao aprovar");
+            }
         });
     });
 
@@ -511,7 +543,10 @@ document.querySelectorAll(".admin-tab").forEach(tab => {
         document.getElementById("actionsUsers").style.display = "none";
         document.getElementById("actionsTurnos").style.display = "none";
         if (tabName === "posts") loadPosts();
-        if (tabName === "users") loadUsers();
+        if (tabName === "users") {
+            loadUsers();
+            loadApprovalSetting();
+        }
         if (tabName === "turnos") loadTurnos();
     });
 });

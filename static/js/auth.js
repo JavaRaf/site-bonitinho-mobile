@@ -61,6 +61,20 @@ async function submitAuth(endpoint, username, password, display_name, email) {
             showError(msg);
             return;
         }
+        if (data.pending_approval) {
+            const modal = document.getElementById("approvalModal");
+            const btn = document.getElementById("approvalModalBtn");
+            if (modal && btn) {
+                modal.removeAttribute("hidden");
+                btn.addEventListener("click", () => {
+                    window.location.href = "/login";
+                });
+            } else {
+                alert(data.message || "Sua conta aguarda aprovação de um administrador.");
+                window.location.href = "/login";
+            }
+            return;
+        }
         window.location.href = "/";
     } catch {
         showError("Erro de conexão");

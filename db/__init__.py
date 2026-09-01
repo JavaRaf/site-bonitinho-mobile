@@ -16,6 +16,7 @@ def _run_migrations():
     from sqlalchemy import text
     migrations = [
         ("users", "is_admin", "INTEGER NOT NULL DEFAULT 0"),
+        ("users", "is_approved", "INTEGER NOT NULL DEFAULT 1"),
         ("users", "avatar", "TEXT NOT NULL DEFAULT 'default-avatar.svg'"),
         ("users", "color", "TEXT NOT NULL DEFAULT ''"),
         ("uploads", "active", "INTEGER NOT NULL DEFAULT 1"),

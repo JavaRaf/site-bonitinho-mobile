@@ -107,6 +107,7 @@ def admin_list_users():
     users = User.query.order_by(User.id).all()
     return jsonify([
         {"id": u.id, "username": u.username, "display_name": u.display_name or u.username, "is_admin": bool(u.is_admin),
+         "is_approved": bool(u.is_approved),
          "avatar": u.avatar, "color": u.color, "created_at": u.created_at}
         for u in users
     ])
@@ -161,6 +162,28 @@ def admin_rename_user(user_id):
     user.username = username
     db.session.commit()
     return jsonify({"ok": True})
+
+
+@admin_bp.route("/api/admin/users/<int:user_id>/approve", methods=["PUT"])
+@admin_required
+def admin_approve_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "not found"}), 404
+    user.is_approved = 1
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@admin_bp.route("/api/admin/settings/approval", methods=["GET", "PUT"])
+@admin_required
+def admin_settings_approval():
+    if request.method == "GET":
+        return jsonify({"require_approval": get_setting("require_approval", "0") == "1"})
+    data = request.get_json(silent=True) or {}
+    enabled = bool(data.get("require_approval"))
+    set_setting("require_approval", "1" if enabled else "0")
+    return jsonify({"require_approval": enabled})
 
 
 @admin_bp.route("/api/admin/users/<int:user_id>/reset-password", methods=["PUT"])

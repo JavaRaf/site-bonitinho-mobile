@@ -13,6 +13,7 @@
   <title>Criar conta — MikanNet</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/auth.css">
+  <link rel="stylesheet" href="/static/css/modals.css">
   <script src="/static/js/theme.js"></script>
 </head>
 <body class="auth-page">
@@ -51,6 +52,16 @@
     <p class="auth-switch">
       Já tem conta? <a href="/login">Entrar</a>
     </p>
+  </div>
+
+  <div class="app-modal-overlay" id="approvalModal" hidden>
+    <div class="app-modal-card" style="text-align: center;">
+      <h3>Conta Criada!</h3>
+      <p style="margin-top: 0.5rem; margin-bottom: 1.5rem;">Sua conta foi criada com sucesso, mas exige aprovação de um administrador antes do primeiro acesso.</p>
+      <div class="app-modal-actions" style="justify-content: center; margin-top: 0;">
+        <button type="button" class="app-modal-btn primary" id="approvalModalBtn" style="width: 100%;">Ok, entendi</button>
+      </div>
+    </div>
   </div>
 
   <script src="/static/js/password-toggle.js"></script>

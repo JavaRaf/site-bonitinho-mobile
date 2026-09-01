@@ -10,6 +10,7 @@ class User(db.Model):
     email = db.Column(db.Text, nullable=False, default="")
     password = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Integer, nullable=False, default=0)
+    is_approved = db.Column(db.Integer, nullable=False, default=1)
     avatar = db.Column(db.Text, nullable=False, default="default-avatar.svg")
     cover = db.Column(db.Text, nullable=False, default="")
     color = db.Column(db.Text, nullable=False, default="")
