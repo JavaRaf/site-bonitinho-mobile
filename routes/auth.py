@@ -6,7 +6,7 @@ import secrets
 from flask import Blueprint, request, jsonify, session
 from db import db
 from db.models import User
-from utils.security import login_required
+from utils.security import login_required, rate_limit
 from utils.validation import normalize_username, validate_username
 
 auth_bp = Blueprint("auth", __name__)
@@ -40,6 +40,7 @@ def check_username():
 
 
 @auth_bp.route("/api/auth/register", methods=["POST"])
+@rate_limit(max_requests=5, window=3600)
 def register():
     data = request.get_json(silent=True) or {}
     typed_username = (data.get("username") or "").strip()
@@ -94,6 +95,7 @@ def register():
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
+@rate_limit(max_requests=10, window=60)
 def login():
     data = request.get_json()
     username = normalize_username(data.get("username") or "")
@@ -140,6 +142,7 @@ def me():
 
 
 @auth_bp.route("/api/auth/recovery/generate", methods=["POST"])
+@rate_limit(max_requests=3, window=3600)
 def generate_recovery_codes():
     if "user_id" not in session:
         return jsonify({"error": "login required"}), 401
@@ -163,6 +166,7 @@ def generate_recovery_codes():
 
 
 @auth_bp.route("/api/auth/recovery/reset", methods=["POST"])
+@rate_limit(max_requests=5, window=3600)
 def recovery_reset():
     data = request.get_json(silent=True) or {}
     username = normalize_username(data.get("username") or "")
@@ -188,6 +192,7 @@ def recovery_reset():
 
 @auth_bp.route("/api/auth/change-password", methods=["POST"])
 @login_required
+@rate_limit(max_requests=5, window=3600)
 def change_password():
     data = request.get_json(silent=True) or {}
     cur = (data.get("current_password") or "").strip()

@@ -8,7 +8,7 @@ from flask import Blueprint, request, jsonify, session
 from config import Config
 from db import db
 from db.models import User, Comment, CommentLike, Upload
-from utils.security import login_required
+from utils.security import login_required, is_rate_limited, get_client_ip
 
 comments_bp = Blueprint("comments", __name__)
 
@@ -42,6 +42,9 @@ def handle_comments(image_name):
 
     if "user_id" not in session:
         return jsonify({"error": "login required"}), 401
+
+    if is_rate_limited(f"comments_post:{get_client_ip()}", 30, 60):
+        return jsonify({"error": "Muitas requisições. Tente novamente em instantes."}), 429
 
     # suporta JSON e multipart
     if request.content_type and "multipart/form-data" in request.content_type:

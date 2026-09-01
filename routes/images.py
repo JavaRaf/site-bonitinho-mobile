@@ -8,7 +8,7 @@ from flask import Blueprint, request, jsonify, session, send_from_directory, sen
 from PIL import Image, ImageOps
 from db import db
 from db.models import User, Upload, Like, Comment, Block
-from utils.security import login_required, safe_path
+from utils.security import login_required, safe_path, rate_limit
 from config import Config
 
 images_bp = Blueprint("images", __name__)
@@ -274,6 +274,7 @@ def search_posts():
 
 @images_bp.route("/api/upload", methods=["POST"])
 @login_required
+@rate_limit(max_requests=20, window=60)
 def upload_images():
     from routes.push import send_push
 
@@ -539,6 +540,7 @@ def delete_my_image(image_name):
 
 @images_bp.route("/api/auth/avatar", methods=["POST", "DELETE"])
 @login_required
+@rate_limit(max_requests=10, window=3600)
 def avatar_upload():
     avatar_dir = Config.BASE_DIR / "static" / "avatars"
     avatar_dir.mkdir(parents=True, exist_ok=True)

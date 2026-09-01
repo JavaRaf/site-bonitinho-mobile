@@ -1821,6 +1821,7 @@ body.clone-top #headerClone { top: 0; }
   max-height: 80dvh;
   object-fit: contain;
   display: block;
+  max-height: 622px;
 }
 
 .feed-img .video-player video {

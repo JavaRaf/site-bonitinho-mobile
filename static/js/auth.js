@@ -50,6 +50,10 @@ async function submitAuth(endpoint, username, password, display_name, email) {
         });
         const data = await res.json();
         if (!res.ok) {
+            if (res.status === 429) {
+                showError(data.error || "Muitas requisições. Tente novamente em instantes.");
+                return;
+            }
             const msg = translateError(data.error || "Erro desconhecido");
             // if duplicate username, show inline field error too
             if (res.status === 409 && msg.includes("já em uso")) {
