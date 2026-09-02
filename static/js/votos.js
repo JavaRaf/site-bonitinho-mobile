@@ -141,6 +141,13 @@ async function loadWinners() {
             } catch {}
         });
     });
+
+    document.querySelectorAll("#vencedorasList .winner-caption").forEach(el => {
+        el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            el.classList.toggle("expanded");
+        });
+    });
 }
 
 function formatDate(dateStr) {
