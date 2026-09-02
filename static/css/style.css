@@ -3063,6 +3063,73 @@ body.clone-top #headerClone { top: 0; }
 .vp-play { width: 34px; height: 34px; }
 .vp-play svg { width: 18px; height: 18px; }
 
+/* Settings gear + panel */
+.vp-settings.active { background: rgba(255,255,255,0.25); }
+
+.vp-settings-panel {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 54px;
+  min-width: 210px;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(24, 25, 26, 0.95);
+  color: #fff;
+  font-size: 0.75rem;
+  z-index: 4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
+
+.vp-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+}
+.vp-settings-row:last-child { margin-bottom: 0; }
+
+.vp-settings-vol {
+  width: 96px;
+  accent-color: var(--btn-bg);
+  cursor: pointer;
+}
+.vp-settings-vol-val {
+  display: inline-block;
+  min-width: 2.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vp-settings-switch {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.vp-settings-switch[aria-checked="true"] { background: var(--btn-bg); }
+.vp-settings-switch:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.vp-settings-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s;
+}
+.vp-settings-switch[aria-checked="true"] .vp-settings-thumb { left: 20px; }
+
 .vp-time { font-size: 0.7rem; white-space: nowrap; }
 .vp-speed { font-size: 0.7rem; min-width: 36px; height: 24px; padding: 0 6px; border-radius: 4px; }
 

@@ -91,12 +91,41 @@ function currentVideoVolumePref() {
 
 function saveVideoVolumePref(volume) {
     try { localStorage.setItem("mikanet_video_volume", String(volume)); } catch {}
+    syncVideoSettingsUI();
 }
 
 function applyVideoVolumePref(volume) {
     document.querySelectorAll(".video-player video").forEach(v => {
         if (!v.muted) v.volume = volume;
     });
+}
+
+/* Preferência de autoplay de vídeos do usuário (localStorage) */
+const VIDEO_AUTOPLAY_KEY = "mikanet_video_autoplay";
+
+function currentVideoAutoplayPref() {
+    try {
+        const v = localStorage.getItem(VIDEO_AUTOPLAY_KEY);
+        return v === null ? true : v !== "0";
+    } catch {
+        return true;
+    }
+}
+
+function setVideoAutoplayPref(enabled) {
+    try { localStorage.setItem(VIDEO_AUTOPLAY_KEY, enabled ? "1" : "0"); } catch {}
+    syncVideoSettingsUI();
+    scheduleAutoPlayCheck();
+}
+
+function syncVideoSettingsUI() {
+    const autoplay = currentVideoAutoplayPref();
+    document.querySelectorAll(".video-player .vp-autoplay-btn").forEach(b => {
+        b.setAttribute("aria-checked", autoplay ? "true" : "false");
+    });
+    const vol = Math.round(currentVideoVolumePref() * 100);
+    document.querySelectorAll(".video-player .vp-settings-vol").forEach(s => { s.value = vol; });
+    document.querySelectorAll(".video-player .vp-settings-vol-val").forEach(el => { el.textContent = vol + "%"; });
 }
 
 /* Autoplay: vídeo toca quando está no centro (destaque) e pausa ao sair */
@@ -116,6 +145,7 @@ function scheduleAutoPlayCheck() {
 }
 
 function updateAutoPlayAll() {
+    const autoplayEnabled = currentVideoAutoplayPref();
     const vh = window.innerHeight || document.documentElement.clientHeight;
     AUTOPLAY_VIDEOS.forEach(wrapper => {
         if (wrapper.dataset.inLightbox === "1") return;
@@ -127,6 +157,7 @@ function updateAutoPlayAll() {
             if (!video.paused) video.pause();
             return;
         }
+        if (!autoplayEnabled) return;
         const centerY = r.top + r.height / 2;
         const centered = centerY > vh * 0.33 && centerY < vh * 0.67;
         if (centered) {
@@ -173,6 +204,11 @@ function initVideoPlayer(wrapper) {
     const loadingEl = wrapper.querySelector(".vp-loading");
     const bigPlay = wrapper.querySelector(".vp-big-play");
     const tooltip = wrapper.querySelector(".vp-tooltip");
+    const settingsBtn = wrapper.querySelector(".vp-settings");
+    const settingsPanel = wrapper.querySelector(".vp-settings-panel");
+    const autoplaySwitch = wrapper.querySelector(".vp-autoplay-btn");
+    const volSlider = wrapper.querySelector(".vp-settings-vol");
+    const volVal = wrapper.querySelector(".vp-settings-vol-val");
 
     const tapIndicator = document.createElement("div");
     tapIndicator.className = "vp-tap-indicator";
@@ -230,7 +266,11 @@ function initVideoPlayer(wrapper) {
     playBtn.addEventListener("click", (e) => { e.stopPropagation(); togglePlay(); });
     bigPlay.addEventListener("click", (e) => { e.stopPropagation(); togglePlay(); });
     wrapper.addEventListener("click", (e) => {
-        if (e.target.closest(".vp-controls") || e.target.closest(".vp-big-play")) return;
+        if (settingsPanel && !settingsPanel.hidden && !e.target.closest(".vp-settings-panel") && !e.target.closest(".vp-settings")) {
+            closeSettings();
+            return;
+        }
+        if (e.target.closest(".vp-controls") || e.target.closest(".vp-big-play") || e.target.closest(".vp-settings-panel") || e.target.closest(".vp-settings")) return;
         const rect = wrapper.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
@@ -244,6 +284,38 @@ function initVideoPlayer(wrapper) {
             openVideoLightbox(wrapper);
         }
     });
+
+    /* Preferências (engrenagem) */
+    function closeSettings() {
+        settingsPanel.hidden = true;
+        if (settingsBtn) settingsBtn.classList.remove("active");
+    }
+
+    if (settingsBtn && settingsPanel) {
+        settingsBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const opening = settingsPanel.hidden;
+            settingsPanel.hidden = !opening;
+            settingsBtn.classList.toggle("active", opening);
+            if (opening) {
+                syncVideoSettingsUI();
+                showControls();
+            }
+        });
+        if (autoplaySwitch) {
+            autoplaySwitch.addEventListener("click", (e) => {
+                e.stopPropagation();
+                setVideoAutoplayPref(!currentVideoAutoplayPref());
+            });
+        }
+        if (volSlider) {
+            volSlider.addEventListener("input", (e) => {
+                e.stopPropagation();
+                setVolume(parseInt(e.target.value, 10) / 100);
+                syncVideoSettingsUI();
+            });
+        }
+    }
 
     /* Progress */
     function updateProgress() {
@@ -387,7 +459,7 @@ function initVideoPlayer(wrapper) {
 
     function updateControlsVisibility() {
         const showExtras = isFullscreen() || wrapper.dataset.inLightbox === "1";
-        const extraControls = wrapper.querySelectorAll(".vp-volume, .vp-time, .vp-spacer, .vp-speed, .vp-pip, .vp-progress-wrap");
+        const extraControls = wrapper.querySelectorAll(".vp-volume, .vp-time, .vp-spacer, .vp-speed, .vp-pip");
         extraControls.forEach(el => { el.style.display = showExtras ? "" : "none"; });
         const playBtn = wrapper.querySelector(".vp-play");
         if (playBtn) playBtn.style.display = "";
@@ -429,12 +501,16 @@ function initVideoPlayer(wrapper) {
     video.addEventListener("canplay", () => { loadingEl.style.display = "none"; });
     video.addEventListener("playing", () => { loadingEl.style.display = "none"; });
 
+    function panelOpen() {
+        return settingsPanel && !settingsPanel.hidden;
+    }
+
     /* Auto-hide controls */
     function showControls() {
         controls.classList.add("visible");
         wrapper.classList.remove("hide-cursor");
         clearTimeout(hideTimer);
-        if (!video.paused) {
+        if (!video.paused && !panelOpen()) {
             hideTimer = setTimeout(() => {
                 controls.classList.remove("visible");
                 wrapper.classList.add("hide-cursor");
@@ -446,7 +522,7 @@ function initVideoPlayer(wrapper) {
     wrapper.addEventListener("touchstart", showControls, { passive: true });
     wrapper.addEventListener("mouseenter", showControls);
     wrapper.addEventListener("mouseleave", () => {
-        if (!video.paused) {
+        if (!video.paused && !panelOpen()) {
             clearTimeout(hideTimer);
             hideTimer = setTimeout(() => {
                 controls.classList.remove("visible");
@@ -496,6 +572,7 @@ function initVideoPlayer(wrapper) {
     controls.classList.add("visible");
     updatePlayIcon();
     updateProgress();
+    syncVideoSettingsUI();
 
     registerAutoPlay(wrapper);
 }
@@ -510,7 +587,7 @@ function createVideoPlayerHTML(src, highPrio) {
             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
         </button>
         <div class="vp-controls">
-            <div class="vp-progress-wrap" style="display:none">
+            <div class="vp-progress-wrap">
                 <div class="vp-progress-buffer"></div>
                 <div class="vp-progress-fill"></div>
                 <div class="vp-progress-handle"></div>
@@ -537,6 +614,19 @@ function createVideoPlayerHTML(src, highPrio) {
                 <button class="vp-mute vp-btn" type="button" aria-label="Mudo">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 </button>
+                <button class="vp-settings vp-btn" type="button" aria-label="Preferências">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="vp-settings-panel" hidden>
+            <div class="vp-settings-row">
+                <span>Autoplay</span>
+                <button class="vp-settings-switch vp-autoplay-btn" type="button" role="switch" aria-checked="true" aria-label="Autoplay de vídeos"><span class="vp-settings-thumb"></span></button>
+            </div>
+            <div class="vp-settings-row">
+                <span>Volume padrão: <span class="vp-settings-vol-val">100%</span></span>
+                <input type="range" class="vp-settings-vol" min="0" max="100" step="5" value="100" aria-label="Volume padrão">
             </div>
         </div>
     </div>`;
