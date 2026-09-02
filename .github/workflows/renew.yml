@@ -2,8 +2,8 @@ name: Renew PythonAnywhere Webapp
 
 on:
   schedule:
-    # Roda a cada 25 dias às 06:00 UTC (03:00 Horário de Brasília)
-    - cron: '0 6 */25 * *'
+    # Roda nos dias 1 e 15 de cada mês às 06:00 UTC (03:00 Horário de Brasília)
+    - cron: '0 6 1,15 * *'
   workflow_dispatch: # Permite rodar manualmente pelo painel do GitHub
 
 jobs:
