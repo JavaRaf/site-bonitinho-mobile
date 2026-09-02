@@ -2660,9 +2660,7 @@ body.clone-top #headerClone { top: 0; }
   cursor: grab;
 }
 
-.lightbox-img-wrap.zoomed {
-  cursor: grab;
-}
+
 
 .lightbox-img {
   max-width: 100%;
@@ -2803,7 +2801,7 @@ body.clone-top #headerClone { top: 0; }
 
 /* Make feed images clickable */
 .feed-img {
-  cursor: zoom-in;
+  cursor: pointer;
   position: relative;
 }
 
