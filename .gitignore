@@ -1,6 +1,7 @@
 .venv
 db/app.db*
 images/
+winners/
 comment-media/
 thumbs/
 static/avatars/

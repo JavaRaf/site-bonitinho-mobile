@@ -39,9 +39,8 @@ function getPostType(post) {
 }
 
 function getFilteredPosts() {
-    let posts = allPosts;
-    if (postFilter === "eleicao") posts = posts.filter(p => p.eleicao);
-    else if (postFilter !== "all") posts = posts.filter(p => getPostType(p) === postFilter);
+    let posts = allPosts.filter(p => !p.eleicao);
+    if (postFilter !== "all") posts = posts.filter(p => getPostType(p) === postFilter);
 
     const q = postQuery.trim().toLowerCase();
     if (q) {
@@ -85,8 +84,8 @@ function renderPosts() {
         const body = type === "text"
             ? `<div class="admin-text-thumb">${esc(img.caption || "")}</div>`
             : type === "video"
-                ? `<video src="/images/${esc(img.name)}" muted playsinline preload="metadata" class="admin-card-thumb"></video>`
-                : `<img src="/images/${esc(img.name)}" alt="${esc(img.name)}" loading="lazy">`;
+                ? `<div class="admin-card-media"><video src="/images/${esc(img.name)}" muted playsinline preload="metadata"></video></div>`
+                : `<div class="admin-card-media"><img src="/images/${esc(img.name)}" alt="${esc(img.name)}" loading="lazy"></div>`;
         return `
         <div class="admin-card" data-name="${esc(img.name)}">
             <div class="admin-card-info">
@@ -252,33 +251,6 @@ document.getElementById("adminRemoveLikes").addEventListener("click", async () =
     const res = await api("DELETE", "/api/admin/likes", { images: [...selected] });
     if (res.ok) showStatus("Likes removidos");
     loadPosts();
-});
-
-/* Export collage */
-document.getElementById("adminExportCollage").addEventListener("click", async () => {
-    const btn = document.getElementById("adminExportCollage");
-    const original = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Aguarde...";
-    try {
-        const res = await api("POST", "/api/admin/collage", { images: [...selected] });
-        if (!res.ok) {
-            const data = await res.json().catch(() => null);
-            showStatus(data?.error || "Erro ao exportar");
-            return;
-        }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "collage.png";
-        a.click();
-        URL.revokeObjectURL(url);
-        showStatus("Collage exportada");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = original;
-    }
 });
 
 /* === Users tab === */
@@ -531,25 +503,291 @@ document.getElementById("turnoReset").addEventListener("click", async () => {
 });
 
 /* === Tab switching === */
+let currentTab = "posts";
+let currentSubtab = "posts";
+
 document.querySelectorAll(".admin-tab").forEach(tab => {
     tab.addEventListener("click", () => {
         document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
-        const tabName = tab.dataset.tab;
-        document.getElementById("tabPosts").style.display = tabName === "posts" ? "" : "none";
-        document.getElementById("tabUsers").style.display = tabName === "users" ? "" : "none";
-        document.getElementById("tabTurnos").style.display = tabName === "turnos" ? "" : "none";
-        document.getElementById("actionsPosts").style.display = tabName === "posts" ? "" : "none";
+        currentTab = tab.dataset.tab;
+        document.getElementById("tabPosts").style.display = currentTab === "posts" ? "" : "none";
+        document.getElementById("tabUsers").style.display = currentTab === "users" ? "" : "none";
+        document.getElementById("tabEleicao").style.display = currentTab === "eleicao" ? "" : "none";
+        document.getElementById("actionsPosts").style.display = currentTab === "posts" ? "" : "none";
         document.getElementById("actionsUsers").style.display = "none";
-        document.getElementById("actionsTurnos").style.display = "none";
-        if (tabName === "posts") loadPosts();
-        if (tabName === "users") {
+        if (currentTab === "posts") loadPosts();
+        if (currentTab === "users") {
             loadUsers();
             loadApprovalSetting();
         }
-        if (tabName === "turnos") loadTurnos();
+        if (currentTab === "eleicao") {
+            if (currentSubtab === "turnos") loadTurnos();
+            else loadEleicaoPosts();
+        }
     });
 });
+
+/* === Subtab switching (Eleição) === */
+document.querySelectorAll(".admin-subtab").forEach(subtab => {
+    subtab.addEventListener("click", () => {
+        document.querySelectorAll(".admin-subtab").forEach(s => s.classList.remove("active"));
+        subtab.classList.add("active");
+        currentSubtab = subtab.dataset.subtab;
+        document.getElementById("subtabTurnos").style.display = currentSubtab === "turnos" ? "" : "none";
+        document.getElementById("subtabPosts").style.display = currentSubtab === "posts" ? "" : "none";
+        if (currentSubtab === "turnos") loadTurnos();
+        else if (currentSubtab === "posts") loadEleicaoPosts();
+    });
+});
+
+/* === Eleicao posts subtab === */
+let selectedEleicao = new Set();
+let winnerNames = new Set();
+
+function renderEleicaoPosts() {
+    const grid = document.getElementById("eleicaoPostsGrid");
+    const posts = allPosts.filter(p => p.eleicao && !winnerNames.has(p.name));
+
+    const q = postQuery.trim().toLowerCase();
+    const filtered = q
+        ? posts.filter(p =>
+            (p.owner || "").toLowerCase().includes(q) ||
+            (p.caption || "").toLowerCase().includes(q)
+        )
+        : posts;
+
+    const sorted = [...filtered].sort((a, b) => {
+        if (postSort === "popular") {
+            const la = a.likes || 0, lb = b.likes || 0;
+            if (la !== lb) return lb - la;
+        }
+        const da = new Date(a.created_at || 0).getTime() || 0;
+        const dbb = new Date(b.created_at || 0).getTime() || 0;
+        return dbb - da;
+    });
+
+    if (!sorted.length) {
+        grid.innerHTML = `<div class="admin-empty"><p>Nenhum post com tag Eleição.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = sorted.map(img => {
+        const type = getPostType(img);
+        const typeBadge = type === "video" ? '<span class="admin-type-badge admin-type-video">Video</span>' : "";
+        const body = type === "text"
+            ? `<div class="admin-text-thumb">${esc(img.caption || "")}</div>`
+            : type === "video"
+                ? `<div class="admin-card-media"><video src="/images/${esc(img.name)}" muted playsinline preload="metadata"></video></div>`
+                : `<div class="admin-card-media"><img src="/images/${esc(img.name)}" alt="${esc(img.name)}" loading="lazy"></div>`;
+        return `
+        <div class="admin-card" data-name="${esc(img.name)}">
+            <div class="admin-card-info">
+                <span style="font-weight: 700; font-size: 0.75rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">@${esc(img.owner || "\u2014")}</span>
+                <div class="admin-card-caption">
+                    ${img.caption ? esc(img.caption) : '<span style="color: var(--text-muted); font-style: italic;">Sem legenda</span>'}
+                </div>
+            </div>
+            ${body}
+            <input type="checkbox" class="admin-select">
+            <div class="admin-card-tags">
+                ${typeBadge}
+                <button class="admin-nsfw-btn${img.nsfw ? ' active' : ''}" data-name="${esc(img.name)}" title="Marcar NSFW">NSFW</button>
+                <button class="admin-eleicao-btn active" data-name="${esc(img.name)}" title="Marcar Eleição">Eleição</button>
+                <span class="admin-card-likes" style="margin-left: auto;"><img src="/static/svg/upvote-filled.svg" alt="" class="admin-card-upvote"> ${img.likes || 0}${img.likers && img.likers.length ? '<span class="admin-card-arrow"></span>' : ""}</span>
+            </div>
+            <div class="admin-likers">
+                ${img.likers && img.likers.length
+                    ? img.likers.map(u => `<span class="admin-liker-tag" data-user-id="${u.id}" data-image="${esc(img.name)}"><span class="admin-liker-name">@${esc(u.username)}</span><img src="/static/svg/trash.svg" alt="del" class="admin-liker-icon"></span>`).join("")
+                    : `<span style="font-size:0.6875rem;color:#9ca3af">Nenhum like</span>`}
+            </div>
+        </div>`;
+    }).join("");
+
+    grid.querySelectorAll(".admin-card").forEach(card => {
+        card.addEventListener("click", e => {
+            if (e.target.closest(".admin-liker-tag") || e.target.closest(".admin-select") || e.target.closest(".admin-nsfw-btn") || e.target.closest(".admin-eleicao-btn")) return;
+            card.classList.toggle("expanded");
+        });
+
+        const selectBtn = card.querySelector(".admin-select");
+        if (selectBtn) {
+            selectBtn.addEventListener("change", e => {
+                e.stopPropagation();
+                const name = card.dataset.name;
+                if (e.target.checked) {
+                    selectedEleicao.add(name);
+                    card.classList.add("selected");
+                } else {
+                    selectedEleicao.delete(name);
+                    card.classList.remove("selected");
+                }
+            });
+        }
+    });
+
+    grid.querySelectorAll(".admin-nsfw-btn").forEach(nsfwBtn => {
+        nsfwBtn.addEventListener("click", async e => {
+            e.stopPropagation();
+            const name = nsfwBtn.dataset.name;
+            const isActive = nsfwBtn.classList.contains("active");
+            nsfwBtn.classList.toggle("active");
+            try {
+                await api("POST", "/api/admin/nsfw", { name, nsfw: !isActive });
+                showStatus(isActive ? "NSFW removido" : "Marcado como NSFW");
+            } catch { nsfwBtn.classList.toggle("active"); }
+        });
+    });
+
+    grid.querySelectorAll(".admin-eleicao-btn").forEach(eleicaoBtn => {
+        eleicaoBtn.addEventListener("click", async e => {
+            e.stopPropagation();
+            const name = eleicaoBtn.dataset.name;
+            eleicaoBtn.classList.toggle("active");
+            try {
+                await api("POST", "/api/admin/eleicao", { name, eleicao: eleicaoBtn.classList.contains("active") });
+                showStatus(eleicaoBtn.classList.contains("active") ? "Marcada como Eleição" : "Eleição removida");
+                await loadPosts();
+                renderEleicaoPosts();
+            } catch { eleicaoBtn.classList.toggle("active"); }
+        });
+    });
+
+    grid.querySelectorAll(".admin-liker-tag").forEach(tag => {
+        tag.addEventListener("click", async e => {
+            e.stopPropagation();
+            if (!await askConfirm("Remover este like?")) return;
+            await api("DELETE", `/api/admin/likes/${encodeURIComponent(tag.dataset.image)}/${tag.dataset.userId}`);
+            showStatus("Like removido");
+            await loadPosts();
+            renderEleicaoPosts();
+        });
+    });
+}
+
+async function loadEleicaoPosts() {
+    if (!allPosts.length) await loadPosts();
+    try {
+        const res = await fetch("/api/admin/eleicao/vencedoras/all");
+        const winners = await res.json();
+        winnerNames = new Set(winners.map(w => w.image_name));
+    } catch { winnerNames = new Set(); }
+    renderEleicaoPosts();
+}
+
+/* Select all eleicao posts */
+document.getElementById("adminSelectAllEleicaoPosts")?.addEventListener("click", () => {
+    const cards = document.querySelectorAll("#eleicaoPostsGrid .admin-card");
+    const names = [...cards].map(c => c.dataset.name);
+    const allSelected = names.length > 0 && names.every(n => selectedEleicao.has(n));
+    cards.forEach(c => {
+        const cb = c.querySelector(".admin-select");
+        if (allSelected) {
+            selectedEleicao.delete(c.dataset.name);
+            c.classList.remove("selected");
+            if (cb) cb.checked = false;
+        } else {
+            selectedEleicao.add(c.dataset.name);
+            c.classList.add("selected");
+            if (cb) cb.checked = true;
+        }
+    });
+    document.getElementById("adminSelectAllEleicaoPosts").textContent = allSelected ? "Selecionar todas" : "Limpar selecao";
+});
+
+/* Delete selected eleicao posts */
+document.getElementById("adminDeleteSelectedEleicao")?.addEventListener("click", async () => {
+    if (!selectedEleicao.size) return;
+    if (!await askConfirm(`Excluir ${selectedEleicao.size} post(s)?`)) return;
+    const res = await api("DELETE", "/api/admin/images", { images: [...selectedEleicao] });
+    if (res.ok) {
+        showStatus(`${selectedEleicao.size} excluido(s)`);
+        selectedEleicao.clear();
+        loadPosts();
+        renderEleicaoPosts();
+    }
+});
+
+/* Remove likes eleicao posts */
+document.getElementById("adminRemoveLikesEleicao")?.addEventListener("click", async () => {
+    if (!selectedEleicao.size) return;
+    if (!await askConfirm(`Remover likes de ${selectedEleicao.size} post(s)?`)) return;
+    const res = await api("DELETE", "/api/admin/likes", { images: [...selectedEleicao] });
+    if (res.ok) showStatus("Likes removidos");
+    loadPosts();
+    renderEleicaoPosts();
+});
+
+/* Export collage eleicao posts */
+document.getElementById("adminExportCollageEleicao")?.addEventListener("click", async () => {
+    const btn = document.getElementById("adminExportCollageEleicao");
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Aguarde...";
+    try {
+        const res = await api("POST", "/api/admin/collage", { images: [...selectedEleicao] });
+        if (!res.ok) {
+            const data = await res.json().catch(() => null);
+            showStatus(data?.error || "Erro ao exportar");
+            return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "collage.png";
+        a.click();
+        URL.revokeObjectURL(url);
+        showStatus("Collage exportada");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+    }
+});
+
+/* Vencedora from eleicao posts subtab */
+document.getElementById("adminAddWinnerFromPosts")?.addEventListener("click", () => {
+    const names = [...selectedEleicao];
+    if (!names.length) { showAlert("Nenhuma imagem selecionada. Marque uma imagem na lista para adicioná-la como vencedora."); return; }
+    if (names.length > 1) { showAlert("Selecione apenas uma imagem para marcar como vencedora."); return; }
+    const post = allPosts.find(p => p.name === names[0]);
+    if (!post || !post.eleicao) { showAlert("Apenas imagens com tag Eleição podem ser vencedoras."); return; }
+
+    const overlay = document.getElementById("winnerModal");
+    const previewWrap = document.getElementById("winnerImages");
+    const captionInput = document.getElementById("winnerCaption");
+    const numberInput = document.getElementById("winnerNumber");
+    const dateInput = document.getElementById("winnerDate");
+
+    previewWrap.innerHTML = `<img src="/images/${esc(names[0])}" alt="${esc(names[0])}" loading="lazy">`;
+    captionInput.value = "";
+    numberInput.value = "";
+    dateInput.value = new Date().toISOString().slice(0, 10);
+    overlay.classList.add("open");
+
+    document.getElementById("winnerCancel").onclick = () => overlay.classList.remove("open");
+    overlay.addEventListener("click", function onClose(e) {
+        if (e.target === overlay) { overlay.classList.remove("open"); overlay.removeEventListener("click", onClose); }
+    });
+
+    document.getElementById("winnerConfirm").onclick = async () => {
+        const numVal = numberInput.value.trim().replace(/^#/, "");
+        const body = { image_name: names[0], caption: captionInput.value.trim() };
+        if (numVal) body.number = parseInt(numVal, 10);
+        if (dateInput.value) body.date = dateInput.value;
+        const res = await api("POST", "/api/admin/eleicao/vencedoras", body);
+        const data = await res.json().catch(() => null);
+        if (res.ok) {
+            showStatus(`Vencedora #${String(data.number).padStart(4, "0")} salva`);
+            overlay.classList.remove("open");
+            renderEleicaoPosts();
+        } else {
+            showStatus(data?.error || "Erro ao salvar");
+        }
+    };
+});
+
+/* === Winners admin (removido - gestão feita na /eleicao) === */
 
 /* === Helpers === */
 async function api(method, url, body) {

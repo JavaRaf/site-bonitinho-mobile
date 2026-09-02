@@ -34,11 +34,13 @@ class Config:
     MAX_VIDEO_SECONDS = 120
     IMAGES_DIR = BASE_DIR / "images"
     COMMENT_MEDIA_DIR = BASE_DIR / "comment-media"
+    WINNER_DIR = BASE_DIR / "winners"
 
 
 (Config.BASE_DIR / "db").mkdir(parents=True, exist_ok=True)
 (Config.IMAGES_DIR).mkdir(parents=True, exist_ok=True)
 (Config.THUMB_DIR).mkdir(parents=True, exist_ok=True)
 (Config.COMMENT_MEDIA_DIR).mkdir(parents=True, exist_ok=True)
+(Config.WINNER_DIR).mkdir(parents=True, exist_ok=True)
 (Config.BASE_DIR / "static" / "avatars").mkdir(parents=True, exist_ok=True)
 (Config.BASE_DIR / "static" / "covers").mkdir(parents=True, exist_ok=True)

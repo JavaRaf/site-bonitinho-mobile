@@ -13,6 +13,7 @@
   <title>Eleição — MikanNet</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/votos.css">
+  <link rel="stylesheet" href="/static/css/modals.css">
   <script src="/static/js/theme.js"></script>
 </head>
 <body class="votos-page">
@@ -22,8 +23,56 @@
     <h2>Eleição</h2>
   </div>
 
-  <div class="votos-list" id="votosList"></div>
+  <div class="votos-tabs">
+    <button class="votos-tab active" data-tab="ranking">Ranking</button>
+    <button class="votos-tab" data-tab="vencedoras">Vencedoras</button>
+  </div>
 
+  <div id="tabRanking">
+    <div class="votos-list" id="votosList"></div>
+  </div>
+
+  <div id="tabVencedoras" style="display:none">
+    <div class="votos-tab-header">
+      <button class="votos-add-winner" id="addWinnerBtn" style="display:none" title="Adicionar vencedora">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+      </button>
+    </div>
+    <div class="votos-list" id="vencedorasList"></div>
+  </div>
+
+  <div class="winner-modal-overlay" id="winnerModal">
+    <div class="winner-modal-card">
+      <h3>Adicionar Vencedora</h3>
+      <div class="winner-modal-upload" id="winnerUpload">
+        <input type="file" id="winnerFileInput" accept="image/*" hidden>
+        <div class="winner-modal-preview" id="winnerPreview">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span>Carregar imagem</span>
+        </div>
+      </div>
+      <div class="winner-modal-fields">
+        <label class="winner-modal-label">
+          <span>Legenda</span>
+          <input type="text" id="winnerCaption" class="winner-modal-input" placeholder="Opcional" maxlength="200">
+        </label>
+        <label class="winner-modal-label">
+          <span>Número</span>
+          <input type="text" id="winnerNumber" class="winner-modal-input" placeholder="Ex: 0001" maxlength="10">
+        </label>
+        <label class="winner-modal-label">
+          <span>Data</span>
+          <input type="date" id="winnerDate" class="winner-modal-input">
+        </label>
+      </div>
+      <div class="winner-modal-actions">
+        <button id="winnerCancel" class="winner-modal-btn secondary">Cancelar</button>
+        <button id="winnerConfirm" class="winner-modal-btn primary">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/modals.js"></script>
   <script src="/static/js/votos.js"></script>
 </body>
 </html>

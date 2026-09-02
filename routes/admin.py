@@ -1,14 +1,28 @@
+import os
 import re
+import uuid
 from pathlib import Path
 
 from flask import Blueprint, request, jsonify, session
 from db import db
-from db.models import User, Upload, Like, Round, Setting
+from db.models import User, Upload, Like, Round, Setting, Winner
 from utils.security import admin_required, get_setting, set_setting
 from utils.validation import normalize_username, validate_username
 from config import Config
 
 admin_bp = Blueprint("admin", __name__)
+
+
+def _save_winner_image_webp(data):
+    """Converte a imagem para WebP (qualidade reduzida) e salva em Config.WINNER_DIR.
+    Retorna o nome do arquivo salvo (com extensão .webp)."""
+    from io import BytesIO
+    from PIL import Image
+    img = Image.open(BytesIO(data))
+    img = img.convert("RGB")
+    new_name = f"{uuid.uuid4().hex[:8]}.webp"
+    img.save(Config.WINNER_DIR / new_name, "WEBP", quality=75)
+    return new_name
 
 
 @admin_bp.route("/api/admin/images", methods=["DELETE"])
@@ -353,3 +367,150 @@ def admin_turnos_reset():
     Round.query.delete()
     db.session.commit()
     return jsonify({"ok": True})
+
+
+@admin_bp.route("/api/admin/eleicao/vencedoras/all", methods=["GET"])
+@admin_required
+def admin_list_all_winners():
+    winners = Winner.query.order_by(Winner.number.desc()).all()
+    result = [{
+        "id": w.id,
+        "image_name": w.image_name,
+        "caption": w.caption or "",
+        "number": w.number,
+        "created_at": w.created_at,
+    } for w in winners]
+    return jsonify(result)
+
+
+@admin_bp.route("/api/admin/eleicao/vencedoras", methods=["POST"])
+@admin_required
+def admin_create_winner():
+    from datetime import datetime
+    from config import Config
+
+    data = request.get_json(silent=True) or {}
+    image_name = (data.get("image_name") or "").strip()
+    caption = (data.get("caption") or "").strip()
+    custom_number = data.get("number")
+    custom_date = (data.get("date") or "").strip()
+
+    if not image_name:
+        return jsonify({"error": "image_name obrigatorio"}), 400
+
+    upload = Upload.query.filter_by(image_name=image_name, active=1).first()
+    if not upload:
+        return jsonify({"error": "imagem nao encontrada"}), 404
+
+    if Winner.query.filter_by(image_name=image_name).first():
+        return jsonify({"error": "esta imagem ja e uma vencedora"}), 409
+
+    src = Config.IMAGES_DIR / image_name
+    if not src.exists():
+        return jsonify({"error": "arquivo de imagem nao encontrado"}), 404
+
+    Config.WINNER_DIR.mkdir(parents=True, exist_ok=True)
+
+    try:
+        new_name = _save_winner_image_webp(src.read_bytes())
+    except Exception:
+        return jsonify({"error": "imagem invalida"}), 400
+
+    if custom_number is not None:
+        try:
+            num = int(custom_number)
+        except (TypeError, ValueError):
+            return jsonify({"error": "numero invalido"}), 400
+        if Winner.query.filter_by(number=num).first():
+            return jsonify({"error": f"numero #{num:04d} ja esta em uso"}), 409
+    else:
+        max_num = db.session.query(db.func.coalesce(db.func.max(Winner.number), 0)).scalar()
+        num = max_num + 1
+
+    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    if custom_date:
+        try:
+            datetime.strptime(custom_date, "%Y-%m-%d")
+            created_at = custom_date + " 00:00:00"
+        except ValueError:
+            pass
+
+    winner = Winner(image_name=new_name, caption=caption, number=num, created_at=created_at)
+    db.session.add(winner)
+    db.session.commit()
+    return jsonify({"ok": True, "number": num, "image_name": new_name})
+
+
+@admin_bp.route("/api/admin/eleicao/vencedoras/<int:winner_id>", methods=["DELETE"])
+@admin_required
+def admin_delete_winner(winner_id):
+    from config import Config
+    winner = Winner.query.get(winner_id)
+    if not winner:
+        return jsonify({"error": "nao encontrada"}), 404
+    try:
+        filepath = Config.WINNER_DIR / Path(winner.image_name).name
+        if filepath.exists():
+            filepath.unlink()
+    except Exception:
+        pass
+    db.session.delete(winner)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@admin_bp.route("/api/admin/eleicao/vencedoras/upload", methods=["POST"])
+@admin_required
+def admin_upload_winner():
+    from datetime import datetime
+    from config import Config
+
+    file = request.files.get("image")
+    if not file or not file.filename:
+        return jsonify({"error": "imagem obrigatoria"}), 400
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in Config.ALLOWED_EXTENSIONS:
+        return jsonify({"error": "formato nao permitido"}), 400
+
+    caption = (request.form.get("caption") or "").strip()[:200]
+    custom_number = request.form.get("number")
+    custom_date = (request.form.get("date") or "").strip()
+
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+    if size > Config.MAX_IMAGE_BYTES:
+        return jsonify({"error": "arquivo muito grande (max 10 MB)"}), 413
+
+    Config.WINNER_DIR.mkdir(parents=True, exist_ok=True)
+
+    try:
+        new_name = _save_winner_image_webp(file.read())
+    except Exception:
+        return jsonify({"error": "imagem invalida"}), 400
+
+    if custom_number is not None:
+        try:
+            num = int(custom_number)
+        except (TypeError, ValueError):
+            return jsonify({"error": "numero invalido"}), 400
+        if Winner.query.filter_by(number=num).first():
+            return jsonify({"error": f"numero #{num:04d} ja esta em uso"}), 409
+    else:
+        max_num = db.session.query(db.func.coalesce(db.func.max(Winner.number), 0)).scalar()
+        num = max_num + 1
+
+    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    if custom_date:
+        try:
+            datetime.strptime(custom_date, "%Y-%m-%d")
+            created_at = custom_date + " 00:00:00"
+        except ValueError:
+            pass
+
+    winner = Winner(image_name=new_name, caption=caption, number=num, created_at=created_at)
+    db.session.add(winner)
+    db.session.commit()
+
+    return jsonify({"ok": True, "number": num, "image_name": new_name})

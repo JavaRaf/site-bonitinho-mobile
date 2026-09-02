@@ -27,7 +27,7 @@
   <div class="admin-tabs">
     <button class="admin-tab active" data-tab="posts">Posts</button>
     <button class="admin-tab" data-tab="users">Usuários</button>
-    <button class="admin-tab" data-tab="turnos">Turnos</button>
+    <button class="admin-tab" data-tab="eleicao">Eleição</button>
   </div>
 
   <div id="actionsPosts">
@@ -47,14 +47,12 @@
         <button class="admin-filter" data-filter="image">Imagens</button>
         <button class="admin-filter" data-filter="video">Videos</button>
         <button class="admin-filter" data-filter="text">Textos</button>
-        <button class="admin-filter" data-filter="eleicao">Eleição</button>
       </div>
     </div>
     <div class="admin-scrollrow admin-post-actions-row">
       <button class="admin-btn outline" id="adminSelectAll">Selecionar todas</button>
       <button class="admin-btn danger" id="adminDeleteSelected">Excluir</button>
       <button class="admin-btn outline" id="adminRemoveLikes">Remover likes</button>
-      <button class="admin-btn outline" id="adminExportCollage">Exportar collage</button>
     </div>
     <span id="adminStatus"></span>
   </div>
@@ -80,44 +78,64 @@
     <div class="users-list" id="usersList"></div>
   </div>
 
-  <div id="tabTurnos" style="display:none">
-    <div class="turnos-panel">
-      <div class="turnos-stats">
-        <div class="turnos-stat">
-          <span class="turnos-stat-label">Turno atual</span>
-          <strong id="turnoNumber"></strong>
+  <div id="tabEleicao" style="display:none">
+    <div class="eleicao-layout">
+      <div class="eleicao-content">
+        <div id="subtabTurnos" style="display:none">
+          <div class="turnos-panel">
+            <div class="turnos-stats">
+              <div class="turnos-stat">
+                <span class="turnos-stat-label">Turno atual</span>
+                <strong id="turnoNumber"></strong>
+              </div>
+              <div class="turnos-stat">
+                <span class="turnos-stat-label">Imagens na disputa</span>
+                <strong id="turnoActiveCount"></strong>
+              </div>
+            </div>
+            <div class="turnos-stats">
+              <label class="turnos-stat">
+                <span class="turnos-stat-label">Passam para a próxima fase</span>
+                <input type="number" id="turnoCutoff" value="3" min="1">
+              </label>
+              <label class="turnos-stat">
+                <span class="turnos-stat-label">Modo voto único</span>
+                <span class="turnos-check"><input type="checkbox" id="turnoSingleVote">Ativar</span>
+              </label>
+            </div>
+            <div class="turnos-stats">
+              <div class="turnos-stat">
+                <button class="admin-btn danger" id="turnoAdvance">Avançar turno</button>
+              </div>
+              <div class="turnos-stat">
+                <button class="admin-btn outline" id="turnoReset">Resetar turnos</button>
+              </div>
+            </div>
+            <div class="turnos-history" id="turnosHistory"></div>
+          </div>
+          <div class="admin-grid" id="turnoGrid"></div>
         </div>
-        <div class="turnos-stat">
-          <span class="turnos-stat-label">Imagens na disputa</span>
-          <strong id="turnoActiveCount"></strong>
+
+        <div id="subtabPosts">
+          <div class="admin-scrollrow admin-post-actions-row" style="margin-bottom: 0.75rem;">
+            <button class="admin-btn outline" id="adminSelectAllEleicaoPosts">Selecionar todas</button>
+            <button class="admin-btn danger" id="adminDeleteSelectedEleicao">Excluir</button>
+            <button class="admin-btn outline" id="adminRemoveLikesEleicao">Remover likes</button>
+            <button class="admin-btn outline" id="adminExportCollageEleicao">Exportar collage</button>
+            <button class="admin-btn outline" id="adminAddWinnerFromPosts">Vencedora</button>
+          </div>
+          <div class="admin-grid" id="eleicaoPostsGrid"></div>
         </div>
       </div>
-      <div class="turnos-stats">
-        <label class="turnos-stat">
-          <span class="turnos-stat-label">Passam para a próxima fase</span>
-          <input type="number" id="turnoCutoff" value="3" min="1">
-        </label>
-        <label class="turnos-stat">
-          <span class="turnos-stat-label">Modo voto único</span>
-          <span class="turnos-check"><input type="checkbox" id="turnoSingleVote">Ativar</span>
-        </label>
+
+      <div class="admin-subtabs">
+        <button class="admin-subtab active" data-subtab="posts">Posts</button>
+        <button class="admin-subtab" data-subtab="turnos">Turnos</button>
       </div>
-      <div class="turnos-stats">
-        <div class="turnos-stat">
-          <button class="admin-btn danger" id="turnoAdvance">Avançar turno</button>
-        </div>
-        <div class="turnos-stat">
-          <button class="admin-btn outline" id="turnoReset">Resetar turnos</button>
-        </div>
-      </div>
-      <div class="turnos-history" id="turnosHistory"></div>
     </div>
-    <div class="admin-grid" id="turnoGrid"></div>
   </div>
 
   <div class="admin-actions" id="actionsUsers" style="display:none"></div>
-
-  <div class="admin-actions" id="actionsTurnos" style="display:none"></div>
 
   <div class="confirm-overlay" id="confirmModal">
     <div class="confirm-card">
@@ -125,6 +143,31 @@
       <div class="confirm-actions">
         <button id="confirmNo" class="confirm-btn">Não</button>
         <button id="confirmYes" class="confirm-btn danger">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="winner-modal-overlay" id="winnerModal">
+    <div class="winner-modal-card">
+      <h3>Adicionar Vencedora</h3>
+      <div class="winner-modal-preview" id="winnerImages"></div>
+      <div class="winner-modal-fields">
+        <label class="winner-modal-label">
+          <span>Legenda</span>
+          <input type="text" id="winnerCaption" class="winner-modal-input" placeholder="Opcional" maxlength="200">
+        </label>
+        <label class="winner-modal-label">
+          <span>Número</span>
+          <input type="text" id="winnerNumber" class="winner-modal-input" placeholder="Ex: 0001" maxlength="10">
+        </label>
+        <label class="winner-modal-label">
+          <span>Data</span>
+          <input type="date" id="winnerDate" class="winner-modal-input">
+        </label>
+      </div>
+      <div class="winner-modal-actions">
+        <button id="winnerCancel" class="confirm-btn">Cancelar</button>
+        <button id="winnerConfirm" class="confirm-btn" style="background: var(--btn-bg); color: #fff; border-color: var(--btn-bg);">Salvar</button>
       </div>
     </div>
   </div>

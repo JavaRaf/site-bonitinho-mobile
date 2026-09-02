@@ -149,6 +149,15 @@ class PushNotification(db.Model):
     created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
 
 
+class Winner(db.Model):
+    __tablename__ = "winners"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    image_name = db.Column(db.Text, nullable=False, unique=True)
+    caption = db.Column(db.Text, nullable=False, default="")
+    number = db.Column(db.Integer, nullable=False, unique=True)
+    created_at = db.Column(db.Text, nullable=False, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+
+
 class RecoveryCode(db.Model):
     __tablename__ = "recovery_codes"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

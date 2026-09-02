@@ -172,3 +172,16 @@ def ranking_api():
 @likes_bp.route("/api/eleicao", methods=["GET"])
 def eleicao_ranking_api():
     return jsonify(_ranking_payload(eleicao_only=True))
+
+
+@likes_bp.route("/api/eleicao/vencedoras", methods=["GET"])
+def eleicao_vencedoras_api():
+    from db.models import Winner
+    winners = Winner.query.order_by(Winner.number.asc()).all()
+    return jsonify([{
+        "id": w.id,
+        "image_name": w.image_name,
+        "caption": w.caption or "",
+        "number": w.number,
+        "created_at": w.created_at,
+    } for w in winners])

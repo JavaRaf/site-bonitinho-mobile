@@ -77,6 +77,75 @@
   border-bottom-color: var(--text);
 }
 
+/* Eleição layout */
+.eleicao-layout {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.eleicao-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Subtabs (vertical sidebar) */
+.admin-subtabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 1px solid var(--border);
+  padding-left: 0.5rem;
+  flex-shrink: 0;
+  width: 80px;
+}
+
+.admin-subtab {
+  padding: 0.5rem 0.35rem;
+  border: none;
+  background: none;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  text-align: left;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.admin-subtab:hover {
+  color: var(--text-secondary);
+}
+
+.admin-subtab.active {
+  color: var(--text);
+  border-left-color: var(--btn-bg);
+}
+
+@media (max-width: 28rem) {
+  .eleicao-layout {
+    flex-direction: column-reverse;
+  }
+  .admin-subtabs {
+    flex-direction: row;
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+    padding-left: 0;
+    width: auto;
+  }
+  .admin-subtab {
+    flex: 1;
+    text-align: center;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+  }
+  .admin-subtab.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--btn-bg);
+  }
+}
+
 /* Empty state */
 .admin-empty {
   grid-column: 1 / -1;
@@ -121,12 +190,6 @@
   }
 }
 
-@media (min-width: 90rem) {
-  .admin-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
-
 .admin-card {
   position: relative;
   display: flex;
@@ -150,9 +213,20 @@
   box-shadow: 0 0 0 1px var(--text);
 }
 
-.admin-card > img {
+.admin-card-media {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.admin-card-media > img,
+.admin-card-media > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
@@ -832,14 +906,6 @@
   color: #fff;
 }
 
-.admin-card-thumb {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  display: block;
-  background: #000;
-}
-
 .admin-text-thumb {
   width: 100%;
   aspect-ratio: 1;
@@ -948,4 +1014,103 @@
 
 .admin-text-card.expanded .admin-text-likers {
   display: flex;
+}
+
+/* Winner modal */
+.winner-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.winner-modal-overlay.open {
+  display: flex;
+}
+
+.winner-modal-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 1.25rem;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.winner-modal-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.winner-modal-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.winner-modal-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.winner-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.winner-modal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.winner-modal-label span {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.winner-modal-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 0.625rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.winner-modal-input:focus {
+  border-color: var(--btn-bg);
+}
+
+.winner-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
+.winner-modal-actions .confirm-btn {
+  min-width: 72px;
+  justify-content: center;
 }

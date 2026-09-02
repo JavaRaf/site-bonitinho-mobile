@@ -601,6 +601,18 @@ def serve_image(filename):
     return send_from_directory(Config.BASE_DIR / "images", filename, max_age=604800)
 
 
+@images_bp.route("/winners/<path:filename>/download")
+def download_winner_image(filename):
+    return send_from_directory(
+        Config.WINNER_DIR, filename, as_attachment=True, max_age=0
+    )
+
+
+@images_bp.route("/winners/<path:filename>")
+def serve_winner_image(filename):
+    return send_from_directory(Config.WINNER_DIR, filename, max_age=604800)
+
+
 @images_bp.route("/comment-media/<path:filename>")
 def serve_comment_media(filename):
     safe = Path(filename).name
