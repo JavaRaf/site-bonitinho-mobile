@@ -1642,8 +1642,8 @@ async function onFeedSubmit(e) {
     const textarea = form.querySelector("textarea");
     const text = textarea.value.trim();
     const mediaInput = form.querySelector(".comment-media-input");
-    const hasMedia = mediaInput && mediaInput.files && mediaInput.files[0];
-    const submitFile = hasMedia ? mediaInput.files[0] : null;
+    const submitFile = (mediaInput && mediaInput.files && mediaInput.files[0]) || form._pastedMedia || null;
+    const hasMedia = !!submitFile;
     const reuseGif = form.dataset.reuseGif || "";
     if (!text && !hasMedia && !reuseGif) return;
     const card = form.closest(".feed-card");
@@ -1653,7 +1653,7 @@ async function onFeedSubmit(e) {
         const fd = new FormData();
         fd.append("text", text);
         if (feedReplyParentId) fd.append("parent_id", feedReplyParentId);
-        fd.append("media", mediaInput.files[0]);
+        fd.append("media", submitFile);
         fetchOpts = { method: "POST", body: fd };
     } else {
         const body = { text };
@@ -1689,6 +1689,7 @@ async function onFeedSubmit(e) {
             }
             textarea.value = "";
             if (mediaInput) { mediaInput.value = ""; const prev=form.querySelector(".comment-media-preview"); if(prev){ prev.hidden=true; prev.innerHTML=""; } }
+            form._pastedMedia = null;
             autoResizeFeed(textarea);
             await loadFeedComments(card);
         } else {
@@ -1716,7 +1717,8 @@ function updateFeedCommentSendBtn(form) {
     const mediaInput = form.querySelector(".comment-media-input");
     const hasMedia = mediaInput && mediaInput.files && mediaInput.files[0];
     const hasReuse = !!(form.dataset.reuseGif);
-    btn.disabled = !text && !hasMedia && !hasReuse;
+    const hasPasted = !!form._pastedMedia;
+    btn.disabled = !text && !hasMedia && !hasReuse && !hasPasted;
 }
 
 function onFeedKeydown(e) {
@@ -1737,6 +1739,91 @@ function bindFeedEvents(root) {
     root.addEventListener("submit", onFeedSubmit);
     root.addEventListener("input", onFeedInput);
     root.addEventListener("keydown", onFeedKeydown);
+root.addEventListener("paste", (e) => {
+        if (e.target.matches(".feed-comment-form textarea")) {
+            const items = Array.from(e.clipboardData?.items || []);
+            const fileItem = items.find(i => i.type.startsWith("image/") || i.type.startsWith("video/"));
+            if (fileItem) {
+                const file = fileItem.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    const form = e.target.closest("form");
+                    const inp = form.querySelector(".comment-media-input");
+                    const preview = form?.querySelector(".comment-media-preview");
+                    if (!inp || !preview) return;
+                    if (file.size > 10 * 1024 * 1024) { showAlert("Arquivo muito grande (máx 10MB)"); return; }
+                    const isVideo = file.type.startsWith("video/");
+                    let url = null;
+                    const attach = () => {
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        try { inp.files = dt.files; } catch { /* ignore */ }
+                        const mimeExts = {
+                            "image/png": ".png",
+                            "image/jpeg": ".jpg",
+                            "image/jpg": ".jpg",
+                            "image/webp": ".webp",
+                            "image/avif": ".avif",
+                            "image/gif": ".gif",
+                            "video/mp4": ".mp4",
+                            "video/webm": ".webm",
+                            "video/quicktime": ".mov"
+                        };
+                        const hasExt = file.name && file.name.includes(".") && !file.name.endsWith(".blob");
+                        const ext = mimeExts[file.type] || (hasExt ? "." + file.name.split(".").pop().toLowerCase() : ".png");
+                        const filename = `pasted_${Date.now()}_${Math.random().toString(36).substr(2, 6)}${ext}`;
+                        const fileWithName = new File([file], filename, { type: file.type || "image/png" });
+                        form._pastedMedia = fileWithName;
+                        const rm = () => {
+                            form._pastedMedia = null;
+                            preview.hidden = true;
+                            preview.innerHTML = "";
+                            updateFeedCommentSendBtn(form);
+                        };
+                        if (isVideo) {
+                            preview.innerHTML = `<div style="position:relative;display:inline-block;"><video src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;" muted></video><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
+                            preview.hidden = false;
+                            updateFeedCommentSendBtn(form);
+                            preview.querySelector(".comment-media-remove").onclick = rm;
+                        } else {
+                            preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${url}" style="max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;"><button type="button" class="comment-media-remove" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#000;color:#fff;cursor:pointer;">×</button></div>`;
+                            preview.hidden = false;
+                            updateFeedCommentSendBtn(form);
+                            preview.querySelector(".comment-media-remove").onclick = () => { URL.revokeObjectURL(url); url = null; rm(); };
+                        }
+                    };
+                    if (isVideo) {
+                        url = URL.createObjectURL(file);
+                        const v = document.createElement("video");
+                        v.preload = "metadata";
+                        v.src = url;
+                        v.onloadedmetadata = () => {
+                            if (v.duration > 120) { showAlert("Vídeo muito longo (máx 2min)"); URL.revokeObjectURL(url); url = null; return; }
+                            attach();
+                        };
+                        if (v.duration !== undefined && !isNaN(v.duration)) {
+                            if (v.duration > 120) { showAlert("Vídeo muito longo (máx 2min)"); URL.revokeObjectURL(url); url = null; return; }
+                            else { attach(); }
+                        }
+                    } else {
+                        url = URL.createObjectURL(file);
+                        const img = document.createElement("img");
+                        img.onload = () => {
+                            attach();
+                            URL.revokeObjectURL(url);
+                        };
+                        img.onerror = () => {
+                            showAlert("Imagem inválida");
+                            URL.revokeObjectURL(url);
+                            url = null;
+                            rm();
+                        };
+                        img.src = url;
+                    }
+                }
+            }
+        }
+    });
     root.addEventListener("click", (e)=>{
         const gifBtn = e.target.closest(".comment-gif-btn");
         if (gifBtn) {

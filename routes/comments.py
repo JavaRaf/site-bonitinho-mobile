@@ -1,5 +1,5 @@
 import re
-import os
+import io
 import uuid
 from pathlib import Path
 from PIL import Image, ImageOps
@@ -67,26 +67,57 @@ def handle_comments(image_name):
         media_file = None
 
     if media_file and media_file.filename:
+        media_file.seek(0)
+        raw = media_file.read()
+        media_file.seek(0)
+
+        if len(raw) == 0:
+            return jsonify({"error": "arquivo vazio"}), 400
+
         ext = Path(media_file.filename).suffix.lower()
         allowed = Config.ALLOWED_EXTENSIONS | Config.VIDEO_EXTENSIONS
-        if ext not in allowed:
-            return jsonify({"error": "tipo de arquivo não permitido"}), 400
-        media_file.seek(0, os.SEEK_END)
-        size = media_file.tell()
-        media_file.seek(0)
-        if size > Config.MAX_IMAGE_BYTES and ext not in Config.VIDEO_EXTENSIONS:
-            return jsonify({"error": "arquivo muito grande"}), 400
-        # video limite 2min
+
+        # Detecta formato real pelo conteúdo para evitar corrupção
+        real_format = None
+        is_animated = False
+        real_ext = ext
         is_video = ext in Config.VIDEO_EXTENSIONS
-        # gera nome único
-        media_name = f"{uuid.uuid4().hex[:8]}_{Path(media_file.filename).stem[:20]}{ext}"
-        # sanitiza
+        if not is_video and len(raw) >= 12:
+            try:
+                with Image.open(io.BytesIO(raw)) as probe:
+                    real_format = (probe.format or "").upper()
+                    try:
+                        n_frames = getattr(probe, "n_frames", 1)
+                        is_animated = n_frames and n_frames > 1
+                    except Exception:
+                        is_animated = False
+                fmt_map = {
+                    "PNG": ".png", "JPEG": ".jpg", "JPG": ".jpg",
+                    "GIF": ".gif", "WEBP": ".webp", "AVIF": ".avif",
+                }
+                real_ext = fmt_map.get(real_format, ext)
+                # se detectou AVIF e não está na lista, converte para jpg
+                if real_format == "AVIF" and real_ext not in allowed:
+                    real_ext = ".jpg"
+            except Exception:
+                real_ext = ext
+
+        if real_ext not in allowed:
+            return jsonify({"error": "tipo de arquivo não permitido"}), 400
+
+        if len(raw) > Config.MAX_IMAGE_BYTES and not is_video:
+            return jsonify({"error": "arquivo muito grande"}), 400
+
+        if real_format == "GIF" and raw[:6] not in (b"GIF87a", b"GIF89a"):
+            return jsonify({"error": "GIF inválido"}), 400
+
+        media_name = f"{uuid.uuid4().hex[:8]}_{Path(media_file.filename).stem[:20]}{real_ext}"
         media_name = Path(media_name).name
         dest_dir = Config.COMMENT_MEDIA_DIR
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / media_name
+
         if is_video:
-            # salva temp e checa duração
             tmp = dest
             media_file.save(str(tmp))
             try:
@@ -102,25 +133,30 @@ def handle_comments(image_name):
             except Exception:
                 pass
             media_type = "video"
-            # thumb para video opcional
         else:
-            if ext == ".gif":
-                # preserva animação: salva bytes originais do GIF
-                byte = media_file.read()
-                if byte[:6] not in (b"GIF87a", b"GIF89a"):
-                    return jsonify({"error": "GIF inválido"}), 400
-                dest.write_bytes(byte)
+            # GIF: preserva animação (salva bytes orignais)
+            if real_format == "GIF":
+                dest.write_bytes(raw)
                 media_type = "image"
             else:
                 try:
-                    with Image.open(media_file.stream) as im:
+                    with Image.open(io.BytesIO(raw)) as im:
                         im = ImageOps.exif_transpose(im)
-                        im.thumbnail((1080, 1080))
-                        im.save(str(dest), format="JPEG", quality=85)
+                        # preserva transparência/alfa se existir
+                        has_alpha = im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info
+                        if has_alpha and real_ext in (".png", ".webp", ".gif"):
+                            im.thumbnail((1080, 1080))
+                            if real_ext == ".webp":
+                                im.save(str(dest), format="WEBP", quality=90)
+                            else:
+                                im.save(str(dest), format="PNG")
+                        else:
+                            im.convert("RGB")
+                            im.thumbnail((1080, 1080))
+                            im.save(str(dest), format="JPEG", quality=85)
                 except Exception:
-                    media_file.save(str(dest))
+                    dest.write_bytes(raw)
                 media_type = "image"
-            # gera thumb (primeiro frame)
             try:
                 thumb_dir = Config.THUMB_DIR
                 thumb_dir.mkdir(parents=True, exist_ok=True)
@@ -240,6 +276,26 @@ def delete_comment(comment_id):
 
     if not user.is_admin and not is_owner:
         return jsonify({"error": "forbidden"}), 403
+
+    comments = Comment.query.filter(
+        (Comment.id == comment_id) | (Comment.parent_id == comment_id)
+    ).all()
+
+    # remove arquivos de mídia e thumbs associados
+    for c in comments:
+        if c.media_name:
+            media_path = Config.COMMENT_MEDIA_DIR / c.media_name
+            thumb_path = Config.THUMB_DIR / (c.media_name + ".webp")
+            try:
+                if media_path.exists():
+                    media_path.unlink()
+            except Exception:
+                pass
+            try:
+                if thumb_path.exists():
+                    thumb_path.unlink()
+            except Exception:
+                pass
 
     Comment.query.filter(
         (Comment.id == comment_id) | (Comment.parent_id == comment_id)
