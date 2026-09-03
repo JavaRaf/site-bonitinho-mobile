@@ -7,16 +7,27 @@ from PIL import Image, ImageOps
 from flask import Blueprint, request, jsonify, session
 from config import Config
 from db import db
-from db.models import User, Comment, CommentLike, Upload
+from db.models import User, Comment, CommentLike, Upload, Block
 from utils.security import login_required, is_rate_limited, get_client_ip
 
 comments_bp = Blueprint("comments", __name__)
 
 
+def _blocked_ids():
+    viewer_id = session.get("user_id")
+    if not viewer_id:
+        return set()
+    rows = db.session.query(Block.user_id, Block.blocked_id).filter(
+        (Block.user_id == viewer_id) | (Block.blocked_id == viewer_id)
+    ).all()
+    return {r.blocked_id if r.user_id == viewer_id else r.user_id for r in rows}
+
+
 @comments_bp.route("/api/comments/<path:image_name>", methods=["GET", "POST"])
 def handle_comments(image_name):
     if request.method == "GET":
-        rows = (
+        blocked = _blocked_ids()
+        q = (
             db.session.query(
                 Comment.id, Comment.text, Comment.created_at, Comment.parent_id,
                 Comment.media_name, Comment.media_type,
@@ -26,10 +37,10 @@ def handle_comments(image_name):
             .join(User, Comment.user_id == User.id)
             .outerjoin(CommentLike, CommentLike.comment_id == Comment.id)
             .filter(Comment.image_name == image_name)
-            .group_by(Comment.id)
-            .order_by(Comment.created_at.asc())
-            .all()
         )
+        if blocked:
+            q = q.filter(Comment.user_id.notin_(blocked))
+        rows = q.group_by(Comment.id).order_by(Comment.created_at.asc()).all()
         return jsonify([
             {
                 "id": r.id, "text": r.text, "created_at": r.created_at,

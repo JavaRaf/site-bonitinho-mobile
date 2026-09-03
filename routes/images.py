@@ -50,12 +50,20 @@ def list_images():
         .correlate(Upload)
         .scalar_subquery()
     )
+    blocked = _blocked_ids()
     comment_count = (
         db.session.query(db.func.count(Comment.id))
         .filter(Comment.image_name == Upload.image_name)
         .correlate(Upload)
         .scalar_subquery()
     )
+    if blocked:
+        comment_count = (
+            db.session.query(db.func.count(Comment.id))
+            .filter(Comment.image_name == Upload.image_name, Comment.user_id.notin_(blocked))
+            .correlate(Upload)
+            .scalar_subquery()
+        )
 
     uploads = (
         db.session.query(
@@ -77,7 +85,6 @@ def list_images():
         if f.suffix.lower() in Config.ALL_MEDIA_EXTENSIONS
     }
 
-    blocked = _blocked_ids()
     result = []
     post_index = {}
     for upload, username, display_name, owner_avatar, likes, comments in uploads:
@@ -145,12 +152,20 @@ def list_images_since():
         .correlate(Upload)
         .scalar_subquery()
     )
+    blocked = _blocked_ids()
     comment_count = (
         db.session.query(db.func.count(Comment.id))
         .filter(Comment.image_name == Upload.image_name)
         .correlate(Upload)
         .scalar_subquery()
     )
+    if blocked:
+        comment_count = (
+            db.session.query(db.func.count(Comment.id))
+            .filter(Comment.image_name == Upload.image_name, Comment.user_id.notin_(blocked))
+            .correlate(Upload)
+            .scalar_subquery()
+        )
 
     uploads = (
         db.session.query(
@@ -172,7 +187,6 @@ def list_images_since():
         if f.suffix.lower() in Config.ALL_MEDIA_EXTENSIONS
     }
 
-    blocked = _blocked_ids()
     result = []
     post_index = {}
     for upload, username, display_name, owner_avatar, likes, comments in uploads:

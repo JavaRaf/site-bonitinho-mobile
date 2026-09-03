@@ -26,6 +26,16 @@ def _is_blocked(viewer_id, target_id):
     ).first() is not None
 
 
+def _blocked_ids():
+    viewer_id = session.get("user_id")
+    if not viewer_id:
+        return set()
+    rows = db.session.query(Block.user_id, Block.blocked_id).filter(
+        (Block.user_id == viewer_id) | (Block.blocked_id == viewer_id)
+    ).all()
+    return {r.blocked_id if r.user_id == viewer_id else r.user_id for r in rows}
+
+
 @profile_bp.route("/api/profile/<username>", methods=["GET"])
 def get_profile(username):
     user = _get_by_username(username)
@@ -113,12 +123,20 @@ def get_profile_posts(username):
         .correlate(Upload)
         .scalar_subquery()
     )
+    blocked = _blocked_ids()
     comment_count = (
         db.session.query(db.func.count(Comment.id))
         .filter(Comment.image_name == Upload.image_name)
         .correlate(Upload)
         .scalar_subquery()
     )
+    if blocked:
+        comment_count = (
+            db.session.query(db.func.count(Comment.id))
+            .filter(Comment.image_name == Upload.image_name, Comment.user_id.notin_(blocked))
+            .correlate(Upload)
+            .scalar_subquery()
+        )
 
     query = (
         db.session.query(
